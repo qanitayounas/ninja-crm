@@ -1,0 +1,43 @@
+[
+  {
+    "id": "c1",
+    "contactId": "1",
+    "contactName": "John Smith",
+    "lastMessage": "Great, let's schedule the appointment.",
+    "unreadCount": 2,
+    "timestamp": "10:30 AM",
+    "channel": "WhatsApp",
+    "status": "online",
+    "messages": [
+      { "id": "m1", "senderId": "1", "text": "Hi, I'm interested in the service", "timestamp": "10:25 AM", "isMe": false },
+      { "id": "m2", "senderId": "me", "text": "Hi John, we'd be happy to help. What plan are you looking for?", "timestamp": "10:28 AM", "isMe": true },
+      { "id": "m3", "senderId": "1", "text": "Great, let's schedule the appointment.", "timestamp": "10:30 AM", "isMe": false }
+    ]
+  },
+  {
+    "id": "c2",
+    "contactId": "2",
+    "contactName": "Jane Doe",
+    "lastMessage": "What are the prices?",
+    "unreadCount": 0,
+    "timestamp": "9:15 AM",
+    "channel": "Instagram",
+    "status": "offline",
+    "messages": [
+      { "id": "m4", "senderId": "2", "text": "Hi, I saw your post on IG", "timestamp": "9:10 AM", "isMe": false },
+      { "id": "m5", "senderId": "me", "text": "Hi Jane, welcome! How can we help you?", "timestamp": "9:12 AM", "isMe": true },
+      { "id": "m6", "senderId": "2", "text": "What are the prices?", "timestamp": "9:15 AM", "isMe": false }
+    ]
+  },
+  {
+    "id": "c3",
+    "contactId": "3",
+    "contactName": "Michael Brown",
+    "lastMessage": "Thanks for the information.",
+    "unreadCount": 0,
+    "timestamp": "Yesterday",
+    "channel": "Messenger",
+    "status": "offline",
+    "messages": []
+  }
+]

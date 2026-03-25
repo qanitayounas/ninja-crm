@@ -1,0 +1,16 @@
+[
+  {
+    "id": "u1",
+    "name": "Admin Ninja",
+    "email": "admin@ninjacrm.com",
+    "role": "admin",
+    "status": "Active"
+  },
+  {
+    "id": "u2",
+    "name": "User Ninja",
+    "email": "user@ninjacrm.com",
+    "role": "user",
+    "status": "Active"
+  }
+]

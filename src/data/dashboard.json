@@ -1,0 +1,72 @@
+{
+  "kpis": [
+    {
+      "title": "Total Leads",
+      "value": "1,284",
+      "change": 12.5,
+      "isPositive": true
+    },
+    {
+      "title": "Conversion",
+      "value": "24.8%",
+      "change": 4.2,
+      "isPositive": true
+    },
+    {
+      "title": "Open Opportunities",
+      "value": "42",
+      "change": -2.1,
+      "isPositive": false
+    },
+    {
+      "title": "Pipeline Value",
+      "value": "$12,450",
+      "change": 8.1,
+      "isPositive": true
+    }
+  ],
+  "leadGrowth": [
+    { "month": "Oct", "leads": 400 },
+    { "month": "Nov", "leads": 600 },
+    { "month": "Dec", "leads": 550 },
+    { "month": "Jan", "leads": 800 },
+    { "month": "Feb", "leads": 950 },
+    { "month": "Mar", "leads": 1284 }
+  ],
+  "leadSources": [
+    { "name": "WhatsApp", "value": 45 },
+    { "name": "Instagram", "value": 25 },
+    { "name": "Messenger", "value": 15 },
+    { "name": "SMS", "value": 15 }
+  ],
+  "recentActivity": [
+    {
+      "id": "1",
+      "contactName": "John Smith",
+      "action": "New lead from WhatsApp",
+      "time": "2 min ago",
+      "status": "Qualified"
+    },
+    {
+      "id": "2",
+      "contactName": "Jane Doe",
+      "action": "Message received on Instagram",
+      "time": "15 min ago",
+      "status": "Pending"
+    },
+    {
+      "id": "3",
+      "contactName": "Michael Brown",
+      "action": "Scheduled call",
+      "time": "1 hour ago",
+      "status": "Qualified"
+    },
+    {
+      "id": "4",
+      "contactName": "Emily Wilson",
+      "action": "Email sent",
+      "time": "3 hours ago",
+      "status": "Archived"
+    }
+  ]
+}

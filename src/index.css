@@ -1,0 +1,51 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-ninja-bg text-ninja-dark font-sans antialiased;
+  }
+}
+
+@layer components {
+  .ninja-card {
+    @apply bg-white rounded-3xl shadow-ninja p-6;
+  }
+  
+  .btn-primary {
+    @apply bg-ninja-yellow text-ninja-dark font-semibold py-2.5 px-6 rounded-xl transition-all hover:opacity-90 active:scale-95;
+  }
+
+  .btn-secondary {
+    @apply bg-white text-ninja-dark border border-gray-200 font-semibold py-2.5 px-6 rounded-xl transition-all hover:bg-gray-50 active:scale-95;
+  }
+
+  .sidebar-icon-active {
+    @apply bg-ninja-yellow text-ninja-dark rounded-xl p-2;
+  }
+
+  .sidebar-icon {
+    @apply text-white/50 hover:text-white transition-colors p-2;
+  }
+}
+
+/* Custom Scrollbar for Chat */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #E5E7EB;
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #D1D5DB;
+}

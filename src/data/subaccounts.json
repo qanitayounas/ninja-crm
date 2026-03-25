@@ -1,0 +1,26 @@
+[
+  {
+    "id": "s1",
+    "name": "Gym Alpha",
+    "plan": "Pro",
+    "status": "Active",
+    "mrr": 49,
+    "contactsCount": 150
+  },
+  {
+    "id": "s2",
+    "name": "Dental Smile",
+    "plan": "Enterprise",
+    "status": "Active",
+    "mrr": 99,
+    "contactsCount": 450
+  },
+  {
+    "id": "s3",
+    "name": "Real Estate Pro",
+    "plan": "Starter",
+    "status": "Paused",
+    "mrr": 0,
+    "contactsCount": 20
+  }
+]
