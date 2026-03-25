@@ -2,16 +2,16 @@ import { useState } from 'react';
 import { 
   Search, 
   Phone, 
-  Mail, 
   MoreVertical, 
   Send, 
   Paperclip, 
   Smile,
-  Instagram,
   MessageCircle,
+  Instagram,
   MessageSquare,
-  ArrowLeft,
+  Mail,
   Info,
+  ArrowLeft,
   X
 } from 'lucide-react';
 import { Avatar, Input, Badge, Card, Button, cn } from '../components/ui';
@@ -243,4 +243,3 @@ export const MessagesPage = () => {
     </div>
   );
 };
-
