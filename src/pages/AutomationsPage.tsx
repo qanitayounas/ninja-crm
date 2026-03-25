@@ -1,4 +1,4 @@
-import React from 'react';
+import { useState } from 'react';
 import { 
   Zap, GitBranch, FileText, Sparkles, Bell, Settings, 
   ArrowUpRight, PlayCircle, CheckCircle2, XCircle, ChevronRight

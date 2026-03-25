@@ -1,4 +1,3 @@
-import React from 'react';
 import { Bell, Search, Menu } from 'lucide-react';
 import { Avatar, Button, Input } from '../components/ui';
 

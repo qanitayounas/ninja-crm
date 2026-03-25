@@ -3,7 +3,6 @@ import {
   ChevronLeft, 
   ChevronRight, 
   Plus, 
-  Calendar as CalendarIcon,
   Clock,
   RefreshCw,
   MoreVertical,
