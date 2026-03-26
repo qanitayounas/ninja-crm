@@ -1,18 +1,19 @@
 import { useState } from 'react';
-import { 
-  ChevronLeft, 
-  ChevronRight, 
-  Plus, 
+import {
+  ChevronLeft,
+  ChevronRight,
+  Plus,
   Clock,
   RefreshCw,
   MoreVertical,
   Search
 } from 'lucide-react';
-import { Card, Button, cn } from '../components/ui';
+import { Card, Button, cn, Modal, Input, Select, Textarea } from '../components/ui';
 import { agendaData, calendarDays, timeSlots } from '../data/calendarData';
 
 export const CalendarPage = () => {
   const [view, setView] = useState<'semana' | 'mes'>('semana');
+  const [isAddEventModalOpen, setIsAddEventModalOpen] = useState(false);
 
   return (
     <div className="flex flex-col gap-6 pb-10">
@@ -27,7 +28,10 @@ export const CalendarPage = () => {
             <RefreshCw size={18} />
             <span>Sync Calendar</span>
           </Button>
-          <Button className="flex items-center gap-2 px-6">
+          <Button
+            onClick={() => setIsAddEventModalOpen(true)}
+            className="flex items-center gap-2 px-6"
+          >
             <Plus size={20} />
             <span>New Appointment</span>
           </Button>
@@ -53,7 +57,7 @@ export const CalendarPage = () => {
               </div>
 
               <div className="bg-gray-50 p-1 rounded-xl flex">
-                <button 
+                <button
                   onClick={() => setView('week' as any)}
                   className={cn(
                     "px-6 py-2 rounded-lg text-sm font-bold transition-all",
@@ -62,7 +66,7 @@ export const CalendarPage = () => {
                 >
                   Week
                 </button>
-                <button 
+                <button
                   onClick={() => setView('month' as any)}
                   className={cn(
                     "px-6 py-2 rounded-lg text-sm font-bold transition-all",
@@ -123,8 +127,8 @@ export const CalendarPage = () => {
 
             <div className="flex flex-col gap-4 mb-4">
               {agendaData.map((item) => (
-                <div 
-                  key={item.id} 
+                <div
+                  key={item.id}
                   className={cn(
                     "p-5 rounded-3xl bg-gray-50/50 hover:bg-white border border-transparent hover:border-gray-100 hover:shadow-ninja transition-all group cursor-pointer",
                     item.color
@@ -160,6 +164,64 @@ export const CalendarPage = () => {
           </Card>
         </div>
       </div>
+
+      <Modal isOpen={isAddEventModalOpen} onClose={() => setIsAddEventModalOpen(false)} title="Create New Event">
+        <div className="flex flex-col gap-4">
+          <div className="space-y-1.5">
+            <label className="text-sm font-bold text-ninja-dark">Title *</label>
+            <Input placeholder="e.g.: Client Meeting" />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-sm font-bold text-ninja-dark">Time *</label>
+              <Input type="time" />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-bold text-ninja-dark">Duration</label>
+              <Select defaultValue="30">
+                <option value="15">15 minutes</option>
+                <option value="30">30 minutes</option>
+                <option value="45">45 minutes</option>
+                <option value="60">1 hour</option>
+                <option value="90">1.5 hours</option>
+                <option value="120">2 hours</option>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-sm font-bold text-ninja-dark">Type</label>
+              <Select defaultValue="Meeting">
+                <option value="Meeting">Meeting</option>
+                <option value="Call">Call</option>
+                <option value="Reminder">Reminder</option>
+                <option value="Other">Other</option>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-bold text-ninja-dark">Location</label>
+              <Input placeholder="e.g.: Conference Room" />
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-sm font-bold text-ninja-dark">Attendees (separated by comma)</label>
+            <Input placeholder="John, Sarah, Mike" />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-sm font-bold text-ninja-dark">Description</label>
+            <Textarea placeholder="Additional details about the event..." />
+          </div>
+
+          <div className="flex items-center gap-3 justify-end mt-2">
+            <Button variant="secondary" onClick={() => setIsAddEventModalOpen(false)} className="border-none hover:bg-gray-100">Cancel</Button>
+            <Button className="font-black px-10">Create Event</Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };
