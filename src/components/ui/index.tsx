@@ -13,11 +13,11 @@ export const Card = ({ children, className }: { children: React.ReactNode; class
   </div>
 );
 
-export const Button = ({ 
-  children, 
-  variant = 'primary', 
-  className, 
-  ...props 
+export const Button = ({
+  children,
+  variant = 'primary',
+  className,
+  ...props
 }: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'secondary' | 'ghost' | 'danger' }) => {
   const variants = {
     primary: "bg-ninja-yellow text-ninja-dark hover:opacity-90",
@@ -25,9 +25,9 @@ export const Button = ({
     ghost: "bg-transparent text-gray-500 hover:bg-gray-100",
     danger: "bg-red-500 text-white hover:bg-red-600",
   };
-  
+
   return (
-    <button 
+    <button
       className={cn(
         "font-semibold py-2.5 px-6 rounded-xl transition-all active:scale-95 disabled:opacity-50 disabled:pointer-events-none",
         variants[variant],
@@ -40,7 +40,7 @@ export const Button = ({
   );
 };
 
-export const Badge = ({ children, status }: { children: React.ReactNode; status: string }) => {
+export const Badge = ({ children, status, className }: { children: React.ReactNode; status: string; className?: string }) => {
   const colors: Record<string, string> = {
     Qualified: "bg-green-100 text-green-700",
     Pending: "bg-yellow-100 text-yellow-700",
@@ -50,9 +50,9 @@ export const Badge = ({ children, status }: { children: React.ReactNode; status:
     Paused: "bg-orange-100 text-orange-700",
     'Past Due': "bg-red-100 text-red-700",
   };
-  
+
   return (
-    <span className={cn("px-3 py-1 rounded-full text-xs font-medium", colors[status] || "bg-gray-100 text-gray-800")}>
+    <span className={cn("px-3 py-1 rounded-full text-xs font-medium", colors[status] || "bg-gray-100 text-gray-800", className)}>
       {children}
     </span>
   );
@@ -64,9 +64,9 @@ export const Avatar = ({ name, src, size = 'md', className }: { name: string; sr
     md: "h-10 w-10 text-sm",
     lg: "h-12 w-12 text-base",
   };
-  
+
   const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-  
+
   return (
     <div className={cn("relative inline-flex items-center justify-center rounded-full bg-gray-200 text-gray-600 font-bold overflow-hidden", sizes[size], className)}>
       {src ? (
@@ -130,18 +130,18 @@ export const Modal = ({ isOpen, onClose, title, children }: ModalProps) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center animate-in fade-in duration-200">
-      <div 
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm" 
+      <div
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
         onClick={onClose}
       />
       <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-lg mx-4 flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
         <div className="flex items-center justify-between p-6 pb-4 border-b border-gray-50">
           <h2 className="text-xl font-bold text-ninja-dark">{title}</h2>
-          <button 
+          <button
             onClick={onClose}
             className="p-2 text-gray-400 hover:text-ninja-dark hover:bg-gray-100 rounded-full transition-colors"
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
           </button>
         </div>
         <div className="p-6 overflow-y-auto custom-scrollbar">
