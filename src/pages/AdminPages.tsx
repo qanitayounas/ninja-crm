@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   Plus, Building, User, Users, Target, Zap, Settings, Globe, Bell, Shield, Database,
-  CheckCircle2, CreditCard, Download, Clock, ExternalLink, ChevronRight, AlertCircle
+  CheckCircle2, Download
 } from 'lucide-react';
 import { Card, Badge, Avatar, Button, Input, cn } from '../components/ui';
 import subaccountsData from '../data/subaccounts.json';
