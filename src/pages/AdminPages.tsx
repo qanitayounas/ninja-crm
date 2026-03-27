@@ -257,19 +257,21 @@ export const SettingsPage = () => {
 
           {activeTab === 'permissions' && (
             <Card className="max-w-4xl border-none shadow-sm space-y-6">
-              <div className="flex items-center justify-between mb-2">
+              <div className="flex items-start sm:items-center justify-between mb-2 gap-4">
                 <div>
                   <h3 className="text-lg font-bold text-ninja-dark mb-1">Roles & Permissions</h3>
                   <p className="text-gray-400 text-sm font-medium">Manage access levels and plan-based feature visibility.</p>
                 </div>
-                <Button onClick={() => toast.success('Opening Create Role modal...')} className="text-xs px-4 py-2 font-bold bg-ninja-dark text-white shadow-lg shadow-black/5 hover:bg-gray-800">
-                  <Plus size={14} className="inline mr-1" /> New Role
+                <Button onClick={() => toast.success('Opening Create Role modal...')} className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 px-3 py-2 sm:px-4 sm:py-2.5 h-16 w-16 sm:h-auto sm:w-auto shrink-0 rounded-2xl text-[10px] sm:text-xs font-bold leading-tight bg-ninja-dark text-white shadow-lg hover:bg-gray-800 transition-all">
+                  <Plus size={16} className="sm:w-4 sm:h-4" /> 
+                  <span className="text-center">New<br className="sm:hidden" /> Role</span>
                 </Button>
               </div>
 
               {/* Roles Table */}
-              <div className="border border-gray-100 rounded-2xl overflow-hidden">
-                <table className="w-full text-left">
+              <div className="border border-gray-100 rounded-2xl overflow-hidden bg-white">
+                <div className="overflow-x-auto custom-scrollbar">
+                  <table className="w-full min-w-[600px] text-left">
                   <thead className="bg-gray-50/50">
                     <tr>
                       <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Role Name</th>
@@ -286,11 +288,11 @@ export const SettingsPage = () => {
                       { name: 'Client Viewer', plan: 'Basic', users: 45, color: 'bg-gray-100 text-gray-600' }
                     ].map((role, i) => (
                       <tr key={i} className="hover:bg-gray-50/30 transition-colors">
-                        <td className="px-6 py-4">
-                          <span className="font-bold text-ninja-dark text-sm">{role.name}</span>
+                        <td className="px-6 py-4 w-1/4">
+                          <span className="font-bold text-ninja-dark text-sm inline-block max-w-[60px] sm:max-w-none">{role.name}</span>
                         </td>
                         <td className="px-6 py-4">
-                          <span className={cn("text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md", role.color)}>
+                          <span className={cn("text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md inline-block leading-tight max-w-[80px] sm:max-w-none text-center sm:text-left", role.color)}>
                             {role.plan}
                           </span>
                         </td>
@@ -321,7 +323,8 @@ export const SettingsPage = () => {
                       </tr>
                     ))}
                   </tbody>
-                </table>
+                  </table>
+                </div>
               </div>
 
               {/* Plan Feature Toggles */}
