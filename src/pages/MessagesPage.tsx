@@ -4,7 +4,7 @@ import {
   Phone,
   MoreVertical,
   Send,
-  Paperclip,
+  Plus,
   Smile,
   MessageCircle,
   Instagram,
@@ -12,8 +12,12 @@ import {
   Mail,
   Info,
   ArrowLeft,
-  X
+  X,
+  UserPlus,
+  Star,
+  FilePlus
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { Avatar, Input, Badge, Card, Button, cn } from '../components/ui';
 import messagesData from '../data/messages.json';
 import type { Conversation } from '../types';
@@ -32,6 +36,13 @@ export const MessagesPage = () => {
   const [activeId, setActiveId] = useState<string | null>(conversations[0]?.id || null);
   const [showInfo, setShowInfo] = useState(false);
   const [messageText, setMessageText] = useState('');
+  const [channelFilter, setChannelFilter] = useState<string | null>(null);
+
+  const filteredConversations = conversations.filter(c => {
+    if (!channelFilter) return true;
+    if (channelFilter === 'unread') return c.unreadCount > 0;
+    return c.channel.toLowerCase() === channelFilter.toLowerCase();
+  });
 
   const activeChat = conversations.find(c => c.id === activeId);
 
@@ -51,15 +62,20 @@ export const MessagesPage = () => {
         )}>
           <div className="p-5 border-b border-gray-100">
             <Input icon={Search} placeholder="Search chats..." className="bg-gray-50 border-none" />
-            <div className="flex gap-2 mt-4 overflow-x-auto no-scrollbar pb-1">
-              <button className="whitespace-nowrap px-3 py-1.5 text-xs font-bold bg-ninja-yellow text-ninja-dark rounded-lg flex-shrink-0">All</button>
-              <button className="whitespace-nowrap px-3 py-1.5 text-xs font-bold text-gray-400 hover:text-ninja-dark transition-colors flex-shrink-0">Unread</button>
-              <button className="whitespace-nowrap px-3 py-1.5 text-xs font-bold text-gray-400 hover:text-ninja-dark transition-colors flex-shrink-0">Archived</button>
+            <div className="flex items-center justify-between mt-4">
+              <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                <button onClick={() => setChannelFilter(null)} className={cn("whitespace-nowrap px-3 py-1 text-[11px] font-bold rounded-lg flex-shrink-0 shadow-sm transition-colors", channelFilter === null ? "bg-ninja-yellow text-ninja-dark" : "text-gray-500 hover:bg-gray-100")}>All</button>
+                <button onClick={() => setChannelFilter('unread')} className={cn("whitespace-nowrap px-3 py-1 text-[11px] font-bold transition-colors flex-shrink-0 rounded-lg", channelFilter === 'unread' ? "bg-ninja-yellow text-ninja-dark" : "text-gray-500 hover:bg-gray-100")}>Unread</button>
+                <div className="w-px h-4 bg-gray-200 mx-1 self-center" />
+                <button onClick={() => setChannelFilter('whatsapp')} className={cn("p-1.5 rounded-lg transition-colors flex-shrink-0", channelFilter === 'whatsapp' ? "bg-green-100 text-green-600" : "text-gray-400 hover:bg-green-50/50 hover:text-green-500")} title="WhatsApp"><MessageCircle size={14} /></button>
+                <button onClick={() => setChannelFilter('instagram')} className={cn("p-1.5 rounded-lg transition-colors flex-shrink-0", channelFilter === 'instagram' ? "bg-pink-100 text-pink-600" : "text-gray-400 hover:bg-pink-50/50 hover:text-pink-500")} title="Instagram"><Instagram size={14} /></button>
+                <button onClick={() => setChannelFilter('messenger')} className={cn("p-1.5 rounded-lg transition-colors flex-shrink-0", channelFilter === 'messenger' ? "bg-blue-100 text-blue-600" : "text-gray-400 hover:bg-blue-50/50 hover:text-blue-500")} title="Messenger"><MessageSquare size={14} /></button>
+              </div>
             </div>
           </div>
 
           <div className="flex-1 overflow-y-auto custom-scrollbar">
-            {conversations.map((chat) => (
+            {filteredConversations.map((chat) => (
               <div
                 key={chat.id}
                 onClick={() => setActiveId(chat.id)}
@@ -114,7 +130,10 @@ export const MessagesPage = () => {
                   </div>
                 </div>
                 <div className="flex items-center gap-1">
-                  <Button variant="ghost" className="p-2 rounded-full h-9 w-9 md:h-10 md:w-10 flex items-center justify-center">
+                  <Button variant="ghost" className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 h-8 bg-ninja-yellow/10 text-ninja-dark hover:bg-ninja-yellow/20 rounded-lg mr-2" onClick={() => toast.success('Conversation marked as read')}>
+                    <span className="text-[10px] font-bold uppercase tracking-wide cursor-pointer">Mark as Read</span>
+                  </Button>
+                  <Button variant="ghost" className="p-2 rounded-full h-9 w-9 md:h-10 md:w-10 flex items-center justify-center" onClick={() => toast.success('Initiating call...')}>
                     <Phone size={18} className="md:w-5 md:h-5 text-gray-400" />
                   </Button>
                   <Button
@@ -127,9 +146,17 @@ export const MessagesPage = () => {
                   >
                     <Info size={18} className="md:w-5 md:h-5" />
                   </Button>
-                  <Button variant="ghost" className="p-2 rounded-full h-9 w-9 md:h-10 md:w-10 flex items-center justify-center">
-                    <MoreVertical size={18} className="md:w-5 md:h-5 text-gray-400" />
-                  </Button>
+                  <div className="relative group">
+                    <Button variant="ghost" className="p-2 rounded-full h-9 w-9 md:h-10 md:w-10 flex items-center justify-center">
+                      <MoreVertical size={18} className="md:w-5 md:h-5 text-gray-400" />
+                    </Button>
+                    {/* Fake Dropdown for "Create Contact" */}
+                    <div className="absolute right-0 top-full mt-1 w-40 bg-white shadow-xl border border-gray-100 rounded-xl opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity z-50 py-2">
+                      <button onClick={() => toast.success('Opening contact creation flow...')} className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2 text-sm text-gray-600">
+                        <UserPlus size={14} /> Create Contact
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -152,11 +179,10 @@ export const MessagesPage = () => {
                 ))}
               </div>
 
-              {/* Input Bar */}
-              <div className="p-4 md:p-5 border-t border-gray-100">
-                <div className="bg-gray-50 rounded-2xl p-1.5 md:p-2 flex items-center gap-1.5 md:gap-2">
-                  <button className="p-1.5 md:p-2 text-gray-400 hover:text-ninja-dark transition-colors">
-                    <Paperclip size={20} />
+              <div className="p-4 md:p-5 border-t border-gray-100 bg-white">
+                <div className="bg-gray-50 rounded-2xl p-1.5 md:p-2 flex items-center gap-1.5 md:gap-2 border border-gray-100 focus-within:border-ninja-yellow transition-colors shadow-inner">
+                  <button onClick={() => toast.success('Opening file picker for documents...')} className="p-1.5 md:p-2 text-gray-400 hover:text-ninja-dark transition-colors" title="Attach Document">
+                    <FilePlus size={20} />
                   </button>
                   <input
                     type="text"
@@ -193,31 +219,80 @@ export const MessagesPage = () => {
                 <X size={24} />
               </button>
               <Avatar name={activeChat.contactName} className="h-20 w-20 md:h-24 md:w-24 shrink-0 text-2xl mb-4" />
-              <h3 className="text-lg md:text-xl font-bold text-ninja-dark text-center">{activeChat.contactName}</h3>
-              <Badge status="Qualified">Qualified</Badge>
+              <h3 className="text-lg md:text-xl font-bold text-ninja-dark text-center leading-tight">{activeChat.contactName}</h3>
+              <p className="text-[11px] text-gray-400 font-medium mb-4">Acme Corp</p>
 
-              <div className="w-full mt-8 space-y-6">
-                <div className="flex flex-col gap-1">
-                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-1">Email</span>
-                  <div className="flex items-center gap-2 text-sm text-ninja-dark font-medium px-1 truncate">
-                    <Mail size={16} className="text-gray-400 flex-shrink-0" />
-                    <span className="truncate">contact@example.com</span>
+              <div className="w-full mt-2 space-y-4">
+                <div className="flex flex-col gap-1.5 border-b border-gray-50 pb-4">
+                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest px-1">Contact Info</span>
+                  <div className="flex flex-col gap-1.5 px-1 mt-1">
+                    <div className="flex items-center gap-2 text-sm text-ninja-dark font-medium truncate">
+                      <Mail size={14} className="text-gray-400 flex-shrink-0" />
+                      <span className="truncate">contact@example.com</span>
+                    </div>
+                    <div className="flex items-center justify-between group h-8 rounded-lg hover:bg-gray-50 -mx-2 px-2 transition-colors">
+                      <div className="flex items-center gap-2 text-sm text-ninja-dark font-medium">
+                        <Phone size={14} className="text-gray-400 flex-shrink-0" />
+                        <span>+1 (555) 123-4567</span>
+                      </div>
+                      <button onClick={() => toast.success('Initiating call...')} className="text-ninja-yellow opacity-0 group-hover:opacity-100 transition-opacity bg-ninja-yellow/10 p-1.5 rounded-lg hover:scale-105 active:scale-95" title="Call">
+                        <Phone size={12} className="text-ninja-dark" />
+                      </button>
+                    </div>
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-1">
-                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-1">Phone</span>
-                  <div className="flex items-center gap-2 text-sm text-ninja-dark font-medium px-1">
-                    <Phone size={16} className="text-gray-400 flex-shrink-0" />
-                    +52 55 1234 5678
+                <div className="flex flex-col gap-1.5 border-b border-gray-50 pb-4">
+                  <div className="flex justify-between items-center px-1">
+                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Conversation Labels</span>
+                    <button onClick={() => toast.success('Add label dialog...')} className="text-[10px] font-bold text-ninja-yellow hover:underline py-1"><Plus size={10} className="inline mr-0.5" />Add</button>
+                  </div>
+                  <div className="px-1 flex flex-wrap gap-1.5 mt-1">
+                    <span className="flex items-center gap-1 text-[10px] font-bold bg-blue-50 text-blue-600 px-2 py-1 rounded-md">
+                      <div className="w-1.5 h-1.5 rounded-full bg-blue-500" /> Need Follow-up
+                    </span>
+                    <span className="flex items-center gap-1 text-[10px] font-bold bg-pink-50 text-pink-600 px-2 py-1 rounded-md">
+                      <div className="w-1.5 h-1.5 rounded-full bg-pink-500" /> VIP
+                    </span>
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-1">
-                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-1">Tags</span>
-                  <div className="flex flex-wrap gap-2 mt-1 px-1">
-                    <span className="px-2 py-1 bg-ninja-purple/10 text-ninja-purple font-bold text-[10px] rounded-lg border border-ninja-purple/20">Lead</span>
-                    <span className="px-2 py-1 bg-ninja-yellow/10 text-ninja-dark font-bold text-[10px] rounded-lg border border-ninja-yellow/20">Priority</span>
+                <div className="flex flex-col gap-1.5 border-b border-gray-50 pb-4">
+                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest px-1">Opportunity Rating</span>
+                  <div className="px-1 flex items-center gap-1 mt-1 text-ninja-yellow">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star key={star} size={16} fill={star <= 4 ? "currentColor" : "none"} className={star <= 4 ? "text-ninja-yellow" : "text-gray-200"} />
+                    ))}
+                    <span className="text-[10px] text-gray-400 font-bold ml-2">Hot</span>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1.5 border-b border-gray-50 pb-4">
+                  <div className="flex justify-between items-center px-1">
+                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Opportunity Value</span>
+                    <button onClick={() => toast.success('Opening Create Opportunity form...')} className="text-[10px] font-bold text-white bg-ninja-dark hover:bg-gray-800 transition-colors px-2 py-1 rounded-md shadow-sm">+ Create</button>
+                  </div>
+                  <div className="px-1 flex items-center gap-2 mt-1">
+                    <span className="text-xl font-black text-ninja-dark">$45,000</span>
+                    <button onClick={() => toast.success('Editing deal details...')} className="text-[10px] font-bold text-ninja-yellow hover:underline ml-auto bg-ninja-yellow/10 px-2 py-1 rounded-md">Edit</button>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1.5 border-b border-gray-50 pb-4">
+                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest px-1">Status</span>
+                  <div className="px-1 mt-1">
+                    <Badge status="Qualified" className="bg-ninja-yellow text-ninja-dark border-none shadow-sm pb-1 font-bold block w-fit">Hot Prospect</Badge>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1.5 pb-4">
+                  <div className="flex justify-between items-center px-1">
+                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Tags</span>
+                    <button onClick={() => toast.success('Opening Tag manager...')} className="text-[10px] font-bold text-ninja-yellow hover:underline py-1"><Plus size={10} className="inline mr-0.5" />Add</button>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 mt-1 px-1">
+                    <span className="px-2 py-1 bg-white border border-gray-200 shadow-sm text-gray-600 font-bold text-[9px] rounded uppercase">Enterprise</span>
+                    <span className="px-2 py-1 bg-white border border-gray-200 shadow-sm text-gray-600 font-bold text-[9px] rounded uppercase">SaaS</span>
                   </div>
                 </div>
               </div>
@@ -228,10 +303,10 @@ export const MessagesPage = () => {
                     <span className="font-bold">Details</span>
                     <div className="h-1 w-1 rounded-full bg-ninja-yellow" />
                   </Button>
-                  <Button variant="ghost" className="text-xs flex flex-col items-center gap-1 p-2 h-auto text-gray-400">
+                  <Button variant="ghost" onClick={() => toast.success('Opening Contact Notes...')} className="text-xs flex flex-col items-center gap-1 p-2 h-auto text-gray-400 hover:text-ninja-dark">
                     <span className="font-bold">Notes</span>
                   </Button>
-                  <Button variant="ghost" className="text-xs flex flex-col items-center gap-1 p-2 h-auto text-gray-400">
+                  <Button variant="ghost" onClick={() => toast.success('Loading activity stream...')} className="text-xs flex flex-col items-center gap-1 p-2 h-auto text-gray-400 hover:text-ninja-dark">
                     <span className="font-bold">Activity</span>
                   </Button>
                 </div>

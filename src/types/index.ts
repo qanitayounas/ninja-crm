@@ -10,6 +10,8 @@ export interface Contact {
   source: 'WhatsApp' | 'Instagram' | 'Messenger' | 'SMS';
   date: string;
   avatar?: string;
+  company?: string;
+  owner?: string;
 }
 
 export interface Message {

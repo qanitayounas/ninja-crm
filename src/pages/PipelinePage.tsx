@@ -6,12 +6,33 @@ import {
   TrendingUp, 
   MoreVertical
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { Card, Button, Avatar, cn, Modal, Input, Select, Textarea } from '../components/ui';
 import { pipelineData } from '../data/pipelineData';
 import type { Deal } from '../data/pipelineData';
 
 export const PipelinePage = () => {
+  const [columns, setColumns] = useState(pipelineData);
   const [isAddDealModalOpen, setIsAddDealModalOpen] = useState(false);
+  const [isAddSectionModalOpen, setIsAddSectionModalOpen] = useState(false);
+  const [newSectionTitle, setNewSectionTitle] = useState('');
+
+  const handleAddSection = () => {
+    if (!newSectionTitle.trim()) return;
+    
+    const newStage = {
+      id: `stage-${Date.now()}`,
+      title: newSectionTitle,
+      count: 0,
+      totalValue: 0,
+      color: '#D4FF00', // default ninja yellow
+      deals: []
+    };
+
+    setColumns([...columns, newStage]);
+    setNewSectionTitle('');
+    setIsAddSectionModalOpen(false);
+  };
 
   return (
     <div className="flex flex-col gap-8 pb-10">
@@ -47,7 +68,7 @@ export const PipelinePage = () => {
 
       {/* Kanban Board */}
       <div className="flex gap-6 overflow-x-auto pb-6 custom-scrollbar -mx-4 px-4 md:mx-0 md:px-0">
-        {pipelineData.map((stage) => (
+        {columns.map((stage) => (
           <div key={stage.id} className="flex-shrink-0 w-[280px] md:w-[320px] flex flex-col gap-4">
             {/* Stage Header */}
             <div className="flex flex-col gap-1 px-1">
@@ -70,6 +91,19 @@ export const PipelinePage = () => {
             </div>
           </div>
         ))}
+        
+        {/* Add Section Button */}
+        <div className="flex-shrink-0 w-[280px] md:w-[320px] flex flex-col gap-4">
+          <div className="h-[42px]" /> {/* Spacer to align with headers */}
+          <Button 
+            variant="ghost" 
+            onClick={() => setIsAddSectionModalOpen(true)}
+            className="h-[500px] border-2 border-dashed border-gray-200 text-gray-400 hover:text-ninja-dark hover:border-ninja-yellow hover:bg-ninja-yellow/5 rounded-3xl flex flex-col items-center justify-center gap-3 transition-all"
+          >
+            <Plus size={32} />
+            <span className="font-bold text-sm">Add Pipeline Section</span>
+          </Button>
+        </div>
       </div>
 
       <Modal isOpen={isAddDealModalOpen} onClose={() => setIsAddDealModalOpen(false)} title="Add New Deal">
@@ -102,7 +136,31 @@ export const PipelinePage = () => {
           </div>
           <div className="flex items-center gap-3 justify-end mt-4 pt-4 border-t border-gray-100">
             <Button variant="secondary" onClick={() => setIsAddDealModalOpen(false)}>Cancel</Button>
-            <Button>Add Deal</Button>
+            <Button onClick={() => {
+              toast.success('Deal added successfully!');
+              setIsAddDealModalOpen(false);
+            }}>
+              Add Deal
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Add Section Modal */}
+      <Modal isOpen={isAddSectionModalOpen} onClose={() => setIsAddSectionModalOpen(false)} title="Add Pipeline Section">
+        <div className="flex flex-col gap-4">
+          <div className="space-y-1.5">
+            <label className="text-sm font-bold text-ninja-dark">Section Name *</label>
+            <Input 
+              placeholder="e.g.: Under Review" 
+              value={newSectionTitle}
+              onChange={(e) => setNewSectionTitle(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleAddSection()}
+            />
+          </div>
+          <div className="flex items-center gap-3 justify-end mt-4 pt-4 border-t border-gray-100">
+            <Button variant="secondary" onClick={() => setIsAddSectionModalOpen(false)}>Cancel</Button>
+            <Button onClick={handleAddSection}>Add Section</Button>
           </div>
         </div>
       </Modal>

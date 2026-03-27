@@ -49,3 +49,13 @@
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #D1D5DB;
 }
+
+/* Hide scrollbar completely but allow scrolling */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}

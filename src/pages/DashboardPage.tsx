@@ -10,14 +10,16 @@ import {
   Pie, 
   Cell 
 } from 'recharts';
-import { ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, Users, GitBranch, Calendar as CalendarIcon, BarChart2 as BarChartIcon } from 'lucide-react';
 import { Card, Badge, Avatar, cn } from '../components/ui';
 import dashboardData from '../data/dashboard.json';
+import { useNavigate } from 'react-router-dom';
 
 const COLORS = ['#D4FF00', '#BFA9FF', '#F97316', '#3B82F6'];
 
 export const DashboardPage = () => {
   const { kpis, leadGrowth, leadSources, recentActivity } = dashboardData;
+  const navigate = useNavigate();
 
   return (
     <div className="space-y-6 md:space-y-8 animate-in fade-in duration-500 pb-10">
@@ -50,7 +52,58 @@ export const DashboardPage = () => {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
+      {/* Quick Actions */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mt-6 md:mt-8">
+        <div onClick={() => navigate('/dashboard/contacts')} className="block group cursor-pointer">
+          <Card className="p-5 flex flex-col items-start gap-3 h-full hover:shadow-lg transition-all border-slate-100 group-hover:border-ninja-yellow/50 bg-white">
+            <div className="h-10 w-10 rounded-xl bg-ninja-yellow/10 text-ninja-dark flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Users size={20} />
+            </div>
+            <div>
+              <h3 className="font-bold text-sm text-ninja-dark">View Clients</h3>
+              <p className="text-xs text-slate-400 mt-0.5">See all leads and contacts</p>
+            </div>
+          </Card>
+        </div>
+        
+        <div onClick={() => navigate('/dashboard/pipeline')} className="block group cursor-pointer">
+          <Card className="p-5 flex flex-col items-start gap-3 h-full hover:shadow-lg transition-all border-slate-100 group-hover:border-ninja-purple/50 bg-white">
+            <div className="h-10 w-10 rounded-xl bg-ninja-purple/10 text-ninja-purple flex items-center justify-center group-hover:scale-110 transition-transform">
+              <GitBranch size={20} />
+            </div>
+            <div>
+              <h3 className="font-bold text-sm text-ninja-dark">Create Deal</h3>
+              <p className="text-xs text-slate-400 mt-0.5">Start a new opportunity</p>
+            </div>
+          </Card>
+        </div>
+
+        <div onClick={() => navigate('/dashboard/calendar')} className="block group cursor-pointer">
+          <Card className="p-5 flex flex-col items-start gap-3 h-full hover:shadow-lg transition-all border-slate-100 group-hover:border-blue-500/50 bg-white">
+            <div className="h-10 w-10 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <CalendarIcon size={20} />
+            </div>
+            <div>
+              <h3 className="font-bold text-sm text-ninja-dark">Schedule Meeting</h3>
+              <p className="text-xs text-slate-400 mt-0.5">Book a new appointment</p>
+            </div>
+          </Card>
+        </div>
+
+        <div onClick={() => navigate('/dashboard/reports')} className="block group cursor-pointer">
+          <Card className="p-5 flex flex-col items-start gap-3 h-full hover:shadow-lg transition-all border-slate-100 group-hover:border-orange-500/50 bg-white">
+            <div className="h-10 w-10 rounded-xl bg-orange-50 text-orange-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <BarChartIcon size={20} />
+            </div>
+            <div>
+              <h3 className="font-bold text-sm text-ninja-dark">View Report</h3>
+              <p className="text-xs text-slate-400 mt-0.5">Check analytics & insights</p>
+            </div>
+          </Card>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8 mt-6 md:mt-8">
         {/* Main Chart */}
         <Card className="lg:col-span-2 p-6 md:p-8 bg-white border-none shadow-sm">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">

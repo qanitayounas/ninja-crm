@@ -10,8 +10,10 @@ import {
   MessageSquare,
   Mail,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  UploadCloud
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { Card, Badge, Avatar, Input, Button, Modal, Select } from '../components/ui';
 import contactsData from '../data/contacts.json';
 import type { Contact } from '../types';
@@ -29,6 +31,24 @@ export const ContactsPage = () => {
   const [contacts] = useState<Contact[]>(contactsData as Contact[]);
   const [search, setSearch] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [selectedTags, setSelectedTags] = useState<{name: string, color: string}[]>([]);
+  const [newTagInput, setNewTagInput] = useState('');
+  const [selectedColor, setSelectedColor] = useState('bg-ninja-yellow text-ninja-dark');
+
+  const availableColors = [
+    { label: 'Yellow', value: 'bg-ninja-yellow text-ninja-dark border-[#c2e600]' },
+    { label: 'Purple', value: 'bg-purple-100 text-purple-600 border-purple-200' },
+    { label: 'Blue', value: 'bg-blue-100 text-blue-600 border-blue-200' },
+    { label: 'Green', value: 'bg-green-100 text-green-600 border-green-200' },
+    { label: 'Pink', value: 'bg-pink-100 text-pink-600 border-pink-200' },
+  ];
+
+  const handleAddTag = () => {
+    if (newTagInput.trim()) {
+      setSelectedTags([...selectedTags, { name: newTagInput.trim(), color: selectedColor }]);
+      setNewTagInput('');
+    }
+  };
 
   const filteredContacts = contacts.filter(c => 
     c.name.toLowerCase().includes(search.toLowerCase()) || 
@@ -43,10 +63,16 @@ export const ContactsPage = () => {
           <h1 className="text-3xl font-black text-ninja-dark tracking-tighter">Contacts</h1>
           <p className="text-gray-400 font-medium">Manage your leads and clients</p>
         </div>
-        <Button onClick={() => setIsAddModalOpen(true)} className="flex items-center gap-2 px-8 py-3 rounded-2xl shadow-lg shadow-ninja-yellow/20 w-full sm:w-auto justify-center">
-          <Plus size={20} />
-          <span>Add Contact</span>
-        </Button>
+        <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto mt-4 md:mt-0">
+          <Button variant="secondary" className="flex items-center gap-2 px-6 py-3 rounded-2xl w-full sm:w-auto justify-center bg-ninja-dark text-white hover:bg-ninja-dark/90">
+            <UploadCloud size={18} />
+            <span>Import Clients</span>
+          </Button>
+          <Button onClick={() => setIsAddModalOpen(true)} className="flex items-center gap-2 px-8 py-3 rounded-2xl shadow-lg shadow-ninja-yellow/20 w-full sm:w-auto justify-center">
+            <Plus size={20} />
+            <span>Add Contact</span>
+          </Button>
+        </div>
       </div>
 
       {/* Filters Bar */}
@@ -82,11 +108,13 @@ export const ContactsPage = () => {
                 <th className="px-6 py-4 font-bold border-b border-gray-100 w-10">
                   <input type="checkbox" className="rounded border-gray-300 text-ninja-yellow focus:ring-ninja-yellow" />
                 </th>
-                <th className="px-6 py-4 font-bold border-b border-gray-100">Prospect</th>
-                <th className="px-6 py-4 font-bold border-b border-gray-100">Email / Phone</th>
+                <th className="px-6 py-4 font-bold border-b border-gray-100">Name</th>
+                <th className="px-6 py-4 font-bold border-b border-gray-100">Company</th>
+                <th className="px-6 py-4 font-bold border-b border-gray-100">Contact</th>
                 <th className="hidden lg:table-cell px-6 py-4 font-bold border-b border-gray-100">Source</th>
                 <th className="hidden sm:table-cell px-6 py-4 font-bold border-b border-gray-100">Status</th>
-                <th className="hidden xl:table-cell px-6 py-4 font-bold border-b border-gray-100">Date</th>
+                <th className="hidden lg:table-cell px-6 py-4 font-bold border-b border-gray-100">Owner</th>
+                <th className="hidden xl:table-cell px-6 py-4 font-bold border-b border-gray-100">Tags</th>
                 <th className="px-6 py-4 font-bold border-b border-gray-100 text-right">Actions</th>
               </tr>
             </thead>
@@ -99,15 +127,11 @@ export const ContactsPage = () => {
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <Avatar name={contact.name} size="sm" />
-                      <div>
-                        <p className="font-bold text-ninja-dark">{contact.name}</p>
-                        <div className="flex gap-1 mt-1">
-                          {contact.tags.map((tag, i) => (
-                            <span key={i} className="text-[9px] bg-ninja-purple/10 text-ninja-purple px-1.5 py-0.5 rounded font-bold uppercase">{tag}</span>
-                          ))}
-                        </div>
-                      </div>
+                      <span className="font-bold text-ninja-dark">{contact.name}</span>
                     </div>
+                  </td>
+                  <td className="px-6 py-4 text-sm font-medium text-gray-600">
+                    {contact.company || 'N/A'}
                   </td>
                   <td className="px-6 py-4">
                     <div className="space-y-1">
@@ -124,8 +148,19 @@ export const ContactsPage = () => {
                   <td className="hidden sm:table-cell px-6 py-4">
                     <Badge status={contact.status}>{contact.status}</Badge>
                   </td>
-                  <td className="hidden xl:table-cell px-6 py-4 text-xs text-gray-500 font-medium">
-                    {contact.date}
+                  <td className="hidden lg:table-cell px-6 py-4 text-sm font-medium text-gray-600">
+                    {contact.owner || 'Unassigned'}
+                  </td>
+                  <td className="hidden xl:table-cell px-6 py-4">
+                    <div className="flex flex-wrap gap-1">
+                      {contact.tags.map((tag, i) => {
+                        const colors = ['bg-blue-100 text-blue-600', 'bg-purple-100 text-purple-600', 'bg-green-100 text-green-600', 'bg-orange-100 text-orange-600', 'bg-pink-100 text-pink-600'];
+                        const color = colors[i % colors.length];
+                        return (
+                          <span key={i} className={`text-[9px] px-2 py-1 rounded font-bold uppercase ${color}`}>{tag}</span>
+                        );
+                      })}
+                    </div>
                   </td>
                   <td className="px-6 py-4 text-right">
                     <button className="p-2 text-gray-400 hover:text-ninja-dark transition-colors">
@@ -185,7 +220,7 @@ export const ContactsPage = () => {
               </Select>
             </div>
             <div className="space-y-1.5">
-              <label className="text-sm font-bold text-ninja-dark">Owner</label>
+              <label className="text-sm font-bold text-ninja-dark">Responsible Person</label>
               <Select defaultValue="John Smith">
                 <option value="John Smith">John Smith</option>
                 <option value="Emily Davis">Emily Davis</option>
@@ -193,9 +228,61 @@ export const ContactsPage = () => {
               </Select>
             </div>
           </div>
-          <div className="flex items-center gap-3 justify-end mt-4 pt-4 border-t border-gray-100">
+
+          {/* Tags Section */}
+          <div className="border border-gray-100 rounded-2xl p-4 bg-gray-50/50 space-y-3">
+            <label className="text-sm font-bold text-ninja-dark block">Custom Tags</label>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex-1 flex gap-2">
+                <Input 
+                  placeholder="e.g. VIP Client" 
+                  value={newTagInput}
+                  onChange={(e) => setNewTagInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleAddTag()}
+                  className="bg-white flex-1"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                {availableColors.map((color) => (
+                  <button
+                    key={color.label}
+                    onClick={() => setSelectedColor(color.value)}
+                    className={`w-6 h-6 rounded-full border-2 transition-all ${color.value.split(' ')[0]} ${selectedColor === color.value ? 'ring-2 ring-offset-1 ring-ninja-dark scale-110' : 'border-transparent'}`}
+                    title={color.label}
+                  />
+                ))}
+                <Button onClick={handleAddTag} className="ml-2 px-3 py-2 text-xs h-10">Add</Button>
+              </div>
+            </div>
+            
+            {/* Tag Pills Display */}
+            {selectedTags.length > 0 && (
+              <div className="flex flex-wrap gap-2 pt-2">
+                {selectedTags.map((tag, idx) => (
+                  <span 
+                    key={idx} 
+                    className={`text-[10px] px-2.5 py-1 rounded font-bold uppercase flex items-center gap-1.5 border ${tag.color}`}
+                  >
+                    {tag.name}
+                    <button 
+                      onClick={() => setSelectedTags(selectedTags.filter((_, i) => i !== idx))}
+                      className="hover:opacity-60 transition-opacity"
+                    >
+                      &times;
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center gap-3 justify-end mt-2 pt-4 border-t border-gray-100">
             <Button variant="secondary" onClick={() => setIsAddModalOpen(false)}>Cancel</Button>
-            <Button>Add Client</Button>
+            <Button onClick={() => {
+              toast.success('Contact added successfully!');
+              setIsAddModalOpen(false);
+              setSelectedTags([]);
+            }}>Add Client</Button>
           </div>
         </div>
       </Modal>

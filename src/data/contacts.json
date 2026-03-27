@@ -2,9 +2,11 @@
   {
     "id": "1",
     "name": "John Smith",
+    "company": "Tech Innovations Inc",
     "email": "john@example.com",
     "phone": "+1 555 123 4567",
     "status": "Qualified",
+    "owner": "John Smith",
     "tags": ["Lead", "WhatsApp"],
     "source": "WhatsApp",
     "date": "2026-03-24"
@@ -12,9 +14,11 @@
   {
     "id": "2",
     "name": "Jane Doe",
+    "company": "Digital Solutions Ltd",
     "email": "jane@example.com",
     "phone": "+1 555 234 5678",
     "status": "Pending",
+    "owner": "Emily Davis",
     "tags": ["Priority", "Instagram"],
     "source": "Instagram",
     "date": "2026-03-24"
@@ -22,9 +26,11 @@
   {
     "id": "3",
     "name": "Michael Brown",
+    "company": "Global Ventures",
     "email": "michael@example.com",
     "phone": "+1 555 345 6789",
     "status": "Qualified",
+    "owner": "John Smith",
     "tags": ["Client", "Messenger"],
     "source": "Messenger",
     "date": "2026-03-23"
@@ -32,9 +38,11 @@
   {
     "id": "4",
     "name": "Emily Wilson",
+    "company": "Startup Hub",
     "email": "emily@example.com",
     "phone": "+1 555 456 7890",
     "status": "Archived",
+    "owner": "Sarah Lee",
     "tags": ["Cold"],
     "source": "SMS",
     "date": "2026-03-22"
@@ -42,9 +50,11 @@
   {
     "id": "5",
     "name": "David Johnson",
+    "company": "Healthcare Plus",
     "email": "david@example.com",
     "phone": "+1 555 567 8901",
     "status": "Qualified",
+    "owner": "Emily Davis",
     "tags": ["Facebook", "Lead"],
     "source": "Messenger",
     "date": "2026-03-21"

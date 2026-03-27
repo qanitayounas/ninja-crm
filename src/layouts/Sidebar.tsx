@@ -3,21 +3,39 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { 
   Home, 
   Users, 
-  GitBranch, 
   MessageSquare, 
   Calendar, 
   Zap, 
   BarChart2, 
   CreditCard, 
-  Image as ImageIcon, 
   Settings,
   LogOut,
   ChevronLeft,
   ChevronRight,
   X,
-  AlertTriangle
+  AlertTriangle,
+  Phone,
+  Flag,
+  Megaphone,
+  Globe,
+  Star,
+  GraduationCap,
+  Store,
+  Folder,
+  TrendingUp,
+  ArrowLeft,
+  ShoppingCart,
+  Video,
+  FileText,
+  BookOpen,
+  ClipboardList,
+  MessageCircle,
+  QrCode,
+  Target
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { cn } from '../components/ui';
+import { useRole } from '../context/RoleContext';
 
 interface SidebarProps {
   isExpanded: boolean;
@@ -26,17 +44,41 @@ interface SidebarProps {
   setIsMobileOpen: (val: boolean) => void;
 }
 
-const navItems = [
+const mainNavItems = [
   { icon: Home, label: 'Dashboard', path: '/dashboard' },
   { icon: Users, label: 'Contacts', path: '/dashboard/contacts' },
-  { icon: GitBranch, label: 'Pipeline', path: '/dashboard/pipeline' },
-  { icon: MessageSquare, label: 'Messages', path: '/dashboard/messages' },
+  { icon: Phone, label: 'Calls', path: '/dashboard/calls' },
+  { icon: Flag, label: 'Campaigns', path: '/dashboard/campaigns' },
   { icon: Calendar, label: 'Calendar', path: '/dashboard/calendar' },
+  { icon: TrendingUp, label: 'Pipeline', path: '/dashboard/pipeline' },
+  { icon: MessageSquare, label: 'Messages', path: '/dashboard/messages' },
+  { icon: Megaphone, label: 'Marketing', path: '/dashboard/marketing' },
   { icon: Zap, label: 'Automations', path: '/dashboard/automations' },
+  { icon: Globe, label: 'Sites', path: '/dashboard/sites/stores' },
+  { icon: Star, label: 'Reputation', path: '/dashboard/reputation' },
+  { icon: Folder, label: 'Media', path: '/dashboard/media' },
   { icon: BarChart2, label: 'Reports', path: '/dashboard/reports' },
+  { icon: GraduationCap, label: 'Memberships', path: '/dashboard/memberships' },
+  { icon: Store, label: 'App Marketplace', path: '/dashboard/marketplace' },
   { icon: CreditCard, label: 'Billing', path: '/dashboard/billing' },
-  { icon: ImageIcon, label: 'Media', path: '/dashboard/media' },
   { icon: Settings, label: 'Settings', path: '/dashboard/settings' },
+];
+
+const sitesNavItems = [
+  { icon: ArrowLeft, label: 'Go Back', path: '/dashboard' },
+  { icon: Globe, label: 'Websites', path: '/dashboard/sites/web' },
+  { icon: ShoppingCart, label: 'Stores', path: '/dashboard/sites/stores' },
+  { icon: Video, label: 'Webinars', path: '/dashboard/sites/webinars' },
+  { icon: BarChart2, label: 'Analytics', path: '/dashboard/sites/analytics' },
+  { icon: FileText, label: 'Blogs', path: '/dashboard/sites/blogs' },
+  { icon: BookOpen, label: 'WordPress', path: '/dashboard/sites/wordpress' },
+  { icon: Users, label: 'Client Portal', path: '/dashboard/sites/portal' },
+  { icon: MessageSquare, label: 'Forms', path: '/dashboard/sites/forms' },
+  { icon: Target, label: 'Surveys', path: '/dashboard/sites/surveys' },
+  { icon: ClipboardList, label: 'Quizzes', path: '/dashboard/sites/quizzes' },
+  { icon: MessageCircle, label: 'Chat Widget', path: '/dashboard/sites/chatwidget' },
+  { icon: QrCode, label: 'QR Codes', path: '/dashboard/sites/qrcode' },
+  { icon: Settings, label: 'Settings', path: '/dashboard/sites/settings' },
 ];
 
 export const Sidebar = ({ isExpanded, setIsExpanded, isMobileOpen, setIsMobileOpen }: SidebarProps) => {
@@ -49,6 +91,21 @@ export const Sidebar = ({ isExpanded, setIsExpanded, isMobileOpen, setIsMobileOp
     navigate('/');
   };
 
+  const isSitesModule = location.pathname.startsWith('/dashboard/sites');
+  const baseNavItems = isSitesModule ? sitesNavItems : mainNavItems;
+  const { role } = useRole();
+
+  const activeNavItems = baseNavItems.filter(item => {
+    if (role === 'Super Admin' || role === 'Agency Manager') return true;
+    if (role === 'Sales Rep') {
+      return ['Dashboard', 'Contacts', 'Calls', 'Calendar', 'Pipeline', 'Messages', 'Reports', 'Settings', 'Go Back'].includes(item.label);
+    }
+    if (role === 'Client Viewer') {
+      return ['Dashboard', 'Reports', 'Messages', 'Media', 'Go Back'].includes(item.label);
+    }
+    return true;
+  });
+
   return (
     <>
       <aside className={cn(
@@ -59,9 +116,12 @@ export const Sidebar = ({ isExpanded, setIsExpanded, isMobileOpen, setIsMobileOp
       )}>
         {/* Brand & Mobile Close */}
         <div className="p-6 flex items-center justify-between">
-          <div className="flex items-center gap-3 text-ninja-yellow">
-            <Zap size={32} fill="currentColor" />
-            {isExpanded && <span className="font-black tracking-tighter text-xl text-white">NINJA CRM</span>}
+          <div className="flex flex-col gap-1 text-ninja-yellow">
+            <div className="flex items-center gap-3">
+              <Zap size={32} fill="currentColor" />
+              {isExpanded && <span className="font-black tracking-tighter text-xl text-white">{isSitesModule ? 'Sites' : 'NINJA CRM'}</span>}
+            </div>
+            {isExpanded && isSitesModule && <span className="text-xs text-white/50 font-bold ml-11 -mt-1">Web Ecosystem</span>}
           </div>
           <button onClick={() => setIsMobileOpen(false)} className="lg:hidden text-white/50 hover:text-white">
             <X size={24} />
@@ -77,31 +137,29 @@ export const Sidebar = ({ isExpanded, setIsExpanded, isMobileOpen, setIsMobileOp
         </button>
 
         {/* Navigation */}
-        <nav className="flex-1 flex flex-col gap-1 md:gap-2 px-4 py-4 overflow-visible">
-          {navItems.map((item) => {
-            const isActive = location.pathname === item.path || (item.path !== '/dashboard' && location.pathname.startsWith(item.path));
+        <nav className="flex-1 flex flex-col gap-1 md:gap-1.5 px-3 py-2 overflow-y-auto overflow-x-hidden custom-scrollbar">
+          {activeNavItems.map((item) => {
+            const isActive = location.pathname === item.path || (item.path !== '/dashboard' && item.path !== '/dashboard/sites/stores' && location.pathname.startsWith(item.path));
             return (
               <NavLink
                 key={item.path}
                 to={item.path}
-                onClick={() => setIsMobileOpen(false)}
+                onClick={() => {
+                  setIsMobileOpen(false);
+                  if (item.path !== location.pathname) {
+                    toast.success(`Opening ${item.label}`);
+                  }
+                }}
                 className={cn(
-                  "relative group flex items-center gap-3 p-2 md:p-3 rounded-xl transition-all",
-                  isActive ? "bg-ninja-yellow text-ninja-dark font-bold shadow-sm" : "text-white/40 hover:text-white hover:bg-white/5",
+                  "relative group flex items-center gap-3 p-2 rounded-xl transition-all",
+                  isActive ? "bg-ninja-yellow text-ninja-dark font-black shadow-sm" : "text-white/60 hover:text-white hover:bg-white/5 font-bold",
                   !isExpanded && "justify-center px-0"
                 )}
                 title={!isExpanded ? item.label : ''}
               >
-                <item.icon size={22} className={cn("relative z-10 flex-shrink-0", isActive ? "text-ninja-dark" : "")} />
+                <item.icon size={20} className={cn("relative z-10 flex-shrink-0", isActive ? "text-ninja-dark" : "")} />
                 
-                {isExpanded && <span className="text-sm truncate">{item.label}</span>}
-                
-                {/* Tooltip (only when collapsed) */}
-                {!isExpanded && (
-                  <span className="absolute left-16 bg-ninja-dark text-white text-xs py-1.5 px-3 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none border border-white/10 shadow-xl z-50">
-                    {item.label}
-                  </span>
-                )}
+                {isExpanded && <span className="text-xs truncate">{item.label}</span>}
               </NavLink>
             );
           })}
@@ -115,14 +173,10 @@ export const Sidebar = ({ isExpanded, setIsExpanded, isMobileOpen, setIsMobileOp
               "w-full flex items-center gap-3 p-3 text-white/40 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all group relative",
               !isExpanded && "justify-center px-0"
             )}
+            title={!isExpanded ? "Logout" : ""}
           >
             <LogOut size={22} className="flex-shrink-0" />
             {isExpanded && <span className="text-sm font-bold">Logout</span>}
-            {!isExpanded && (
-              <span className="absolute left-16 bg-ninja-dark text-white text-xs py-1.5 px-3 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none border border-white/10 shadow-xl z-50">
-                Logout
-              </span>
-            )}
           </button>
         </div>
       </aside>

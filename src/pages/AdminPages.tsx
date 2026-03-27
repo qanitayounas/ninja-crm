@@ -1,8 +1,11 @@
 import { useState } from 'react';
 import {
   Plus, Building, User, Users, Target, Zap, Settings, Globe, Bell, Shield, Database,
-  CheckCircle2, Download
+  CheckCircle2, Download, CreditCard, Lock
 } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { useRole } from '../context/RoleContext';
+import type { Role } from '../context/RoleContext';
 import { Card, Badge, Avatar, Button, Input, cn } from '../components/ui';
 import subaccountsData from '../data/subaccounts.json';
 import { currentPlan, paymentMethods, invoiceHistory } from '../data/billingData';
@@ -114,12 +117,15 @@ export const SubaccountsPage = () => {
 
 export const SettingsPage = () => {
   const [activeTab, setActiveTab] = useState('profile');
+  const { role: currentRole, setRole } = useRole();
 
   const tabs = [
     { id: 'profile', label: 'My Profile', icon: User },
     { id: 'team', label: 'Team', icon: Users },
+    { id: 'permissions', label: 'Roles & Permissions', icon: Lock },
     { id: 'notifications', label: 'Notifications', icon: Bell },
-    { id: 'billing', label: 'Subscription', icon: Shield },
+    { id: 'billing', label: 'Subscription', icon: CreditCard },
+    { id: 'agency', label: 'Agency Profile', icon: Building },
     { id: 'integrations', label: 'Integrations', icon: Database },
   ];
 
@@ -194,6 +200,190 @@ export const SettingsPage = () => {
                   <Button>Save Changes</Button>
                 </div>
               </form>
+            </Card>
+          )}
+
+          {activeTab === 'agency' && (
+            <Card className="max-w-3xl">
+              <h3 className="text-lg font-bold text-ninja-dark mb-2">Agency White Label</h3>
+              <p className="text-gray-400 text-sm font-medium mb-8">Customize the platform appearance for your clients.</p>
+
+              <form className="space-y-6">
+                <div>
+                  <label className="text-sm font-bold text-ninja-dark mb-3 block">Agency Logo</label>
+                  <div className="flex items-center gap-6">
+                    <div className="h-20 w-48 bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl flex items-center justify-center text-gray-400">
+                      <Plus size={24} />
+                    </div>
+                    <div>
+                      <Button variant="secondary" type="button" className="mb-2">Upload Logo</Button>
+                      <p className="text-xs text-gray-400">Recommended size: 400x100px. Transparent PNG.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-sm font-bold text-ninja-dark block">Custom Domain</label>
+                  <div className="flex gap-3">
+                    <Input placeholder="app.youragency.com" className="max-w-md bg-gray-50" />
+                    <Button variant="secondary" type="button">Verify</Button>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1">Point your CNAME record to `cname.ninjacrm.com`.</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-6 pt-4">
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-bold text-ninja-dark block">Primary Color</label>
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-lg bg-ninja-yellow border border-gray-200 shadow-sm" />
+                      <Input defaultValue="#D4FF00" className="w-24 uppercase font-mono text-xs" />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-bold text-ninja-dark block">Sidebar Theme</label>
+                    <select className="w-full bg-gray-50 border-none rounded-xl px-4 py-3 text-sm font-medium text-ninja-dark outline-none focus:ring-2 focus:ring-ninja-yellow">
+                      <option>Dark Mode</option>
+                      <option>Light Mode</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="pt-6 border-t border-gray-50 flex justify-end">
+                  <Button type="button">Save Brand Settings</Button>
+                </div>
+              </form>
+            </Card>
+          )}
+
+          {activeTab === 'permissions' && (
+            <Card className="max-w-4xl border-none shadow-sm space-y-6">
+              <div className="flex items-center justify-between mb-2">
+                <div>
+                  <h3 className="text-lg font-bold text-ninja-dark mb-1">Roles & Permissions</h3>
+                  <p className="text-gray-400 text-sm font-medium">Manage access levels and plan-based feature visibility.</p>
+                </div>
+                <Button onClick={() => toast.success('Opening Create Role modal...')} className="text-xs px-4 py-2 font-bold bg-ninja-dark text-white shadow-lg shadow-black/5 hover:bg-gray-800">
+                  <Plus size={14} className="inline mr-1" /> New Role
+                </Button>
+              </div>
+
+              {/* Roles Table */}
+              <div className="border border-gray-100 rounded-2xl overflow-hidden">
+                <table className="w-full text-left">
+                  <thead className="bg-gray-50/50">
+                    <tr>
+                      <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Role Name</th>
+                      <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Visibility / Plan</th>
+                      <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Users</th>
+                      <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {[
+                      { name: 'Super Admin', plan: 'All Access', users: 2, color: 'bg-ninja-yellow text-ninja-dark' },
+                      { name: 'Agency Manager', plan: 'Premium', users: 5, color: 'bg-[#BFA9FF] text-[#4C1D95]' },
+                      { name: 'Sales Rep', plan: 'Pro', users: 12, color: 'bg-blue-100 text-blue-600' },
+                      { name: 'Client Viewer', plan: 'Basic', users: 45, color: 'bg-gray-100 text-gray-600' }
+                    ].map((role, i) => (
+                      <tr key={i} className="hover:bg-gray-50/30 transition-colors">
+                        <td className="px-6 py-4">
+                          <span className="font-bold text-ninja-dark text-sm">{role.name}</span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={cn("text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md", role.color)}>
+                            {role.plan}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="text-xs font-bold text-gray-500 bg-white border border-gray-100 px-2.5 py-1 rounded-lg">
+                            {role.users} users
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex justify-end gap-2">
+                            <button 
+                              onClick={() => {
+                                setRole(role.name as Role);
+                                toast.success(`Switched role to ${role.name}. Sidebar updated!`);
+                              }} 
+                              className={cn(
+                                "text-xs font-bold px-3 py-1.5 rounded-lg transition-colors",
+                                currentRole === role.name 
+                                  ? "bg-ninja-dark text-ninja-yellow cursor-default" 
+                                  : "text-gray-500 hover:text-ninja-dark bg-gray-100 hover:bg-gray-200"
+                              )}
+                            >
+                              {currentRole === role.name ? 'Active Role' : 'Switch Role'}
+                            </button>
+                            <button onClick={() => toast.success(`Managing permissions for ${role.name}`)} className="text-xs font-bold text-ninja-yellow hover:underline bg-ninja-yellow/10 px-3 py-1.5 rounded-lg transition-colors">Edit Access</button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Plan Feature Toggles */}
+              <div className="bg-gray-50/50 p-6 rounded-3xl border border-gray-100">
+                <h4 className="font-bold text-ninja-dark mb-4 text-sm">Feature Toggles by Plan</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+                    <div className="flex justify-between items-center mb-4">
+                      <span className="font-bold text-sm text-ninja-dark">Basic Plan</span>
+                      <div className="h-2 w-2 rounded-full bg-gray-400" />
+                    </div>
+                    <div className="space-y-3">
+                      <label className="flex items-center justify-between cursor-pointer group">
+                        <span className="text-xs font-bold text-gray-500 group-hover:text-ninja-dark transition-colors">Contacts Module</span>
+                        <input type="checkbox" defaultChecked className="checked:bg-ninja-yellow checked:border-ninja-yellow focus:ring-ninja-yellow rounded text-ninja-dark" />
+                      </label>
+                      <label className="flex items-center justify-between cursor-pointer group">
+                        <span className="text-xs font-bold text-gray-500 group-hover:text-ninja-dark transition-colors">Automations</span>
+                        <input type="checkbox" className="checked:bg-ninja-yellow checked:border-ninja-yellow flex-shrink-0 cursor-pointer text-ninja-yellow rounded" />
+                      </label>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+                    <div className="flex justify-between items-center mb-4">
+                      <span className="font-bold text-sm text-ninja-dark">Pro Plan</span>
+                      <div className="h-2 w-2 rounded-full bg-blue-500" />
+                    </div>
+                    <div className="space-y-3">
+                      <label className="flex items-center justify-between cursor-pointer group">
+                        <span className="text-xs font-bold text-gray-500 group-hover:text-ninja-dark transition-colors">Automations</span>
+                        <input type="checkbox" defaultChecked className="checked:bg-ninja-yellow checked:border-ninja-yellow rounded text-ninja-dark" />
+                      </label>
+                      <label className="flex items-center justify-between cursor-pointer group">
+                        <span className="text-xs font-bold text-gray-500 group-hover:text-ninja-dark transition-colors">Campaigns</span>
+                        <input type="checkbox" defaultChecked className="checked:bg-ninja-yellow checked:border-ninja-yellow rounded text-ninja-dark" />
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-[0_0_15px_rgba(212,255,0,0.1)] border-ninja-yellow/30">
+                    <div className="flex justify-between items-center mb-4">
+                      <span className="font-bold text-sm text-ninja-dark">Premium Plan</span>
+                      <div className="h-2 w-2 rounded-full bg-ninja-yellow shadow-[0_0_10px_rgba(212,255,0,0.5)]" />
+                    </div>
+                    <div className="space-y-3">
+                      <label className="flex items-center justify-between cursor-pointer group">
+                        <span className="text-xs font-bold text-gray-500 group-hover:text-ninja-dark transition-colors">Advanced Analytics</span>
+                        <input type="checkbox" defaultChecked className="checked:bg-ninja-yellow checked:border-ninja-yellow rounded text-ninja-dark" />
+                      </label>
+                      <label className="flex items-center justify-between cursor-pointer group">
+                        <span className="text-xs font-bold text-gray-500 group-hover:text-ninja-dark transition-colors">White Label Settings</span>
+                        <input type="checkbox" defaultChecked className="checked:bg-ninja-yellow checked:border-ninja-yellow rounded text-ninja-dark" />
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-4 flex justify-end">
+                <Button onClick={() => toast.success('Permissions updated successfully!')}>Save Permissions</Button>
+              </div>
             </Card>
           )}
 
@@ -326,7 +516,7 @@ export const SettingsPage = () => {
             </div>
           )}
 
-          {activeTab !== 'profile' && activeTab !== 'integrations' && activeTab !== 'billing' && (
+          {activeTab !== 'profile' && activeTab !== 'integrations' && activeTab !== 'billing' && activeTab !== 'agency' && activeTab !== 'permissions' && (
             <Card className="flex flex-col items-center justify-center py-20 text-gray-300">
               <Settings size={48} className="mb-4 opacity-20" />
               <p className="font-bold text-sm">View of {activeTab} under development</p>

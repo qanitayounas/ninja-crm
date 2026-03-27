@@ -8,6 +8,7 @@ import {
   MoreVertical,
   Search
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { Card, Button, cn, Modal, Input, Select, Textarea } from '../components/ui';
 import { agendaData, calendarDays, timeSlots } from '../data/calendarData';
 
@@ -24,7 +25,11 @@ export const CalendarPage = () => {
           <p className="text-gray-400 font-medium">Manage your schedule and appointments</p>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="secondary" className="flex items-center gap-2 bg-ninja-dark text-white border-none hover:bg-ninja-dark/90">
+          <Button 
+            variant="secondary" 
+            onClick={() => toast.success('Calendar synced successfully!')}
+            className="flex items-center gap-2 bg-ninja-dark text-white border-none hover:bg-ninja-dark/90"
+          >
             <RefreshCw size={18} />
             <span>Sync Calendar</span>
           </Button>
@@ -154,7 +159,10 @@ export const CalendarPage = () => {
               ))}
             </div>
 
-            <Button className="w-full py-4 text-xs font-black uppercase tracking-widest rounded-2xl shadow-lg shadow-ninja-yellow/20 mb-2">
+            <Button 
+              onClick={() => toast.success('Reminders sent to all attendees!')}
+              className="w-full py-4 text-xs font-black uppercase tracking-widest rounded-2xl shadow-lg shadow-ninja-yellow/20 mb-2"
+            >
               Send Reminder to All
             </Button>
 
@@ -218,7 +226,15 @@ export const CalendarPage = () => {
 
           <div className="flex items-center gap-3 justify-end mt-2">
             <Button variant="secondary" onClick={() => setIsAddEventModalOpen(false)} className="border-none hover:bg-gray-100">Cancel</Button>
-            <Button className="font-black px-10">Create Event</Button>
+            <Button 
+              onClick={() => {
+                toast.success('Event created successfully!');
+                setIsAddEventModalOpen(false);
+              }}
+              className="font-black px-10"
+            >
+              Create Event
+            </Button>
           </div>
         </div>
       </Modal>

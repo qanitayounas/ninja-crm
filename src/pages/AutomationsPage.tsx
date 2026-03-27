@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import {
-  Zap, GitBranch, FileText, Sparkles, Bell, Settings,
-  ArrowUpRight, PlayCircle, CheckCircle2, XCircle, ChevronRight
+  Zap, FileText, Sparkles, Bell, Settings,
+  ArrowUpRight, PlayCircle, CheckCircle2, XCircle, ChevronRight, Workflow
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell
@@ -11,11 +13,14 @@ import { automationsData } from '../data/automationsData';
 
 const COLORS = ['#D4FF00', '#BFA9FF', '#3B82F6', '#F97316'];
 
-const NavItem = ({ icon: Icon, label, active = false, dot = false }: { icon: any, label: string, active?: boolean, dot?: boolean }) => (
-  <button className={cn(
-    "w-full flex items-center justify-between p-4 rounded-xl transition-all font-bold",
-    active ? "bg-ninja-yellow text-ninja-dark shadow-sm" : "text-gray-500 hover:bg-gray-50 hover:text-ninja-dark"
-  )}>
+const NavItem = ({ icon: Icon, label, active = false, dot = false, onClick }: { icon: any, label: string, active?: boolean, dot?: boolean, onClick?: () => void }) => (
+  <button 
+    onClick={onClick}
+    className={cn(
+      "w-full flex items-center justify-between p-4 rounded-xl transition-all font-bold",
+      active ? "bg-ninja-yellow text-ninja-dark shadow-sm" : "text-gray-500 hover:bg-gray-50 hover:text-ninja-dark"
+    )}
+  >
     <div className="flex items-center gap-3">
       <Icon size={20} />
       <span>{label}</span>
@@ -25,6 +30,7 @@ const NavItem = ({ icon: Icon, label, active = false, dot = false }: { icon: any
 );
 
 export const AutomationsPage = () => {
+  const [activeTab, setActiveTab] = useState('overview');
   const { kpis, chartData, pieData, topWorkflows, recentActivity } = automationsData;
 
   const renderKPIIcon = (title: string) => {
@@ -60,12 +66,12 @@ export const AutomationsPage = () => {
         {/* Left Sub-Sidebar */}
         <aside className="w-full lg:w-64 flex-shrink-0 flex flex-col gap-6">
           <nav className="flex flex-col gap-2">
-            <NavItem icon={Zap} label="Overview" active />
-            <NavItem icon={GitBranch} label="Workflows" />
-            <NavItem icon={FileText} label="Templates" />
-            <NavItem icon={Sparkles} label="MagnusFlow" dot />
-            <NavItem icon={Bell} label="Alerts" />
-            <NavItem icon={Settings} label="Settings" />
+            <NavItem icon={Zap} label="Overview" active={activeTab === 'overview'} onClick={() => setActiveTab('overview')} />
+            <NavItem icon={Workflow} label="Workflows" active={activeTab === 'workflows'} onClick={() => setActiveTab('workflows')} />
+            <NavItem icon={FileText} label="Templates" active={activeTab === 'templates'} onClick={() => setActiveTab('templates')} />
+            <NavItem icon={Sparkles} label="MagnusFlow" dot active={activeTab === 'magnusflow'} onClick={() => setActiveTab('magnusflow')} />
+            <NavItem icon={Bell} label="Alerts" active={activeTab === 'alerts'} onClick={() => setActiveTab('alerts')} />
+            <NavItem icon={Settings} label="Settings" active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} />
           </nav>
 
           {/* Premium Card */}
@@ -79,7 +85,10 @@ export const AutomationsPage = () => {
               <p className="text-xs text-ninja-dark/70 font-bold leading-relaxed">
                 Advanced organization for workflows at scale
               </p>
-              <Button className="mt-2 text-xs py-2.5 bg-white text-ninja-dark hover:bg-gray-50 border border-transparent hover:border-ninja-yellow w-full flex items-center justify-center gap-2">
+              <Button 
+                onClick={() => toast.success('Opening MagnusFlow Premium details...')}
+                className="mt-2 text-xs py-2.5 bg-white text-ninja-dark hover:bg-gray-50 border border-transparent hover:border-ninja-yellow w-full flex items-center justify-center gap-2"
+              >
                 <span>Explore</span>
                 <ChevronRight size={14} />
               </Button>
@@ -88,10 +97,12 @@ export const AutomationsPage = () => {
         </aside>
 
         {/* Main Content Dashboard */}
-        <div className="flex-1 flex flex-col gap-6 min-w-0">
-
-          {/* KPIs */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+        <div className="flex-1 flex flex-col gap-6 min-w-0 bg-gray-50/30 rounded-3xl p-2 md:p-6 lg:bg-transparent lg:p-0">
+          
+          {activeTab === 'overview' && (
+            <>
+              {/* KPIs */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
             {kpis.map((kpi, idx) => (
               <Card key={idx} className="p-5 border-none shadow-sm flex flex-col justify-between min-h-[140px]">
                 <div className="flex items-center justify-between">
@@ -233,6 +244,67 @@ export const AutomationsPage = () => {
               </div>
             </Card>
           </div>
+            </>
+          )}
+
+          {activeTab === 'workflows' && (
+            <div className="flex flex-col items-center justify-center py-20 px-4 animate-in fade-in duration-500">
+              <div className="h-20 w-20 rounded-3xl bg-gradient-to-br from-ninja-yellow/50 to-ninja-purple/30 flex items-center justify-center mb-8 shadow-sm">
+                <Workflow size={36} className="text-ninja-dark drop-shadow-sm" />
+              </div>
+              
+              <h2 className="text-3xl font-black text-ninja-dark mb-3 text-center">Workflows</h2>
+              <p className="text-gray-500 font-medium text-center mb-10 max-w-md">
+                This module is under development and will be available soon
+              </p>
+
+              <Card className="w-full max-w-3xl p-8 border border-white shadow-[0_10px_40px_-15px_rgba(0,0,0,0.05)] rounded-3xl bg-white relative z-10 mb-8">
+                <h3 className="text-lg font-bold text-ninja-dark text-center mb-8">Planned Features</h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-2.5 h-2.5 rounded-full bg-ninja-yellow shrink-0" />
+                    <span className="text-sm font-medium text-gray-600">Visual workflow builder</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-2.5 h-2.5 rounded-full bg-ninja-yellow shrink-0" />
+                    <span className="text-sm font-medium text-gray-600">Custom triggers and actions</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-2.5 h-2.5 rounded-full bg-ninja-yellow shrink-0" />
+                    <span className="text-sm font-medium text-gray-600">Advanced logical conditions</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-2.5 h-2.5 rounded-full bg-ninja-yellow shrink-0" />
+                    <span className="text-sm font-medium text-gray-600">Real-time testing</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-2.5 h-2.5 rounded-full bg-ninja-yellow shrink-0" />
+                    <span className="text-sm font-medium text-gray-600">Workflow versioning</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-2.5 h-2.5 rounded-full bg-ninja-yellow shrink-0" />
+                    <span className="text-sm font-medium text-gray-600">Performance analysis</span>
+                  </div>
+                </div>
+              </Card>
+
+              <Button 
+                onClick={() => toast.success('Early access request sent successfully!')}
+                className="bg-[#D4FF00] hover:bg-[#c2e600] text-ninja-dark font-black px-8 py-3.5 rounded-2xl shadow-lg shadow-ninja-yellow/20 flex items-center gap-2"
+              >
+                <span>+ Request Early Access</span>
+              </Button>
+            </div>
+          )}
+
+          {activeTab !== 'overview' && activeTab !== 'workflows' && (
+            <div className="flex flex-col items-center justify-center py-32 text-gray-300">
+              <Settings size={48} className="mb-4 opacity-20" />
+              <p className="font-bold text-sm">View of {activeTab} under development</p>
+            </div>
+          )}
+
         </div>
 
       </div>
