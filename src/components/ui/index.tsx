@@ -1,14 +1,18 @@
 import React from 'react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { ChevronDown, X } from 'lucide-react';
 
 // Helper for tailwind class merging
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export const Card = ({ children, className }: { children: React.ReactNode; className?: string }) => (
-  <div className={cn("bg-white rounded-3xl shadow-ninja p-6", className)}>
+export const Card = ({ children, className, onClick }: { children: React.ReactNode; className?: string; onClick?: () => void }) => (
+  <div 
+    onClick={onClick}
+    className={cn("bg-white rounded-3xl shadow-ninja p-6", onClick && "cursor-pointer", className)}
+  >
     {children}
   </div>
 );
@@ -107,15 +111,20 @@ export const Textarea = ({ className, ...props }: React.TextareaHTMLAttributes<H
 );
 
 export const Select = ({ className, children, ...props }: React.SelectHTMLAttributes<HTMLSelectElement>) => (
-  <select
-    className={cn(
-      "w-full bg-gray-50 border border-gray-200 rounded-xl py-2.5 px-4 outline-none transition-all focus:border-ninja-yellow focus:ring-1 focus:ring-ninja-yellow appearance-none cursor-pointer",
-      className
-    )}
-    {...props}
-  >
-    {children}
-  </select>
+  <div className="relative w-full group">
+    <select
+      className={cn(
+        "w-full bg-gray-50 border border-gray-200 rounded-xl py-2.5 px-4 pr-10 outline-none transition-all focus:border-ninja-yellow focus:ring-1 focus:ring-ninja-yellow appearance-none cursor-pointer",
+        className
+      )}
+      {...props}
+    >
+      {children}
+    </select>
+    <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-ninja-yellow transition-colors pointer-events-none">
+      <ChevronDown size={18} />
+    </div>
+  </div>
 );
 
 interface ModalProps {
@@ -123,9 +132,10 @@ interface ModalProps {
   onClose: () => void;
   title: string;
   children: React.ReactNode;
+  className?: string;
 }
 
-export const Modal = ({ isOpen, onClose, title, children }: ModalProps) => {
+export const Modal = ({ isOpen, onClose, title, children, className }: ModalProps) => {
   if (!isOpen) return null;
 
   return (
@@ -134,14 +144,14 @@ export const Modal = ({ isOpen, onClose, title, children }: ModalProps) => {
         className="absolute inset-0 bg-black/40 backdrop-blur-sm"
         onClick={onClose}
       />
-      <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-lg mx-4 flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
+      <div className={cn("relative bg-white rounded-3xl shadow-2xl w-full max-w-lg mx-4 flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200", className)}>
         <div className="flex items-center justify-between p-6 pb-4 border-b border-gray-50">
           <h2 className="text-xl font-bold text-ninja-dark">{title}</h2>
           <button
             onClick={onClose}
             className="p-2 text-gray-400 hover:text-ninja-dark hover:bg-gray-100 rounded-full transition-colors"
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
+            <X size={20} />
           </button>
         </div>
         <div className="p-6 overflow-y-auto custom-scrollbar">

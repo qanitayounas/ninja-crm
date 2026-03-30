@@ -14,13 +14,12 @@ import {
   ChevronRight,
   X,
   AlertTriangle,
-  Phone,
+
   Flag,
   Megaphone,
   Globe,
   Star,
-  GraduationCap,
-  Store,
+
   Folder,
   TrendingUp,
   ArrowLeft,
@@ -41,7 +40,10 @@ import {
   BarChart3 as BarChartIcon,
   Target,
   Trophy,
-  QrCode
+  QrCode,
+  Timer,
+  Link2,
+  Palette
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { cn } from '../components/ui';
@@ -57,19 +59,18 @@ interface SidebarProps {
 const mainNavItems = [
   { icon: Home, label: 'Dashboard', path: '/dashboard' },
   { icon: Users, label: 'Contacts', path: '/dashboard/contacts' },
-  { icon: Phone, label: 'Calls', path: '/dashboard/calls' },
+
   { icon: Flag, label: 'Campaigns', path: '/dashboard/campaigns' },
   { icon: Calendar, label: 'Calendar', path: '/dashboard/calendar' },
   { icon: TrendingUp, label: 'Pipeline', path: '/dashboard/pipeline' },
   { icon: MessageSquare, label: 'Messages', path: '/dashboard/messages' },
-  { icon: Target, label: 'Opportunities', path: '/dashboard/opportunities' },
+  { icon: Target, label: 'Marketing Hub', path: '/dashboard/marketing-hub' },
   { icon: Megaphone, label: 'Marketing', path: '/dashboard/marketing' },
   { icon: Zap, label: 'Automations', path: '/dashboard/automations' },
   { icon: Globe, label: 'Sites', path: '/dashboard/sites/stores' },
   { icon: Folder, label: 'Media', path: '/dashboard/media' },
   { icon: BarChart2, label: 'Reports', path: '/dashboard/reports' },
-  { icon: GraduationCap, label: 'Memberships', path: '/dashboard/memberships' },
-  { icon: Store, label: 'App Marketplace', path: '/dashboard/marketplace' },
+
   { icon: CreditCard, label: 'Billing', path: '/dashboard/billing' },
   { icon: Star, label: 'Reputation', path: '/dashboard/reputation' },
   { icon: Settings, label: 'Settings', path: '/dashboard/settings' },
@@ -88,7 +89,7 @@ const sitesNavItems = [
   { icon: Target, label: 'Surveys', path: '/dashboard/sites/surveys' },
   { icon: ClipboardList, label: 'Quizzes', path: '/dashboard/sites/quizzes' },
   { icon: MessageCircle, label: 'Chat Widget', path: '/dashboard/sites/chatwidget' },
-  { icon: QrCode, label: 'QR Codes', path: '/dashboard/sites/qrcode' },
+  { icon: QrCode, label: 'QR Codes', path: '/dashboard/sites/qr' },
   { icon: Settings, label: 'Settings', path: '/dashboard/sites/settings' },
 ];
 
@@ -121,6 +122,20 @@ const reputationNavItems = [
   { icon: Settings, label: 'Settings', path: '/dashboard/reputation/settings' },
 ];
 
+const marketingNavItems = [
+  { icon: ArrowLeft, label: 'Go Back', path: '/dashboard/marketing-hub' },
+  { icon: Megaphone, label: 'Ads Manager', path: '/dashboard/marketing/ads' },
+  { icon: Mail, label: 'Email Marketing', path: '/dashboard/marketing/email' },
+  { icon: FileText, label: 'Snippets', path: '/dashboard/marketing/snippets' },
+  { icon: Timer, label: 'Timers', path: '/dashboard/marketing/timers' },
+  { icon: Link2, label: 'Activation Links', path: '/dashboard/marketing/links' },
+  { icon: Users, label: 'Affiliate Manager', path: '/dashboard/marketing/affiliate' },
+  { icon: Calendar, label: 'Social Media', path: '/dashboard/marketing/social' },
+  { icon: Palette, label: 'Brand Panels', path: '/dashboard/marketing/brand' },
+  { icon: BarChartIcon, label: 'Statistics', path: '/dashboard/marketing/stats' },
+  { icon: Zap, label: 'Automation', path: '/dashboard/marketing/automation' },
+];
+
 
 export const Sidebar = ({ isExpanded, setIsExpanded, isMobileOpen, setIsMobileOpen }: SidebarProps) => {
   const location = useLocation();
@@ -135,11 +150,14 @@ export const Sidebar = ({ isExpanded, setIsExpanded, isMobileOpen, setIsMobileOp
   const isSitesModule = location.pathname.startsWith('/dashboard/sites');
   const isReportsModule = location.pathname.startsWith('/dashboard/reports');
   const isReputationModule = location.pathname.startsWith('/dashboard/reputation');
+  const isMarketingHub = location.pathname === '/dashboard/marketing-hub';
+  const isMarketingModule = (location.pathname.startsWith('/dashboard/marketing/') || location.pathname === '/dashboard/marketing') && !isMarketingHub;
 
   let baseNavItems = mainNavItems;
   if (isSitesModule) baseNavItems = sitesNavItems;
   else if (isReportsModule) baseNavItems = reportsNavItems;
   else if (isReputationModule) baseNavItems = reputationNavItems;
+  else if (isMarketingModule) baseNavItems = marketingNavItems;
 
   const { role } = useRole();
 
@@ -164,23 +182,42 @@ export const Sidebar = ({ isExpanded, setIsExpanded, isMobileOpen, setIsMobileOp
       )}>
         {/* Brand & Mobile Close */}
         <div className="p-6 flex items-center justify-between">
-          <div className="flex flex-col gap-1 text-ninja-yellow">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-white flex items-center justify-center text-ninja-dark font-black text-xl shadow-lg border border-gray-100/50 group hover:scale-110 transition-transform cursor-pointer">
-                N
-              </div>
-              {isExpanded && (
-                <div className="flex flex-col -gap-1">
-                  <span className="font-black tracking-tighter text-lg text-white leading-tight">
-                    {isReportsModule ? 'Reports' : isReputationModule ? 'Reputation' : isSitesModule ? 'Sites' : 'NINJA CRM'}
-                  </span>
-                  {(isReportsModule || isReputationModule || isSitesModule) && (
-                    <span className="text-[10px] text-white/40 font-bold uppercase tracking-widest whitespace-nowrap">
-                      {isReportsModule ? 'Reporting Hub' : isReputationModule ? 'Full Management' : 'Web Ecosystem'}
-                    </span>
-                  )}
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2 group cursor-pointer h-10 overflow-hidden">
+               {/* Context aware title */}
+               {isExpanded && isMarketingModule && (
+                <div className="animate-in slide-in-from-top-4 duration-500">
+                  <div className="text-[14px] font-black text-white uppercase tracking-tighter leading-none">Marketing System</div>
+                  <div className="text-[9px] font-bold text-white/40 uppercase tracking-widest leading-none mt-1 group-hover:text-ninja-yellow transition-colors italic">Complete Management</div>
                 </div>
-              )}
+               )}
+               {isExpanded && isReputationModule && (
+                <div className="animate-in slide-in-from-top-4 duration-500">
+                  <div className="text-[14px] font-black text-white uppercase tracking-tighter leading-none">Reputation</div>
+                  <div className="text-[9px] font-bold text-white/40 uppercase tracking-widest leading-none mt-1 group-hover:text-ninja-yellow transition-colors italic">Complete Management</div>
+                </div>
+               )}
+               {isExpanded && isSitesModule && (
+                <div className="animate-in slide-in-from-top-4 duration-500">
+                  <div className="text-[14px] font-black text-white uppercase tracking-tighter leading-none">Site Builder</div>
+                  <div className="text-[9px] font-bold text-white/40 uppercase tracking-widest leading-none mt-1 group-hover:text-ninja-yellow transition-colors italic">Full Customization</div>
+                </div>
+               )}
+               {isExpanded && !isMarketingModule && !isReputationModule && !isSitesModule && (
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 flex items-center justify-center text-ninja-yellow transition-transform hover:scale-110 flex-shrink-0">
+                    <Zap size={32} fill="currentColor" stroke="none" />
+                  </div>
+                  <span className="font-black tracking-tighter text-xl text-white uppercase animate-in slide-in-from-left-4 duration-300 whitespace-nowrap">
+                    NINJA CRM
+                  </span>
+                </div>
+               )}
+               {!isExpanded && (
+                <div className="flex items-center justify-center text-ninja-yellow transition-transform hover:scale-110 flex-shrink-0 w-full h-full">
+                  <Zap size={30} fill="currentColor" stroke="none" className="-ml-1" />
+                </div>
+               )}
             </div>
           </div>
           <button onClick={() => setIsMobileOpen(false)} className="lg:hidden text-white/50 hover:text-white">
@@ -199,7 +236,10 @@ export const Sidebar = ({ isExpanded, setIsExpanded, isMobileOpen, setIsMobileOp
         {/* Navigation */}
         <nav className="flex-1 flex flex-col gap-1 md:gap-1.5 px-3 py-2 overflow-y-auto overflow-x-hidden custom-scrollbar">
           {activeNavItems.map((item) => {
-            const isActive = location.pathname === item.path || (item.path !== '/dashboard' && item.path !== '/dashboard/sites/stores' && location.pathname.startsWith(item.path));
+            const isActive = location.pathname === item.path || (
+              location.pathname.startsWith(item.path + '/') && 
+              item.path !== '/dashboard'
+            );
             return (
               <NavLink
                 key={item.path}
@@ -225,8 +265,9 @@ export const Sidebar = ({ isExpanded, setIsExpanded, isMobileOpen, setIsMobileOp
           })}
         </nav>
 
+        
         {/* Footer / Logout */}
-        <div className="p-4 border-t border-white/5">
+        <div className="p-4 border-t border-white/5 shrink-0">
           <button
             onClick={() => setShowLogoutConfirm(true)}
             className={cn(

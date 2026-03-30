@@ -19,7 +19,7 @@ import { GlobalKPIsReport } from './pages/reports/GlobalKPIsReport';
 import { AgentRankingReport } from './pages/reports/AgentRankingReport';
 import { AppointmentsReport } from './pages/reports/AppointmentsReport';
 import { SchedulingReport } from './pages/reports/SchedulingReport';
-import { ReportPlaceholder } from './pages/reports/ReportPlaceholder';
+import { ModulePlaceholder } from './components/ModulePlaceholder';
 import { MediaPage } from './pages/MediaPage';
 import { BillingPage } from './pages/BillingPage';
 import { CampaignsPage } from './pages/CampaignsPage';
@@ -30,6 +30,32 @@ import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { SignupPage } from './pages/SignupPage';
 import { ReputationPage } from './pages/ReputationPage';
 import { ReputationOverview } from './pages/reputation/ReputationOverview';
+import { ReputationQRCodes } from './pages/reputation/ReputationQRCodes';
+import { ReputationGoogleBusiness } from './pages/reputation/ReputationGoogleBusiness';
+import { ReputationRequests } from './pages/reputation/ReputationRequests';
+import { MarketingPage } from './pages/MarketingPage';
+import { MarketingAdsManager } from './pages/marketing/MarketingAdsManager';
+import { MarketingEmail } from './pages/marketing/MarketingEmail';
+import { MarketingSnippets } from './pages/marketing/MarketingSnippets';
+import { MarketingBrandPanels } from './pages/marketing/MarketingBrandPanels';
+import { MarketingTimers } from './pages/marketing/MarketingTimers';
+import { MarketingActivationLinks } from './pages/marketing/MarketingActivationLinks';
+import { MarketingAffiliate } from './pages/marketing/MarketingAffiliate';
+import { MarketingStats } from './pages/marketing/MarketingStats';
+import { MarketingAutomation } from './pages/marketing/MarketingAutomation';
+import { MarketingSocial } from './pages/marketing/MarketingSocial';
+import { WebinarsPage } from "./pages/WebinarsPage";
+import { AnalyticsPage } from "./pages/AnalyticsPage";
+import { BlogsPage } from "./pages/BlogsPage";
+import { WordPressPage } from "./pages/WordPressPage";
+import { ClientPortalPage } from "./pages/ClientPortalPage";
+import { FormsPage } from "./pages/FormsPage";
+import { SurveysPage } from "./pages/SurveysPage";
+import { QuizzesPage } from "./pages/QuizzesPage";
+import { ChatWidgetPage } from "./pages/ChatWidgetPage";
+import { QRCodesPage } from "./pages/QRCodesPage";
+import { SitesSettingsPage } from "./pages/SitesSettingsPage";
+import { MarketingHubPage } from "./pages/MarketingHubPage";
 
 function App() {
   return (
@@ -60,8 +86,8 @@ function App() {
               <Route path="calls" element={<CallsReport />} />
               <Route path="appointments" element={<AppointmentsReport />} />
               <Route path="kpis" element={<GlobalKPIsReport />} />
-              <Route path="fb-ads" element={<ReportPlaceholder title="Facebook Ads" />} />
-              <Route path="google-ads" element={<ReportPlaceholder title="Google Ads" />} />
+              <Route path="fb-ads" element={<ModulePlaceholder title="Facebook Ads" />} />
+              <Route path="google-ads" element={<ModulePlaceholder title="Google Ads" />} />
               <Route path="ranking" element={<AgentRankingReport />} />
               <Route path="scheduling" element={<SchedulingReport />} />
             </Route>
@@ -69,19 +95,19 @@ function App() {
             <Route path="reputation" element={<ReputationPage />}>
               <Route index element={<Navigate to="overview" replace />} />
               <Route path="overview" element={<ReputationOverview />} />
-              <Route path="requests" element={<ReportPlaceholder title="Requests" />} />
-              <Route path="management" element={<ReportPlaceholder title="Management" />} />
-              <Route path="link" element={<ReportPlaceholder title="Review Link" />} />
-              <Route path="automation" element={<ReportPlaceholder title="Automation" />} />
-              <Route path="sms" element={<ReportPlaceholder title="SMS" />} />
-              <Route path="email" element={<ReportPlaceholder title="Email" />} />
-              <Route path="whatsapp" element={<ReportPlaceholder title="WhatsApp" />} />
-              <Route path="qrcodes" element={<ReportPlaceholder title="QR Codes" />} />
-              <Route path="ai" element={<ReportPlaceholder title="Review AI" />} />
-              <Route path="widgets" element={<ReportPlaceholder title="Widgets" />} />
-              <Route path="google" element={<ReportPlaceholder title="Google Business" />} />
-              <Route path="analytics" element={<ReportPlaceholder title="Analytics" />} />
-              <Route path="settings" element={<ReportPlaceholder title="Settings" />} />
+              <Route path="requests" element={<ReputationRequests />} />
+              <Route path="management" element={<ModulePlaceholder title="Management" />} />
+              <Route path="link" element={<ModulePlaceholder title="Review Link" />} />
+              <Route path="automation" element={<ModulePlaceholder title="Automation" />} />
+              <Route path="sms" element={<ModulePlaceholder title="SMS" />} />
+              <Route path="email" element={<ModulePlaceholder title="Email" />} />
+              <Route path="whatsapp" element={<ModulePlaceholder title="WhatsApp" />} />
+              <Route path="qrcodes" element={<ReputationQRCodes />} />
+              <Route path="ai" element={<ModulePlaceholder title="Review AI" />} />
+              <Route path="widgets" element={<ModulePlaceholder title="Widgets" />} />
+              <Route path="google" element={<ReputationGoogleBusiness />} />
+              <Route path="analytics" element={<ModulePlaceholder title="Analytics" />} />
+              <Route path="settings" element={<ModulePlaceholder title="Settings" />} />
             </Route>
 
             <Route path="billing" element={<BillingPage />} />
@@ -89,6 +115,31 @@ function App() {
             <Route path="campaigns" element={<CampaignsPage />} />
             <Route path="sites/web" element={<WebsitesPage />} />
             <Route path="sites/stores" element={<StoresPage />} />
+            <Route path="sites/webinars" element={<WebinarsPage />} />
+            <Route path="sites/analytics" element={<AnalyticsPage />} />
+            <Route path="sites/blogs" element={<BlogsPage />} />
+            <Route path="sites/wordpress" element={<WordPressPage />} />
+            <Route path="sites/portal" element={<ClientPortalPage />} />
+            <Route path="sites/forms" element={<FormsPage />} />
+            <Route path="sites/surveys" element={<SurveysPage />} />
+            <Route path="sites/quizzes" element={<QuizzesPage />} />
+            <Route path="sites/chatwidget" element={<ChatWidgetPage />} />
+            <Route path="sites/qr" element={<QRCodesPage />} />
+            <Route path="sites/settings" element={<SitesSettingsPage />} />
+            <Route path="marketing-hub" element={<MarketingHubPage />} />
+            <Route path="marketing" element={<MarketingPage />}>
+              <Route index element={<Navigate to="ads" replace />} />
+              <Route path="ads" element={<MarketingAdsManager />} />
+              <Route path="email" element={<MarketingEmail />} />
+              <Route path="snippets" element={<MarketingSnippets />} />
+              <Route path="timers" element={<MarketingTimers />} />
+              <Route path="links" element={<MarketingActivationLinks />} />
+              <Route path="affiliate" element={<MarketingAffiliate />} />
+              <Route path="social" element={<MarketingSocial />} />
+              <Route path="brand" element={<MarketingBrandPanels />} />
+              <Route path="stats" element={<MarketingStats />} />
+              <Route path="automation" element={<MarketingAutomation />} />
+            </Route>
             <Route path="sites" element={<Navigate to="/dashboard/sites/web" replace />} />
           </Route>
 
