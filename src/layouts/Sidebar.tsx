@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { 
-  Home, 
-  Users, 
-  MessageSquare, 
-  Calendar, 
-  Zap, 
-  BarChart2, 
-  CreditCard, 
+import {
+  Home,
+  Users,
+  MessageSquare,
+  Calendar,
+  Zap,
+  BarChart2,
+  CreditCard,
   Settings,
   LogOut,
   ChevronLeft,
@@ -30,8 +30,18 @@ import {
   BookOpen,
   ClipboardList,
   MessageCircle,
-  QrCode,
-  Target
+  Clock,
+  LayoutDashboard,
+  List,
+  Link,
+  Smartphone,
+  Mail,
+  Bot,
+  Grid,
+  BarChart3 as BarChartIcon,
+  Target,
+  Trophy,
+  QrCode
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { cn } from '../components/ui';
@@ -52,15 +62,16 @@ const mainNavItems = [
   { icon: Calendar, label: 'Calendar', path: '/dashboard/calendar' },
   { icon: TrendingUp, label: 'Pipeline', path: '/dashboard/pipeline' },
   { icon: MessageSquare, label: 'Messages', path: '/dashboard/messages' },
+  { icon: Target, label: 'Opportunities', path: '/dashboard/opportunities' },
   { icon: Megaphone, label: 'Marketing', path: '/dashboard/marketing' },
   { icon: Zap, label: 'Automations', path: '/dashboard/automations' },
   { icon: Globe, label: 'Sites', path: '/dashboard/sites/stores' },
-  { icon: Star, label: 'Reputation', path: '/dashboard/reputation' },
   { icon: Folder, label: 'Media', path: '/dashboard/media' },
   { icon: BarChart2, label: 'Reports', path: '/dashboard/reports' },
   { icon: GraduationCap, label: 'Memberships', path: '/dashboard/memberships' },
   { icon: Store, label: 'App Marketplace', path: '/dashboard/marketplace' },
   { icon: CreditCard, label: 'Billing', path: '/dashboard/billing' },
+  { icon: Star, label: 'Reputation', path: '/dashboard/reputation' },
   { icon: Settings, label: 'Settings', path: '/dashboard/settings' },
 ];
 
@@ -81,6 +92,36 @@ const sitesNavItems = [
   { icon: Settings, label: 'Settings', path: '/dashboard/sites/settings' },
 ];
 
+const reportsNavItems = [
+  { icon: ArrowLeft, label: 'Go Back', path: '/dashboard' },
+  { icon: Target, label: 'Attribution', path: '/dashboard/reports/attribution' },
+  { icon: Calendar, label: 'Appointments', path: '/dashboard/reports/appointments' },
+  { icon: Globe, label: 'Global KPIs', path: '/dashboard/reports/kpis' },
+  { icon: Zap, label: 'Facebook Ads', path: '/dashboard/reports/fb-ads' },
+  { icon: Zap, label: 'Google Ads', path: '/dashboard/reports/google-ads' },
+  { icon: Trophy, label: 'Agent Ranking', path: '/dashboard/reports/ranking' },
+  { icon: Clock, label: 'Scheduling', path: '/dashboard/reports/scheduling' },
+];
+
+const reputationNavItems = [
+  { icon: ArrowLeft, label: 'Go Back', path: '/dashboard' },
+  { icon: LayoutDashboard, label: 'Overview', path: '/dashboard/reputation/overview' },
+  { icon: MessageSquare, label: 'Requests', path: '/dashboard/reputation/requests' },
+  { icon: List, label: 'Management', path: '/dashboard/reputation/management' },
+  { icon: Link, label: 'Review Link', path: '/dashboard/reputation/link' },
+  { icon: Zap, label: 'Automation', path: '/dashboard/reputation/automation' },
+  { icon: Smartphone, label: 'SMS', path: '/dashboard/reputation/sms' },
+  { icon: Mail, label: 'Email', path: '/dashboard/reputation/email' },
+  { icon: MessageCircle, label: 'WhatsApp', path: '/dashboard/reputation/whatsapp' },
+  { icon: QrCode, label: 'QR Codes', path: '/dashboard/reputation/qrcodes' },
+  { icon: Bot, label: 'Review AI', path: '/dashboard/reputation/ai' },
+  { icon: Grid, label: 'Widgets', path: '/dashboard/reputation/widgets' },
+  { icon: Globe, label: 'Google Business', path: '/dashboard/reputation/google' },
+  { icon: BarChartIcon, label: 'Analytics', path: '/dashboard/reputation/analytics' },
+  { icon: Settings, label: 'Settings', path: '/dashboard/reputation/settings' },
+];
+
+
 export const Sidebar = ({ isExpanded, setIsExpanded, isMobileOpen, setIsMobileOpen }: SidebarProps) => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -92,7 +133,14 @@ export const Sidebar = ({ isExpanded, setIsExpanded, isMobileOpen, setIsMobileOp
   };
 
   const isSitesModule = location.pathname.startsWith('/dashboard/sites');
-  const baseNavItems = isSitesModule ? sitesNavItems : mainNavItems;
+  const isReportsModule = location.pathname.startsWith('/dashboard/reports');
+  const isReputationModule = location.pathname.startsWith('/dashboard/reputation');
+
+  let baseNavItems = mainNavItems;
+  if (isSitesModule) baseNavItems = sitesNavItems;
+  else if (isReportsModule) baseNavItems = reportsNavItems;
+  else if (isReputationModule) baseNavItems = reputationNavItems;
+
   const { role } = useRole();
 
   const activeNavItems = baseNavItems.filter(item => {
@@ -118,18 +166,30 @@ export const Sidebar = ({ isExpanded, setIsExpanded, isMobileOpen, setIsMobileOp
         <div className="p-6 flex items-center justify-between">
           <div className="flex flex-col gap-1 text-ninja-yellow">
             <div className="flex items-center gap-3">
-              <Zap size={32} fill="currentColor" />
-              {isExpanded && <span className="font-black tracking-tighter text-xl text-white">{isSitesModule ? 'Sites' : 'NINJA CRM'}</span>}
+              <div className="h-10 w-10 rounded-full bg-white flex items-center justify-center text-ninja-dark font-black text-xl shadow-lg border border-gray-100/50 group hover:scale-110 transition-transform cursor-pointer">
+                N
+              </div>
+              {isExpanded && (
+                <div className="flex flex-col -gap-1">
+                  <span className="font-black tracking-tighter text-lg text-white leading-tight">
+                    {isReportsModule ? 'Reports' : isReputationModule ? 'Reputation' : isSitesModule ? 'Sites' : 'NINJA CRM'}
+                  </span>
+                  {(isReportsModule || isReputationModule || isSitesModule) && (
+                    <span className="text-[10px] text-white/40 font-bold uppercase tracking-widest whitespace-nowrap">
+                      {isReportsModule ? 'Reporting Hub' : isReputationModule ? 'Full Management' : 'Web Ecosystem'}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
-            {isExpanded && isSitesModule && <span className="text-xs text-white/50 font-bold ml-11 -mt-1">Web Ecosystem</span>}
           </div>
           <button onClick={() => setIsMobileOpen(false)} className="lg:hidden text-white/50 hover:text-white">
             <X size={24} />
           </button>
         </div>
-        
+
         {/* Desktop Toggle Button */}
-        <button 
+        <button
           onClick={() => setIsExpanded(!isExpanded)}
           className="hidden lg:flex absolute -right-3 top-20 bg-ninja-yellow text-ninja-dark h-6 w-6 rounded-full items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all"
         >
@@ -158,7 +218,7 @@ export const Sidebar = ({ isExpanded, setIsExpanded, isMobileOpen, setIsMobileOp
                 title={!isExpanded ? item.label : ''}
               >
                 <item.icon size={20} className={cn("relative z-10 flex-shrink-0", isActive ? "text-ninja-dark" : "")} />
-                
+
                 {isExpanded && <span className="text-xs truncate">{item.label}</span>}
               </NavLink>
             );

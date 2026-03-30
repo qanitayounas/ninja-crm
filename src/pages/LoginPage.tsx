@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Zap, Mail, Lock, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { Input } from '../components/ui';
 
@@ -109,9 +109,12 @@ export const LoginPage = () => {
               <div className="flex flex-col gap-1.5">
                 <div className="flex justify-between items-center pl-1">
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Password</label>
-                  <button type="button" className="text-[10px] font-black text-ninja-yellow uppercase tracking-wider hover:opacity-70 transition-opacity">
+                  <Link 
+                    to="/forgot-password" 
+                    className="text-[10px] font-black text-ninja-yellow uppercase tracking-wider hover:opacity-70 transition-opacity"
+                  >
                     Forgot your password?
-                  </button>
+                  </Link>
                 </div>
                 <Input
                   icon={Lock}
@@ -160,11 +163,11 @@ export const LoginPage = () => {
             </button>
           </div>
 
-          <p className="mt-6 text-center text-gray-500 text-sm font-medium">
+          <p className="mt-8 text-center text-gray-500 text-sm font-medium">
             Don't have an account?{' '}
-            <span className="text-ninja-dark font-black cursor-pointer hover:underline underline-offset-4">
-              Contact Support
-            </span>
+            <Link to="/signup" className="text-ninja-dark font-black hover:underline underline-offset-4">
+              Create account
+            </Link>
           </p>
         </div>
       </div>
