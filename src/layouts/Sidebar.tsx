@@ -43,7 +43,10 @@ import {
   QrCode,
   Timer,
   Link2,
-  Palette
+  Palette,
+  Workflow,
+  Sparkles,
+  Bell
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { cn } from '../components/ui';
@@ -136,6 +139,16 @@ const marketingNavItems = [
   { icon: Zap, label: 'Automation', path: '/dashboard/marketing/automation' },
 ];
 
+const automationNavItems = [
+  { icon: ArrowLeft, label: 'Go Back', path: '/dashboard' },
+  { icon: Zap, label: 'Overview', path: '/dashboard/automations/overview' },
+  { icon: Workflow, label: 'Workflows', path: '/dashboard/automations/workflows' },
+  { icon: FileText, label: 'Templates', path: '/dashboard/automations/templates' },
+  { icon: Sparkles, label: 'MagnusFlow', path: '/dashboard/automations/magnusflow' },
+  { icon: Bell, label: 'Alerts', path: '/dashboard/automations/alerts' },
+  { icon: Settings, label: 'Settings', path: '/dashboard/automations/settings' },
+];
+
 
 export const Sidebar = ({ isExpanded, setIsExpanded, isMobileOpen, setIsMobileOpen }: SidebarProps) => {
   const location = useLocation();
@@ -152,12 +165,14 @@ export const Sidebar = ({ isExpanded, setIsExpanded, isMobileOpen, setIsMobileOp
   const isReputationModule = location.pathname.startsWith('/dashboard/reputation');
   const isMarketingHub = location.pathname === '/dashboard/marketing-hub';
   const isMarketingModule = (location.pathname.startsWith('/dashboard/marketing/') || location.pathname === '/dashboard/marketing') && !isMarketingHub;
+  const isAutomationModule = location.pathname.startsWith('/dashboard/automations');
 
   let baseNavItems = mainNavItems;
   if (isSitesModule) baseNavItems = sitesNavItems;
   else if (isReportsModule) baseNavItems = reportsNavItems;
   else if (isReputationModule) baseNavItems = reputationNavItems;
   else if (isMarketingModule) baseNavItems = marketingNavItems;
+  else if (isAutomationModule) baseNavItems = automationNavItems;
 
   const { role } = useRole();
 
@@ -203,7 +218,13 @@ export const Sidebar = ({ isExpanded, setIsExpanded, isMobileOpen, setIsMobileOp
                   <div className="text-[9px] font-bold text-white/40 uppercase tracking-widest leading-none mt-1 group-hover:text-ninja-yellow transition-colors italic">Full Customization</div>
                 </div>
                )}
-               {isExpanded && !isMarketingModule && !isReputationModule && !isSitesModule && (
+                {isExpanded && isAutomationModule && (
+                <div className="animate-in slide-in-from-top-4 duration-500">
+                  <div className="text-[14px] font-black text-white uppercase tracking-tighter leading-none">Automation</div>
+                  <div className="text-[9px] font-bold text-white/40 uppercase tracking-widest leading-none mt-1 group-hover:text-ninja-yellow transition-colors italic">Workflow Control</div>
+                </div>
+               )}
+               {isExpanded && !isMarketingModule && !isReputationModule && !isSitesModule && !isAutomationModule && (
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 flex items-center justify-center text-ninja-yellow transition-transform hover:scale-110 flex-shrink-0">
                     <Zap size={32} fill="currentColor" stroke="none" />
@@ -260,6 +281,10 @@ export const Sidebar = ({ isExpanded, setIsExpanded, isMobileOpen, setIsMobileOp
                 <item.icon size={20} className={cn("relative z-10 flex-shrink-0", isActive ? "text-ninja-dark" : "")} />
 
                 {isExpanded && <span className="text-xs truncate">{item.label}</span>}
+                
+                {item.label === 'MagnusFlow' && (
+                   <div className="absolute right-3 h-1.5 w-1.5 rounded-full bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.6)] animate-pulse shadow-orange-500/50" />
+                )}
               </NavLink>
             );
           })}

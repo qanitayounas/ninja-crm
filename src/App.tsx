@@ -19,6 +19,8 @@ import { GlobalKPIsReport } from './pages/reports/GlobalKPIsReport';
 import { AgentRankingReport } from './pages/reports/AgentRankingReport';
 import { AppointmentsReport } from './pages/reports/AppointmentsReport';
 import { SchedulingReport } from './pages/reports/SchedulingReport';
+import { AutomationOverview } from './pages/automations/AutomationOverview';
+import { MagnusFlowTab } from './components/automations/MagnusFlowTab';
 import { ModulePlaceholder } from './components/ModulePlaceholder';
 import { MediaPage } from './pages/MediaPage';
 import { BillingPage } from './pages/BillingPage';
@@ -78,7 +80,15 @@ function App() {
 
             <Route path="pipeline" element={<PipelinePage />} />
             <Route path="calendar" element={<CalendarPage />} />
-            <Route path="automations" element={<AutomationsPage />} />
+            <Route path="automations" element={<AutomationsPage />}>
+              <Route index element={<Navigate to="overview" replace />} />
+              <Route path="overview" element={<AutomationOverview />} />
+              <Route path="workflows" element={<ModulePlaceholder title="Workflows" />} />
+              <Route path="templates" element={<ModulePlaceholder title="Templates" />} />
+              <Route path="magnusflow" element={<MagnusFlowTab />} />
+              <Route path="alerts" element={<ModulePlaceholder title="Alerts" />} />
+              <Route path="settings" element={<ModulePlaceholder title="Settings" />} />
+            </Route>
 
             <Route path="reports" element={<ReportsPage />}>
               <Route index element={<Navigate to="attribution" replace />} />
