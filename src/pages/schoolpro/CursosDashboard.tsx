@@ -61,7 +61,7 @@ export const CursosDashboard = () => {
         {/* Income Growth Chart */}
         <Card className="lg:col-span-2 p-6 border-none shadow-sm">
           <h3 className="font-bold text-ninja-dark text-lg mb-8">Revenue Growth</h3>
-          <div className="h-[300px] w-full">
+          <div className="h-[220px] sm:h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={incomeGrowthData}>
                 <defs>
@@ -84,7 +84,7 @@ export const CursosDashboard = () => {
         <Card className="p-6 border-none shadow-sm flex flex-col items-center">
           <h3 className="font-bold text-ninja-dark text-lg mb-8 self-start">Student Funnel</h3>
           <div className="flex-1 flex flex-col items-center justify-center w-full">
-            <div className="h-[200px] w-full">
+            <div className="h-[180px] sm:h-[200px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -122,7 +122,7 @@ export const CursosDashboard = () => {
       {/* Course Activity Bar Chart */}
       <Card className="p-6 border-none shadow-sm">
         <h3 className="font-bold text-ninja-dark text-lg mb-8">Daily Course Activity</h3>
-        <div className="h-[250px] w-full">
+        <div className="h-[200px] sm:h-[250px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={dailyActivityData}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />

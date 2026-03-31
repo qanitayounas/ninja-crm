@@ -22,9 +22,9 @@ import {
 import { Card, Button, cn } from '../../components/ui';
 
 const topAgents = [
-    { rank: 2, name: 'Ana Martínez', revenue: '$142K', conversions: 108, initial: 'AM', color: 'bg-purple-100 text-purple-600', border: 'border-purple-200' },
+    { rank: 2, name: 'Ana Martinez', revenue: '$142K', conversions: 108, initial: 'AM', color: 'bg-purple-100 text-purple-600', border: 'border-purple-200' },
     { rank: 1, name: 'Carlos Ruiz', revenue: '$157K', conversions: 124, initial: 'CR', color: 'bg-ninja-yellow text-ninja-dark', border: 'border-ninja-yellow' },
-    { rank: 3, name: 'David López', revenue: '$119K', conversions: 89, initial: 'DL', color: 'bg-orange-100 text-orange-600', border: 'border-orange-200' },
+    { rank: 3, name: 'David Lopez', revenue: '$119K', conversions: 89, initial: 'DL', color: 'bg-orange-100 text-orange-600', border: 'border-orange-200' },
 ];
 
 const revenueByAgent = [
@@ -45,9 +45,9 @@ const convByAgent = [
 
 const leaderboard = [
     { rank: '#1', name: 'Carlos Ruiz', initial: 'CR', leads: 342, conv: 124, rate: '36.3%', revenue: '$157,700', calls: 567, emails: 892, resp: '2.3h', sat: 4.9 },
-    { rank: '#2', name: 'Ana Martínez', initial: 'AM', leads: 318, conv: 108, rate: '34.0%', revenue: '$142,300', calls: 512, emails: 734, resp: '2.8h', sat: 4.8 },
-    { rank: '#3', name: 'David López', initial: 'DL', leads: 289, conv: 89, rate: '30.8%', revenue: '$118,900', calls: 445, emails: 678, resp: '3.1h', sat: 4.7 },
-    { rank: '#4', name: 'Laura Sánchez', initial: 'LS', leads: 267, conv: 78, rate: '29.2%', revenue: '$98,400', calls: 398, emails: 589, resp: '3.5h', sat: 4.6 },
+    { rank: '#2', name: 'Ana Martinez', initial: 'AM', leads: 318, conv: 108, rate: '34.0%', revenue: '$142,300', calls: 512, emails: 734, resp: '2.8h', sat: 4.8 },
+    { rank: '#3', name: 'David Lopez', initial: 'DL', leads: 289, conv: 89, rate: '30.8%', revenue: '$118,900', calls: 445, emails: 678, resp: '3.1h', sat: 4.7 },
+    { rank: '#4', name: 'Laura Sanchez', initial: 'LS', leads: 267, conv: 78, rate: '29.2%', revenue: '$98,400', calls: 398, emails: 589, resp: '3.5h', sat: 4.6 },
     { rank: '#5', name: 'Miguel Torres', initial: 'MT', leads: 234, conv: 64, rate: '27.4%', revenue: '$84,200', calls: 356, emails: 512, resp: '4.2h', sat: 4.5 },
 ];
 

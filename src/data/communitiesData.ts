@@ -62,7 +62,7 @@ export const myCommunities = [
 export const feedPosts = [
     {
         id: 1,
-        user: 'María González',
+        user: 'Maria Gonzalez',
         avatar: 'MG',
         time: '2 hours ago',
         content: 'Has anyone tried the new segmentation strategies we saw in lesson 5? I would like to share my results and learn from your experiences.',
@@ -82,7 +82,7 @@ export const feedPosts = [
     },
     {
         id: 3,
-        user: 'Ana Martínez',
+        user: 'Ana Martinez',
         avatar: 'AM',
         time: '1 day ago',
         content: 'I have a question about the sales funnel. What is the best way to integrate the CRM with email campaigns?',

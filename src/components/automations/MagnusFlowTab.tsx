@@ -26,7 +26,7 @@ import { Card, Button, cn } from '../ui';
 import { magnusFlowData } from '../../data/magnusFlowData';
 
 export const MagnusFlowTab = () => {
-    const [activeFilter, setActiveFilter] = useState('todos');
+    const [activeFilter, setActiveFilter] = useState('all');
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
     const getIconForFilter = (iconName: string | null) => {
@@ -63,7 +63,7 @@ export const MagnusFlowTab = () => {
     };
 
     // Filter workflows based on active filter
-    const filteredWorkflows = activeFilter === 'todos' 
+    const filteredWorkflows = activeFilter === 'all' 
         ? magnusFlowData.workflows 
         : magnusFlowData.workflows.filter(wf => 
             wf.platform === activeFilter || (wf.tags && wf.tags.includes(activeFilter))
@@ -75,16 +75,16 @@ export const MagnusFlowTab = () => {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-black text-ninja-dark tracking-tighter">MagnusFlow</h1>
-                    <p className="text-gray-400 font-medium">Organización avanzada y control de workflows</p>
+                    <p className="text-gray-400 font-medium">Advanced workflow organization and control</p>
                 </div>
                 <div className="flex items-center gap-3">
                     <Button variant="ghost" className="flex items-center gap-2 font-bold px-4 py-2 border border-gray-200 rounded-xl bg-white hover:bg-gray-50 text-ninja-dark">
                         <FolderPlus size={16} />
-                        Crear Carpeta
+                        Create Folder
                     </Button>
                     <Button className="flex items-center gap-2 font-black px-4 py-2 bg-[#D4FF00] hover:bg-[#c2e600] text-ninja-dark rounded-xl shadow-lg shadow-ninja-yellow/20 border-transparent">
                         <Plus size={16} />
-                        Crear Workflow
+                        Create Workflow
                     </Button>
                 </div>
             </div>
@@ -100,7 +100,7 @@ export const MagnusFlowTab = () => {
                             {kpi.status && (
                                 <div className={cn(
                                     "px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-widest",
-                                    kpi.status.includes('Revisar') ? "bg-red-50 text-red-600" : "bg-green-50 text-green-600"
+                                    kpi.status.includes('Review') ? "bg-red-50 text-red-600" : "bg-green-50 text-green-600"
                                 )}>
                                     {kpi.status}
                                 </div>
@@ -123,14 +123,14 @@ export const MagnusFlowTab = () => {
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                             <input 
                                 type="text"
-                                placeholder="Buscar workflow..."
+                                placeholder="Search workflow..."
                                 className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-ninja-dark focus:ring-1 focus:ring-ninja-dark transition-all text-sm font-medium"
                             />
                         </div>
                         <div className="flex items-center gap-2">
                             <Button variant="ghost" className="flex items-center gap-2 px-3 py-2 border border-gray-200 text-gray-500 hover:text-ninja-dark hover:bg-gray-50 rounded-lg h-10">
                                 <Filter size={16} />
-                                <span className="text-sm font-bold">Filtros</span>
+                                <span className="text-sm font-bold">Filters</span>
                             </Button>
                             <div className="flex items-center bg-gray-50 border border-gray-200 rounded-lg p-1 h-10">
                                 <button 
@@ -159,8 +159,8 @@ export const MagnusFlowTab = () => {
                             // Check if it's the specific layout required by user screenshots 
                             // e.g., Todos is black when active.
                             let activeClasses = "bg-ninja-dark text-white border-transparent shadow-md";
-                            if (filter.id !== 'todos' && filter.color) {
-                                const isLightColor = filter.id === 'ventas' || filter.id === 'whatsapp' || filter.id === 'seguimiento';
+                            if (filter.id !== 'all' && filter.color) {
+                                const isLightColor = filter.id === 'sales' || filter.id === 'whatsapp' || filter.id === 'followup';
                                 activeClasses = `${filter.color} ${isLightColor ? 'text-ninja-dark' : 'text-white'} border-transparent shadow-md`;
                             }
 
@@ -215,7 +215,7 @@ export const MagnusFlowTab = () => {
                                     <p className="text-lg font-black text-ninja-dark leading-none">{wf.triggers}</p>
                                 </div>
                                 <div>
-                                    <p className="text-[10px] text-gray-400 font-bold mb-1">Conversión</p>
+                                    <p className="text-[10px] text-gray-400 font-bold mb-1">Conversion</p>
                                     <p className={cn("text-lg font-black leading-none", wf.conversionColor.includes('D4FF00') ? 'text-[#aacc00]' : wf.conversionColor)}>{wf.conversion}</p>
                                 </div>
                                 <div>
@@ -223,7 +223,7 @@ export const MagnusFlowTab = () => {
                                     <p className="text-lg font-black text-ninja-dark leading-none">{wf.leads}</p>
                                 </div>
                                 <div>
-                                    <p className="text-[10px] text-gray-400 font-bold mb-1">ROI Estimado</p>
+                                    <p className="text-[10px] text-gray-400 font-bold mb-1">Est. ROI</p>
                                     <p className="text-lg font-black text-green-500 leading-none">{wf.roi}</p>
                                 </div>
                             </div>
@@ -246,13 +246,13 @@ export const MagnusFlowTab = () => {
                             <thead>
                                 <tr className="bg-gray-50 border-b border-gray-100">
                                     <th className="px-6 py-4 text-xs font-bold text-gray-500">Workflow</th>
-                                    <th className="px-6 py-4 text-xs font-bold text-gray-500">Estado</th>
+                                    <th className="px-6 py-4 text-xs font-bold text-gray-500">Status</th>
                                     <th className="px-6 py-4 text-xs font-bold text-gray-500">Triggers</th>
-                                    <th className="px-6 py-4 text-xs font-bold text-gray-500">Conversión</th>
+                                    <th className="px-6 py-4 text-xs font-bold text-gray-500">Conversion</th>
                                     <th className="px-6 py-4 text-xs font-bold text-gray-500">Leads</th>
-                                    <th className="px-6 py-4 text-xs font-bold text-gray-500">Última Actividad</th>
-                                    <th className="px-6 py-4 text-xs font-bold text-gray-500">Salud</th>
-                                    <th className="px-6 py-4 text-xs font-bold text-gray-500 text-right">Acciones</th>
+                                    <th className="px-6 py-4 text-xs font-bold text-gray-500">Last Activity</th>
+                                    <th className="px-6 py-4 text-xs font-bold text-gray-500">Health</th>
+                                    <th className="px-6 py-4 text-xs font-bold text-gray-500 text-right">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-50">

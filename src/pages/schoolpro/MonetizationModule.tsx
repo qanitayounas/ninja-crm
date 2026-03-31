@@ -245,19 +245,21 @@ export const MonetizationModule = () => {
         ))}
       </div>
 
-      <div className="flex items-center bg-white p-1.5 rounded-2xl shadow-sm border border-gray-100 w-fit">
-        {(['overview', 'pricing', 'subscriptions'] as MonTab[]).map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={cn(
-              "px-8 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all capitalize",
-              tab === t ? "bg-ninja-dark text-white shadow-lg" : "text-gray-400 hover:text-gray-600"
-            )}
-          >
-            {t === 'pricing' ? 'Pricing Models' : t}
-          </button>
-        ))}
+      <div className="w-full overflow-x-auto scrollbar-none -mx-1 px-1">
+        <div className="flex items-center bg-white p-1.5 rounded-2xl shadow-sm border border-gray-100 w-max min-w-full sm:w-fit sm:min-w-0">
+          {(['overview', 'pricing', 'subscriptions'] as MonTab[]).map((t) => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={cn(
+                "px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all capitalize whitespace-nowrap",
+                tab === t ? "bg-ninja-dark text-white shadow-lg" : "text-gray-400 hover:text-gray-600"
+              )}
+            >
+              {t === 'pricing' ? 'Pricing Models' : t}
+            </button>
+          ))}
+        </div>
       </div>
 
       {tab === 'overview' && <OverviewView />}

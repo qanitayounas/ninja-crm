@@ -4,10 +4,10 @@ import { Card, Button, Input, cn } from '../../components/ui';
 import toast from 'react-hot-toast';
 
 const affiliates = [
-  { id: 1, name: 'Maria González', email: 'maria@example.com', leads: 45, sales: 12, commission: '$1,890', status: 'Active' },
+  { id: 1, name: 'Maria Gonzalez', email: 'maria@example.com', leads: 45, sales: 12, commission: '$1,890', status: 'Active' },
   { id: 2, name: 'Carlos Ruiz', email: 'carlos@example.com', leads: 78, sales: 23, commission: '$3,450', status: 'Active' },
-  { id: 3, name: 'Ana Martínez', email: 'ana@example.com', leads: 34, sales: 8, commission: '$1,200', status: 'Active' },
-  { id: 4, name: 'Jorge López', email: 'jorge@example.com', leads: 12, sales: 2, commission: '$300', status: 'Pending' },
+  { id: 3, name: 'Ana Martinez', email: 'ana@example.com', leads: 34, sales: 8, commission: '$1,200', status: 'Active' },
+  { id: 4, name: 'Jorge Lopez', email: 'jorge@example.com', leads: 12, sales: 2, commission: '$300', status: 'Pending' },
 ];
 
 const kpis = [

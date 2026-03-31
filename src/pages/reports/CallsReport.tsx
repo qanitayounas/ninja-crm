@@ -94,7 +94,7 @@ const trendData = [
 
 const detailedCalls = [
     {
-        name: 'Maria González',
+        name: 'Maria Gonzalez',
         phone: '+34 612 345 678',
         type: 'Incoming',
         duration: '12:34',
@@ -103,16 +103,16 @@ const detailedCalls = [
         date: '2 hours ago',
     },
     {
-        name: 'Juan Pérez',
+        name: 'Juan Perez',
         phone: '+34 823 456 789',
         type: 'Outgoing',
         duration: '08:45',
         status: 'Answered',
-        agent: 'Ana Martínez',
+        agent: 'Ana Martinez',
         date: '3 hours ago',
     },
     {
-        name: 'Laura Sánchez',
+        name: 'Laura Sanchez',
         phone: '+34 034 567 890',
         type: 'Incoming',
         duration: '00:00',
@@ -121,7 +121,7 @@ const detailedCalls = [
         date: '4 hours ago',
     },
     {
-        name: 'Pedro López',
+        name: 'Pedro Lopez',
         phone: '+34 545 678 901',
         type: 'Incoming',
         duration: '15:23',

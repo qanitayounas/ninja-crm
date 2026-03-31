@@ -1,58 +1,58 @@
 export const magnusFlowData = {
     kpis: [
-        { title: 'Total Workflows', subtitle: 'organizados en 8 carpetas', value: '8', iconType: 'activity' },
-        { title: 'Workflows Activos', subtitle: 'funcionando correctamente', value: '6', iconType: 'check', status: 'Óptimo' },
-        { title: 'Workflows en Error', subtitle: 'requieren atención', value: '1', iconType: 'x', status: '! Revisar' },
-        { title: 'Leads Procesados', subtitle: 'en periodo actual', value: '2,276', iconType: 'trending' },
+        { title: 'Total Workflows', subtitle: 'organized in 8 folders', value: '8', iconType: 'activity' },
+        { title: 'Active Workflows', subtitle: 'running correctly', value: '6', iconType: 'check', status: 'Optimal' },
+        { title: 'Workflows with Error', subtitle: 'require attention', value: '1', iconType: 'x', status: '! Review' },
+        { title: 'Leads Processed', subtitle: 'in current period', value: '2,276', iconType: 'trending' },
     ],
     filters: [
-        { id: 'todos', label: 'Todos', count: 8, icon: null },
+        { id: 'all', label: 'All', count: 8, icon: null },
         { id: 'instagram', label: 'Instagram', count: 8, icon: 'instagram', color: 'bg-pink-500', textColor: 'text-pink-500' },
         { id: 'whatsapp', label: 'WhatsApp', count: 12, icon: 'whatsapp', color: 'bg-[#25D366]', textColor: 'text-[#25D366]' },
         { id: 'facebook', label: 'Facebook', count: 6, icon: 'facebook', color: 'bg-blue-500', textColor: 'text-blue-500' },
         { id: 'email', label: 'Email', count: 15, icon: 'mail', color: 'bg-red-500', textColor: 'text-red-500' },
-        { id: 'ventas', label: 'Ventas', count: 10, icon: 'shopping-cart', color: 'bg-[#D4FF00]', textColor: 'text-[#D4FF00]' },
-        { id: 'seguimiento', label: 'Seguimiento', count: 7, icon: 'user', color: 'bg-[#BFA9FF]', textColor: 'text-[#BFA9FF]' },
-        { id: 'retencion', label: 'Retención', count: 5, icon: 'heart', color: 'bg-[#F97316]', textColor: 'text-[#F97316]' },
+        { id: 'sales', label: 'Sales', count: 10, icon: 'shopping-cart', color: 'bg-[#D4FF00]', textColor: 'text-[#D4FF00]' },
+        { id: 'followup', label: 'Follow-up', count: 7, icon: 'user', color: 'bg-[#BFA9FF]', textColor: 'text-[#BFA9FF]' },
+        { id: 'retention', label: 'Retention', count: 5, icon: 'heart', color: 'bg-[#F97316]', textColor: 'text-[#F97316]' },
     ],
     workflows: [
         {
             id: '1',
             platform: 'instagram',
             title: 'DM Welcome Sequence',
-            status: 'Activo',
+            status: 'Active',
             statusColor: 'bg-green-500',
             statusTextColor: 'text-green-600',
             triggers: '1,245',
             conversion: '34.5%',
-            conversionColor: 'text-ninja-yellow', // Yellowish lime in the image
+            conversionColor: 'text-ninja-yellow',
             leads: '429',
             roi: '2340%',
-            timeText: 'Hace 2 min',
+            timeText: '2 min ago',
             platformColor: 'bg-pink-100 text-pink-500',
-            tags: ['instagram', 'seguimiento']
+            tags: ['instagram', 'followup']
         },
         {
             id: '2',
             platform: 'whatsapp',
-            title: 'Respuesta Automática 24/7',
-            status: 'Activo',
+            title: 'Auto-Response 24/7',
+            status: 'Active',
             statusColor: 'bg-green-500',
             statusTextColor: 'text-green-600',
             triggers: '2,876',
             conversion: '42.1%',
-            conversionColor: 'text-[#D4FF00]', 
+            conversionColor: 'text-[#D4FF00]',
             leads: '1210',
             roi: '4560%',
-            timeText: 'Hace 5 min',
+            timeText: '5 min ago',
             platformColor: 'bg-[#DCF8C6] text-[#25D366]',
-            tags: ['whatsapp', 'ventas']
+            tags: ['whatsapp', 'sales']
         },
         {
             id: '3',
             platform: 'facebook',
             title: 'Lead Ads Nurturing',
-            status: 'Activo',
+            status: 'Active',
             statusColor: 'bg-green-500',
             statusTextColor: 'text-green-600',
             triggers: '892',
@@ -60,15 +60,15 @@ export const magnusFlowData = {
             conversionColor: 'text-[#D4FF00]',
             leads: '252',
             roi: '1890%',
-            timeText: 'Hace 1 hora',
+            timeText: '1 hour ago',
             platformColor: 'bg-blue-100 text-blue-500',
-            tags: ['facebook', 'ventas']
+            tags: ['facebook', 'sales']
         },
         {
             id: '4',
             platform: 'email',
             title: 'Abandoned Cart Recovery',
-            status: 'Activo',
+            status: 'Active',
             statusColor: 'bg-yellow-400',
             statusTextColor: 'text-green-600',
             triggers: '567',
@@ -76,15 +76,15 @@ export const magnusFlowData = {
             conversionColor: 'text-[#D4FF00]',
             leads: '106',
             roi: '3210%',
-            timeText: 'Hace 30 min',
+            timeText: '30 min ago',
             platformColor: 'bg-red-50 text-red-500',
-            tags: ['email', 'retencion']
+            tags: ['email', 'retention']
         },
         {
             id: '5',
             platform: 'whatsapp',
-            title: 'Cierre Asistido por IA',
-            status: 'Activo',
+            title: 'AI-Assisted Closing',
+            status: 'Active',
             statusColor: 'bg-green-500',
             statusTextColor: 'text-green-600',
             triggers: '423',
@@ -92,15 +92,15 @@ export const magnusFlowData = {
             conversionColor: 'text-[#D4FF00]',
             leads: '217',
             roi: '5670%',
-            timeText: 'Hace 10 min',
+            timeText: '10 min ago',
             platformColor: 'bg-[#DCF8C6] text-[#25D366]',
-            tags: ['whatsapp', 'ventas']
+            tags: ['whatsapp', 'sales']
         },
         {
             id: '6',
             platform: 'email',
-            title: 'Follow-up Sin Respuesta',
-            status: 'Pausado',
+            title: 'No-Reply Follow-up',
+            status: 'Paused',
             statusColor: 'bg-yellow-400',
             statusTextColor: 'text-gray-500',
             triggers: '234',
@@ -108,15 +108,15 @@ export const magnusFlowData = {
             conversionColor: 'text-[#D4FF00]',
             leads: '29',
             roi: '450%',
-            timeText: 'Hace 2 días',
+            timeText: '2 days ago',
             platformColor: 'bg-red-50 text-red-500',
-            tags: ['email', 'seguimiento']
+            tags: ['email', 'followup']
         },
         {
             id: '7',
             platform: 'whatsapp',
-            title: 'Reactivación Clientes Inactivos',
-            status: 'Activo',
+            title: 'Inactive Clients Reactivation',
+            status: 'Active',
             statusColor: 'bg-green-500',
             statusTextColor: 'text-green-600',
             triggers: '145',
@@ -124,9 +124,9 @@ export const magnusFlowData = {
             conversionColor: 'text-[#D4FF00]',
             leads: '33',
             roi: '1120%',
-            timeText: 'Hace 3 horas',
+            timeText: '3 hours ago',
             platformColor: 'bg-[#DCF8C6] text-[#25D366]',
-            tags: ['whatsapp', 'retencion']
+            tags: ['whatsapp', 'retention']
         },
         {
             id: '8',
@@ -140,9 +140,9 @@ export const magnusFlowData = {
             conversionColor: 'text-[#D4FF00]',
             leads: '0',
             roi: '0%',
-            timeText: 'Hace 6 horas',
+            timeText: '6 hours ago',
             platformColor: 'bg-[#DCF8C6] text-[#25D366]',
-            tags: ['whatsapp', 'ventas']
+            tags: ['whatsapp', 'sales']
         }
     ]
 };

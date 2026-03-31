@@ -227,20 +227,22 @@ export const AutomationModule = ({ activeTab, setActiveTab }: { activeTab: Autom
       {automationMetrics.map((m, i) => <KpiCard key={i} metric={m} />)}
     </div>
 
-    {/* Tab Navigation */}
-    <div className="flex items-center bg-white p-1.5 rounded-2xl shadow-sm border border-gray-100 w-fit">
-      {(['automations', 'templates', 'triggers'] as AutomationTab[]).map((tab) => (
-        <button
-          key={tab}
-          onClick={() => setActiveTab(tab)}
-          className={cn(
-            "px-8 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all capitalize",
-            activeTab === tab ? "bg-ninja-dark text-white shadow-lg" : "text-gray-400 hover:text-gray-600"
-          )}
-        >
-          {tab}
-        </button>
-      ))}
+    {/* Tab Navigation - scrollable on mobile */}
+    <div className="w-full overflow-x-auto scrollbar-none -mx-1 px-1">
+      <div className="flex items-center bg-white p-1.5 rounded-2xl shadow-sm border border-gray-100 w-max min-w-full sm:w-fit sm:min-w-0">
+        {(['automations', 'templates', 'triggers'] as AutomationTab[]).map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={cn(
+              "px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all capitalize whitespace-nowrap",
+              activeTab === tab ? "bg-ninja-dark text-white shadow-lg" : "text-gray-400 hover:text-gray-600"
+            )}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
     </div>
 
     {activeTab === 'automations' && <AutomationsView />}

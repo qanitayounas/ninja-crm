@@ -47,9 +47,9 @@ const statusDistribution = [
 
 const topSetters = [
     { name: 'Carlos Ruiz', appts: 124, conv: '42%', revenue: '$45,200', initial: 'CR' },
-    { name: 'Ana Martínez', appts: 108, conv: '38%', revenue: '$38,900', initial: 'AM' },
-    { name: 'David López', appts: 89, conv: '35%', revenue: '$31,500', initial: 'DL' },
-    { name: 'Laura Sánchez', appts: 78, conv: '32%', revenue: '$27,400', initial: 'LS' },
+    { name: 'Ana Martinez', appts: 108, conv: '38%', revenue: '$38,900', initial: 'AM' },
+    { name: 'David Lopez', appts: 89, conv: '35%', revenue: '$31,500', initial: 'DL' },
+    { name: 'Laura Sanchez', appts: 78, conv: '32%', revenue: '$27,400', initial: 'LS' },
 ];
 
 export const AppointmentsReport = () => {

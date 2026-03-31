@@ -20,7 +20,7 @@ const quizzes = [
     name: 'Which Plan is for You?',
     completed: 345,
     lastUpdate: '20/3/2026',
-    updatedBy: 'María López'
+    updatedBy: 'Maria Lopez'
   },
   {
     id: 2,
@@ -34,7 +34,7 @@ const quizzes = [
     name: 'Marketing Assessment',
     completed: 189,
     lastUpdate: '18/3/2026',
-    updatedBy: 'Ana Martínez'
+    updatedBy: 'Ana Martinez'
   }
 ];
 

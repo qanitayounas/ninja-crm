@@ -71,10 +71,10 @@ const commentTags: Record<string, string> = {
 const commentsList = [
   { id: 1, author: '@maria_tech', platform: 'Instagram', time: '5 min ago', content: 'Great content! Do you have a demo available?', post: 'Enterprise Plan Launch', likes: 3, tag: 'Question' },
   { id: 2, author: 'Carlos Ruiz', platform: 'Facebook', time: '12 min ago', content: 'Very useful, thanks for sharing', post: 'Weekly CRM Tips', likes: 8, tag: 'Positive' },
-  { id: 3, author: 'Ana Martínez', platform: 'LinkedIn', time: '25 min ago', content: 'I would like to know more about pricing', post: 'Case Study Acme Corp', likes: 5, tag: 'Question' },
+  { id: 3, author: 'Ana Martinez', platform: 'LinkedIn', time: '25 min ago', content: 'I would like to know more about pricing', post: 'Case Study Acme Corp', likes: 5, tag: 'Question' },
   { id: 4, author: '@techguru', platform: 'Twitter', time: '1 hour ago', content: '🔥🔥🔥', post: 'Automation Webinar', likes: 12, tag: 'Reaction' },
   { id: 5, author: '@startup_life', platform: 'Instagram', time: '2 hours ago', content: 'When is the next webinar?', post: 'Behind the Scenes', likes: 2, tag: 'Question' },
-  { id: 6, author: 'Jorge López', platform: 'LinkedIn', time: '3 hours ago', content: 'Great article, very well explained', post: 'Marketing Automation', likes: 15, tag: 'Positive' },
+  { id: 6, author: 'Jorge Lopez', platform: 'LinkedIn', time: '3 hours ago', content: 'Great article, very well explained', post: 'Marketing Automation', likes: 15, tag: 'Positive' },
   { id: 7, author: '@digitalmarketer', platform: 'TikTok', time: '4 hours ago', content: 'I need this for my business', post: 'CRM Demo Video', likes: 24, tag: 'Interest' },
   { id: 8, author: 'StartupHub', platform: 'YouTube', time: '5 hours ago', content: 'Very complete tutorial, subscribed!', post: 'Complete Tutorial', likes: 34, tag: 'Positive' },
 ];
