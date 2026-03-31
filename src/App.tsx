@@ -58,6 +58,16 @@ import { ChatWidgetPage } from "./pages/ChatWidgetPage";
 import { QRCodesPage } from "./pages/QRCodesPage";
 import { SitesSettingsPage } from "./pages/SitesSettingsPage";
 import { MarketingHubPage } from "./pages/MarketingHubPage";
+import { SchoolProPage } from "./pages/SchoolProPage";
+import { SchoolProOverview } from "./pages/schoolpro/SchoolProOverview";
+import { 
+  SchoolProCourses, 
+  SchoolProCommunities, 
+  SchoolProCertificates, 
+  SchoolProStudentPortal, 
+  SchoolProMonetization, 
+  SchoolProAutomation 
+} from "./pages/schoolpro/SchoolProSubPages";
 
 function App() {
   return (
@@ -149,6 +159,16 @@ function App() {
               <Route path="brand" element={<MarketingBrandPanels />} />
               <Route path="stats" element={<MarketingStats />} />
               <Route path="automation" element={<MarketingAutomation />} />
+            </Route>
+            <Route path="schoolpro" element={<SchoolProPage />}>
+              <Route index element={<Navigate to="overview" replace />} />
+              <Route path="overview" element={<SchoolProOverview />} />
+              <Route path="courses" element={<SchoolProCourses />} />
+              <Route path="communities" element={<SchoolProCommunities />} />
+              <Route path="certificates" element={<SchoolProCertificates />} />
+              <Route path="student-portal" element={<SchoolProStudentPortal />} />
+              <Route path="monetization" element={<SchoolProMonetization />} />
+              <Route path="automation" element={<SchoolProAutomation />} />
             </Route>
             <Route path="sites" element={<Navigate to="/dashboard/sites/web" replace />} />
           </Route>

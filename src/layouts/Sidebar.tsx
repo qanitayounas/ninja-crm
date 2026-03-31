@@ -46,7 +46,8 @@ import {
   Palette,
   Workflow,
   Sparkles,
-  Bell
+  Bell,
+  GraduationCap
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { cn } from '../components/ui';
@@ -76,6 +77,7 @@ const mainNavItems = [
 
   { icon: CreditCard, label: 'Billing', path: '/dashboard/billing' },
   { icon: Star, label: 'Reputation', path: '/dashboard/reputation' },
+  { icon: GraduationCap, label: 'SchoolPro', path: '/dashboard/schoolpro' },
   { icon: Settings, label: 'Settings', path: '/dashboard/settings' },
 ];
 
@@ -148,7 +150,16 @@ const automationNavItems = [
   { icon: Bell, label: 'Alerts', path: '/dashboard/automations/alerts' },
   { icon: Settings, label: 'Settings', path: '/dashboard/automations/settings' },
 ];
-
+const schoolProNavItems = [
+  { icon: ArrowLeft, label: 'Go Back', path: '/dashboard' },
+  { icon: GraduationCap, label: 'Dashboard', path: '/dashboard/schoolpro/overview' },
+  { icon: BookOpen, label: 'Courses', path: '/dashboard/schoolpro/courses' },
+  { icon: Users, label: 'Communities', path: '/dashboard/schoolpro/communities' },
+  { icon: Trophy, label: 'Certificates', path: '/dashboard/schoolpro/certificates' },
+  { icon: LayoutDashboard, label: 'Student Portal', path: '/dashboard/schoolpro/student-portal' },
+  { icon: CreditCard, label: 'Monetization', path: '/dashboard/schoolpro/monetization' },
+  { icon: Zap, label: 'Automation', path: '/dashboard/schoolpro/automation' },
+];
 
 export const Sidebar = ({ isExpanded, setIsExpanded, isMobileOpen, setIsMobileOpen }: SidebarProps) => {
   const location = useLocation();
@@ -166,6 +177,7 @@ export const Sidebar = ({ isExpanded, setIsExpanded, isMobileOpen, setIsMobileOp
   const isMarketingHub = location.pathname === '/dashboard/marketing-hub';
   const isMarketingModule = (location.pathname.startsWith('/dashboard/marketing/') || location.pathname === '/dashboard/marketing') && !isMarketingHub;
   const isAutomationModule = location.pathname.startsWith('/dashboard/automations');
+  const isSchoolProModule = location.pathname.startsWith('/dashboard/schoolpro');
 
   let baseNavItems = mainNavItems;
   if (isSitesModule) baseNavItems = sitesNavItems;
@@ -173,6 +185,7 @@ export const Sidebar = ({ isExpanded, setIsExpanded, isMobileOpen, setIsMobileOp
   else if (isReputationModule) baseNavItems = reputationNavItems;
   else if (isMarketingModule) baseNavItems = marketingNavItems;
   else if (isAutomationModule) baseNavItems = automationNavItems;
+  else if (isSchoolProModule) baseNavItems = schoolProNavItems;
 
   const { role } = useRole();
 
@@ -224,7 +237,13 @@ export const Sidebar = ({ isExpanded, setIsExpanded, isMobileOpen, setIsMobileOp
                   <div className="text-[9px] font-bold text-white/40 uppercase tracking-widest leading-none mt-1 group-hover:text-ninja-yellow transition-colors italic">Workflow Control</div>
                 </div>
                )}
-               {isExpanded && !isMarketingModule && !isReputationModule && !isSitesModule && !isAutomationModule && (
+               {isExpanded && isSchoolProModule && (
+                <div className="animate-in slide-in-from-top-4 duration-500">
+                  <div className="text-[14px] font-black text-white uppercase tracking-tighter leading-none">SchoolPro</div>
+                  <div className="text-[9px] font-bold text-white/40 uppercase tracking-widest leading-none mt-1 group-hover:text-ninja-yellow transition-colors italic">Educational Ecosystem</div>
+                </div>
+               )}
+               {isExpanded && !isMarketingModule && !isReputationModule && !isSitesModule && !isAutomationModule && !isSchoolProModule && (
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 flex items-center justify-center text-ninja-yellow transition-transform hover:scale-110 flex-shrink-0">
                     <Zap size={32} fill="currentColor" stroke="none" />
