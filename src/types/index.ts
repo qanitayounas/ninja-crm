@@ -60,3 +60,30 @@ export interface User {
   status: 'Active' | 'Inactive';
   avatar?: string;
 }
+
+export type TaskPriority = 'Low' | 'Medium' | 'High';
+export type TaskStatus = 'To Do' | 'In Progress' | 'Review' | 'Completed';
+export type TaskCategory = 'assigned' | 'created' | 'team';
+
+export interface Task {
+  id: string;
+  title: string;
+  description: string;
+  dueDate: string;
+  priority: TaskPriority;
+  status: TaskStatus;
+  assigneeId: string; // User ID
+  creatorId: string;  // User ID
+  createdAt: string;
+  updatedAt: string;
+  tags?: string[];
+  contactId?: string; // Optional related contact
+}
+
+export interface TaskFilter {
+  status?: TaskStatus[];
+  priority?: TaskPriority[];
+  assigneeId?: string;
+  creatorId?: string;
+  search?: string;
+}

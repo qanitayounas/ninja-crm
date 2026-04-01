@@ -60,6 +60,7 @@ import { SitesSettingsPage } from "./pages/SitesSettingsPage";
 import { MarketingHubPage } from "./pages/MarketingHubPage";
 import { SchoolProPage } from "./pages/SchoolProPage";
 import { SchoolProOverview } from "./pages/schoolpro/SchoolProOverview";
+import { TasksPage } from "./pages/TasksPage";
 import { 
   SchoolProCourses, 
   SchoolProCommunities, 
@@ -87,6 +88,7 @@ function App() {
             <Route path="contacts" element={<ContactsPage />} />
             <Route path="subaccounts" element={<SubaccountsPage />} />
             <Route path="settings" element={<SettingsPage />} />
+            <Route path="tasks" element={<TasksPage />} />
 
             <Route path="pipeline" element={<PipelinePage />} />
             <Route path="calendar" element={<CalendarPage />} />

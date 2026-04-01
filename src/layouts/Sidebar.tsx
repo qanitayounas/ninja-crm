@@ -63,6 +63,7 @@ interface SidebarProps {
 const mainNavItems = [
   { icon: Home, label: 'Dashboard', path: '/dashboard' },
   { icon: Users, label: 'Contacts', path: '/dashboard/contacts' },
+  { icon: ClipboardList, label: 'Tasks', path: '/dashboard/tasks' },
 
   { icon: Flag, label: 'Campaigns', path: '/dashboard/campaigns' },
   { icon: Calendar, label: 'Calendar', path: '/dashboard/calendar' },
@@ -192,7 +193,7 @@ export const Sidebar = ({ isExpanded, setIsExpanded, isMobileOpen, setIsMobileOp
   const activeNavItems = baseNavItems.filter(item => {
     if (role === 'Super Admin' || role === 'Agency Manager') return true;
     if (role === 'Sales Rep') {
-      return ['Dashboard', 'Contacts', 'Calls', 'Calendar', 'Pipeline', 'Messages', 'Reports', 'Settings', 'Go Back'].includes(item.label);
+      return ['Dashboard', 'Contacts', 'Tasks', 'Calls', 'Calendar', 'Pipeline', 'Messages', 'Reports', 'Settings', 'Go Back'].includes(item.label);
     }
     if (role === 'Client Viewer') {
       return ['Dashboard', 'Reports', 'Messages', 'Media', 'Go Back'].includes(item.label);
