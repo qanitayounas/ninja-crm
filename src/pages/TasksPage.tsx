@@ -5,8 +5,7 @@ import {
   Filter, 
   CheckCircle2, 
   User as UserIcon,
-  Users as UsersIcon,
-  ChevronRight
+  Users as UsersIcon
 } from 'lucide-react';
 import { TaskBoard } from '../components/tasks/TaskBoard';
 import { TaskModal } from '../components/tasks/TaskModal';
@@ -103,12 +102,8 @@ export const TasksPage = () => {
       {/* Header section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-black text-ninja-dark tracking-tighter uppercase italic">Task Management</h1>
-          <p className="text-gray-400 font-bold text-sm mt-1 uppercase tracking-widest flex items-center gap-2">
-            Centralized Workflow Control
-            <ChevronRight size={14} className="text-ninja-yellow" />
-            <span className="text-ninja-dark">{filteredTasks.length} {filteredTasks.length === 1 ? 'Task' : 'Tasks'}</span>
-          </p>
+          <h1 className="text-3xl font-black text-ninja-dark tracking-tighter">Task Management</h1>
+          <p className="text-gray-400 font-medium mt-1">Manage your team tasks and centralized workflows</p>
         </div>
         <div className="flex items-center gap-3">
           <Button 
@@ -131,7 +126,7 @@ export const TasksPage = () => {
               key={category.id}
               onClick={() => setActiveCategory(category.id)}
               className={cn(
-                "flex items-center gap-2 px-4 md:px-6 py-2.5 rounded-xl text-[10px] md:text-sm font-black uppercase tracking-tighter transition-all whitespace-nowrap snap-start",
+                "flex items-center gap-2 px-4 md:px-6 py-2.5 rounded-xl text-[10px] md:text-sm font-bold transition-all whitespace-nowrap snap-start",
                 activeCategory === category.id 
                   ? "bg-white text-ninja-dark shadow-sm ring-1 ring-ninja-yellow/20" 
                   : "text-gray-400 hover:text-ninja-dark hover:bg-white/50"
@@ -164,7 +159,7 @@ export const TasksPage = () => {
             <select
               value={priorityFilter}
               onChange={(e) => setPriorityFilter(e.target.value as TaskPriority | 'All')}
-              className="bg-transparent border-none focus:ring-0 text-xs font-black text-ninja-dark uppercase tracking-widest cursor-pointer pr-8"
+              className="bg-transparent border-none focus:ring-0 text-xs font-bold text-ninja-dark uppercase tracking-wider cursor-pointer pr-8"
             >
               <option value="All">All Priorities</option>
               <option value="High">High</option>

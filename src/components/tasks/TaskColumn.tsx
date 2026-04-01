@@ -21,8 +21,8 @@ export const TaskColumn = ({ id, title, tasks, onAddTask, onTaskClick }: TaskCol
     <div className="flex flex-col w-[calc(100vw-3rem)] md:w-[300px] lg:w-full shrink-0 h-full rounded-3xl bg-gray-50/50 border border-gray-100/50 snap-center transition-all duration-300 hover:shadow-lg hover:shadow-gray-200/50 ring-1 ring-white">
       <div className="flex items-center justify-between p-4 pb-2">
         <div className="flex items-center gap-2">
-          <h3 className="font-black text-ninja-dark text-sm uppercase tracking-wider">{title}</h3>
-          <span className="flex items-center justify-center w-5 h-5 rounded-full bg-white border border-gray-100 text-[10px] font-bold text-gray-500">
+          <h3 className="font-bold text-ninja-dark text-[11px] uppercase tracking-widest">{title}</h3>
+          <span className="flex items-center justify-center w-5 h-5 rounded-full bg-white border border-gray-100 text-[10px] font-bold text-gray-500 shadow-sm">
             {tasks.length}
           </span>
         </div>
@@ -54,12 +54,12 @@ export const TaskColumn = ({ id, title, tasks, onAddTask, onTaskClick }: TaskCol
             <div className="bg-white p-3 rounded-2xl shadow-sm mb-3">
                <Plus className="text-gray-300" size={24} />
             </div>
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-tighter">No tasks here</p>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">No tasks yet</p>
             <button 
               onClick={() => onAddTask?.(id)}
-              className="mt-2 text-[10px] font-black text-ninja-yellow uppercase tracking-widest hover:underline"
+              className="mt-2 text-[10px] font-bold text-ninja-yellow uppercase tracking-widest hover:opacity-70"
             >
-              Click to add
+              Add first task
             </button>
           </div>
         )}

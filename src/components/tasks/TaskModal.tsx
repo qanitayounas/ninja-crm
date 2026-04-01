@@ -61,7 +61,7 @@ export const TaskModal = ({ isOpen, onClose, onSave, task, initialStatus }: Task
       <form onSubmit={handleSubmit} className="flex flex-col gap-6">
         <div className="space-y-4">
           <div>
-            <label className="text-xs font-black text-ninja-dark uppercase tracking-widest mb-2 block">Task Title</label>
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 block">Task Title</label>
             <Input
               required
               placeholder="What needs to be done?"
@@ -72,7 +72,7 @@ export const TaskModal = ({ isOpen, onClose, onSave, task, initialStatus }: Task
           </div>
 
           <div>
-            <label className="text-xs font-black text-ninja-dark uppercase tracking-widest mb-2 block">Description</label>
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 block">Description</label>
             <Textarea
               placeholder="Provide more context..."
               value={formData.description}
@@ -83,7 +83,7 @@ export const TaskModal = ({ isOpen, onClose, onSave, task, initialStatus }: Task
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="text-xs font-black text-ninja-dark uppercase tracking-widest mb-2 block">Due Date</label>
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 block">Due Date</label>
               <Input
                 type="date"
                 icon={Calendar}
@@ -93,7 +93,7 @@ export const TaskModal = ({ isOpen, onClose, onSave, task, initialStatus }: Task
               />
             </div>
             <div>
-              <label className="text-xs font-black text-ninja-dark uppercase tracking-widest mb-2 block">Priority</label>
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 block">Priority</label>
               <Select
                 value={formData.priority}
                 onChange={(e) => setFormData({ ...formData, priority: e.target.value as TaskPriority })}
@@ -108,7 +108,7 @@ export const TaskModal = ({ isOpen, onClose, onSave, task, initialStatus }: Task
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="text-xs font-black text-ninja-dark uppercase tracking-widest mb-2 block">Status</label>
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 block">Status</label>
               <Select
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value as TaskStatus })}
@@ -121,7 +121,7 @@ export const TaskModal = ({ isOpen, onClose, onSave, task, initialStatus }: Task
               </Select>
             </div>
             <div>
-              <label className="text-xs font-black text-ninja-dark uppercase tracking-widest mb-2 block">Assigned To</label>
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 block">Assigned To</label>
               <div className="flex items-center gap-2">
                 <Select
                   value={formData.assigneeId}
@@ -137,7 +137,7 @@ export const TaskModal = ({ isOpen, onClose, onSave, task, initialStatus }: Task
           </div>
           
           <div>
-            <label className="text-xs font-black text-ninja-dark uppercase tracking-widest mb-2 block">Tags (comma separated)</label>
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 block">Tags (comma separated)</label>
             <Input
               icon={Tag}
               placeholder="Design, Development, Planning..."
