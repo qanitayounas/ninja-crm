@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import {
     CreditCard,
     CheckCircle2,
@@ -11,10 +12,49 @@ import {
     AlertCircle
 } from 'lucide-react';
 import { Card, Button, Badge } from '../components/ui';
-import { currentPlan, paymentMethods, invoiceHistory } from '../data/billingData';
+import { currentPlan, paymentMethods } from '../data/billingData';
 import { cn } from '../components/ui';
+import { apiService } from '../services/apiService';
 
 export const BillingPage = () => {
+    const [transactions, setTransactions] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [syncError, setSyncError] = useState<string | null>(null);
+
+    useEffect(() => {
+        loadTransactions();
+    }, []);
+
+    const loadTransactions = async () => {
+        setIsLoading(true);
+        setSyncError(null);
+        try {
+            const data = await apiService.getTransactions();
+            const mapped = (Array.isArray(data) ? data : []).map((order: any) => ({
+                id: (order.id || '').substring(0, 8).toUpperCase(),
+                date: order.createdAt ? new Date(order.createdAt).toLocaleDateString() : 'N/A',
+                amount: order.totalAmount ? `$${(order.totalAmount / 100).toFixed(2)}` : '$0.00',
+                status: order.status === 'completed' ? 'Paid' : 'Pending',
+                method: 'Credit Card' // Default placeholder as GHL API v2 list doesn't always provide method details
+            }));
+            setTransactions(mapped);
+        } catch (error: any) {
+            console.error('Error loading transactions:', error);
+            if (error.status === 403 || error.status === 401) {
+                setSyncError('Billing information is currently being synchronized. Please ensure your Ninja CRM account setup is complete.');
+            }
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center h-96">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ninja-yellow"></div>
+            </div>
+        );
+    }
     return (
         <div className="flex flex-col gap-10 pb-12">
             {/* Header Section */}
@@ -31,6 +71,21 @@ export const BillingPage = () => {
                     </Button>
                 </div>
             </div>
+
+            {/* Alert Case: Branded Setup Notice */}
+            {syncError && (
+                <Card className="p-4 border-l-4 border-l-ninja-purple bg-ninja-purple/5 border-ninja-purple/10">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-ninja-purple/10 rounded-lg text-ninja-purple">
+                            <CreditCard size={18} />
+                        </div>
+                        <div>
+                            <p className="text-sm font-bold text-ninja-dark">Module Synchronization</p>
+                            <p className="text-xs text-slate-500 font-medium">{syncError}</p>
+                        </div>
+                    </div>
+                </Card>
+            )}
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Subscription Overview */}
@@ -178,16 +233,16 @@ export const BillingPage = () => {
                         <table className="w-full text-left">
                             <thead>
                                 <tr className="bg-gray-50 border-b border-gray-100">
-                                    <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Invoice ID</th>
+                                    <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Transaction ID</th>
                                     <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Date</th>
                                     <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Amount</th>
                                     <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Status</th>
-                                    <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Payment Method</th>
+                                    <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Method</th>
                                     <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Action</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-50">
-                                {invoiceHistory.map((invoice, i) => (
+                                {transactions.map((invoice, i) => (
                                     <tr key={i} className="hover:bg-gray-50/50 transition-colors group">
                                         <td className="px-6 py-4">
                                             <span className="font-bold text-ninja-dark">{invoice.id}</span>
@@ -199,7 +254,10 @@ export const BillingPage = () => {
                                             <span className="font-black text-ninja-dark">{invoice.amount}</span>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <Badge status="Active" className="bg-green-50 text-green-600 border-none font-bold text-[10px] px-2 py-0.5">
+                                            <Badge status="Active" className={cn(
+                                                "border-none font-bold text-[10px] px-2 py-0.5",
+                                                invoice.status === 'Paid' ? "bg-green-50 text-green-600" : "bg-yellow-50 text-yellow-600"
+                                            )}>
                                                 {invoice.status}
                                             </Badge>
                                         </td>

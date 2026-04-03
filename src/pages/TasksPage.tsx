@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Plus, 
   Search, 
@@ -10,22 +10,44 @@ import {
 import { TaskBoard } from '../components/tasks/TaskBoard';
 import { TaskModal } from '../components/tasks/TaskModal';
 import { Button, cn } from '../components/ui';
-import type { Task, TaskStatus, TaskPriority, TaskCategory } from '../types';
-import { mockTasks } from '../data/tasksData';
-import users from '../data/users.json';
+import type { Task, TaskStatus, TaskPriority, TaskCategory, User } from '../types';
+import { apiService } from '../services/apiService';
 import toast from 'react-hot-toast';
 
 export const TasksPage = () => {
-  const [tasks, setTasks] = useState<Task[]>(mockTasks);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [activeCategory, setActiveCategory] = useState<TaskCategory>('team');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [initialStatus, setInitialStatus] = useState<TaskStatus>('To Do');
   const [searchQuery, setSearchQuery] = useState('');
   const [priorityFilter, setPriorityFilter] = useState<TaskPriority | 'All'>('All');
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Mock current user
-  const currentUser = users[0]; // Admin Ninja
+  // Mock current user (In a real app, this would come from an auth context)
+  const currentUser = JSON.parse(localStorage.getItem('ninja_crm_user') || '{}');
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    setIsLoading(true);
+    try {
+      const [tasksData, usersData] = await Promise.all([
+        apiService.getTasks(),
+        apiService.getUsers()
+      ]);
+      setTasks(tasksData);
+      setUsers(usersData);
+    } catch (error) {
+      console.error('Error loading tasks data:', error);
+      toast.error('Failed to load tasks');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const filteredTasks = tasks.filter(task => {
     // Category filter
@@ -43,13 +65,18 @@ export const TasksPage = () => {
     return matchesCategory && matchesSearch && matchesPriority;
   });
 
-  const handleTaskMove = (taskId: string, newStatus: TaskStatus) => {
+  const handleTaskMove = async (taskId: string, newStatus: TaskStatus) => {
     const task = tasks.find(t => t.id === taskId);
     if (task && task.status !== newStatus) {
-      setTasks(prev => prev.map(t => 
-        t.id === taskId ? { ...t, status: newStatus, updatedAt: new Date().toISOString() } : t
-      ));
-      toast.success(`Task moved to ${newStatus}`);
+      try {
+        const updatedTask = await apiService.updateTask(taskId, { status: newStatus });
+        setTasks(prev => prev.map(t => 
+          t.id === taskId ? updatedTask : t
+        ));
+        toast.success(`Task moved to ${newStatus}`);
+      } catch (error) {
+        toast.error('Failed to move task');
+      }
     }
   };
 
@@ -64,38 +91,48 @@ export const TasksPage = () => {
     setIsModalOpen(true);
   };
 
-  const handleSaveTask = (taskData: Partial<Task>) => {
-    if (editingTask) {
-      // Update
-      setTasks(prev => prev.map(t => 
-        t.id === editingTask.id ? { ...t, ...taskData, updatedAt: new Date().toISOString() } as Task : t
-      ));
-      toast.success('Task updated');
-    } else {
-      // Create
-      const newTask: Task = {
-        id: `t${Date.now()}`,
-        title: taskData.title || 'Untitled Task',
-        description: taskData.description || '',
-        dueDate: taskData.dueDate || new Date().toISOString().split('T')[0],
-        priority: taskData.priority || 'Medium',
-        status: taskData.status || initialStatus,
-        assigneeId: taskData.assigneeId || currentUser.id,
-        creatorId: currentUser.id,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        tags: taskData.tags || [],
-      };
-      setTasks(prev => [newTask, ...prev]);
-      toast.success('Task created');
+  const handleSaveTask = async (taskData: Partial<Task>) => {
+    try {
+      if (editingTask) {
+        // Update
+        const updatedTask = await apiService.updateTask(editingTask.id, taskData);
+        setTasks(prev => prev.map(t => 
+          t.id === editingTask.id ? updatedTask : t
+        ));
+        toast.success('Task updated');
+      } else {
+        // Create
+        const newTaskData = {
+          ...taskData,
+          status: taskData.status || initialStatus,
+          assigneeId: taskData.assigneeId || currentUser.id,
+          creatorId: currentUser.id,
+          tags: taskData.tags || [],
+        };
+        const newTask = await apiService.createTask(newTaskData);
+        setTasks(prev => [newTask, ...prev]);
+        toast.success('Task created');
+      }
+      setIsModalOpen(false);
+    } catch (error) {
+      toast.error('Failed to save task');
     }
   };
+
 
   const categories = [
     { id: 'assigned', label: 'Assigned to Me', icon: UserIcon },
     { id: 'created', label: 'Created by Me', icon: CheckCircle2 },
     { id: 'team', label: 'Team Tasks', icon: UsersIcon },
   ] as const;
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ninja-yellow"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-6 h-full animate-in fade-in duration-500">
@@ -187,6 +224,7 @@ export const TasksPage = () => {
         onSave={handleSaveTask}
         task={editingTask}
         initialStatus={initialStatus}
+        users={users}
       />
     </div>
   );

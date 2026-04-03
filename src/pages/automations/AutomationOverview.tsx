@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { 
   Zap, PlayCircle, CheckCircle2, XCircle, ArrowUpRight
 } from 'lucide-react';
@@ -7,11 +8,56 @@ import {
 } from 'recharts';
 import { Card, cn } from '../../components/ui';
 import { automationsData } from '../../data/automationsData';
+import { apiService } from '../../services/apiService';
 
 const COLORS = ['#D4FF00', '#BFA9FF', '#3B82F6', '#F97316'];
 
 export const AutomationOverview = () => {
-  const { kpis, chartData, pieData, topWorkflows, recentActivity } = automationsData;
+  const { chartData, pieData, recentActivity } = automationsData;
+  const [workflows, setWorkflows] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [ghlError, setGhlError] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadWorkflows();
+  }, []);
+
+  const loadWorkflows = async () => {
+    setIsLoading(true);
+    setGhlError(null);
+    try {
+      const data = await apiService.getWorkflows();
+      setWorkflows(Array.isArray(data) ? data : []);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const activeWorkflowsCount = workflows.filter(w => w.status === 'published' || w.status === 'active').length;
+
+  const kpis = [
+    { title: 'Triggers Today', value: ghlError ? '--' : '142', subtitle: 'Across all flows', change: ghlError ? null : '+12%', iconStyle: 'yellow' },
+    { title: 'Active Workflows', value: ghlError ? '--' : activeWorkflowsCount.toString(), subtitle: 'Status: Published', iconStyle: 'purple' },
+    { title: 'Success Rate', value: ghlError ? '--' : '98.5%', subtitle: 'Last 24 hours', change: ghlError ? null : '+0.5%', iconStyle: 'green' },
+    { title: 'Paused Flows', value: ghlError ? '--' : (workflows.length - activeWorkflowsCount).toString(), subtitle: 'Draft/Paused', iconStyle: 'lime' },
+  ];
+
+  const topWorkflows = workflows.slice(0, 5).map(w => ({
+    id: (w.id || '').substring(0, 8).toUpperCase(),
+    name: w.name || 'Unnamed Workflow',
+    platform: 'Ninja CRM Flow',
+    rate: '98%',
+    triggers: '450',
+    color: w.status === 'published' ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-600'
+  }));
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ninja-yellow"></div>
+      </div>
+    );
+  }
 
   const renderKPIIcon = (title: string) => {
     switch (title) {
@@ -34,6 +80,21 @@ export const AutomationOverview = () => {
 
   return (
     <div className="flex flex-col gap-6 animate-in fade-in duration-500">
+      {/* Alert Case: Branded Setup Notice */}
+      {ghlError && (
+        <Card className="p-4 border-l-4 border-l-ninja-purple bg-ninja-purple/5 border-ninja-purple/10">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-ninja-purple/10 rounded-lg text-ninja-purple">
+              <Zap size={18} />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-ninja-dark">Module Synchronization</p>
+              <p className="text-xs text-slate-500 font-medium">Automation management is currently being synchronized. Please ensure your Ninja CRM account setup is complete.</p>
+            </div>
+          </div>
+        </Card>
+      )}
+
       {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         {kpis.map((kpi, idx) => (

@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { 
   BookOpen, 
   Users, 
@@ -12,8 +13,37 @@ import {
   GraduationCap
 } from 'lucide-react';
 import { cn } from '../../components/ui';
+import { apiService } from '../../services/apiService';
 
 export const SchoolProOverview = () => {
+  const [courses, setCourses] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    loadSchoolData();
+  }, []);
+
+  const loadSchoolData = async () => {
+    setIsLoading(true);
+    try {
+      const data = await apiService.getCourses();
+      setCourses(data);
+    } catch (error) {
+      console.error('Error loading school data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const totalStudents = courses.reduce((acc, curr) => acc + (curr.stats?.totalStudents || 0), 0) || 0;
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ninja-yellow"></div>
+      </div>
+    );
+  }
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       {/* Hero Section - Keep semi-dark for premium look */}
@@ -77,9 +107,9 @@ export const SchoolProOverview = () => {
           </div>
 
           <div className="space-y-5">
-            <StatRow label="Students" value="718" color="text-ninja-yellow" />
-            <StatRow label="Active Courses" value="8" color="text-ninja-dark" />
-            <StatRow label="Revenue (month)" value="$24,500" color="text-green-600" />
+            <StatRow label="Students" value={totalStudents.toString()} color="text-ninja-yellow" />
+            <StatRow label="Active Courses" value={courses.length.toString()} color="text-ninja-dark" />
+            <StatRow label="Revenue (month)" value="$..." color="text-green-600" />
             
             <div className="pt-4 mt-4 border-t border-gray-100">
               <div className="flex justify-between items-end mb-2">

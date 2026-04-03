@@ -6,8 +6,7 @@ import {
   Select, 
   Button, 
 } from '../ui';
-import type { Task, TaskPriority, TaskStatus } from '../../types';
-import users from '../../data/users.json';
+import type { Task, TaskPriority, TaskStatus, User } from '../../types';
 import { Calendar, Tag } from 'lucide-react';
 
 interface TaskModalProps {
@@ -16,16 +15,17 @@ interface TaskModalProps {
   onSave: (task: Partial<Task>) => void;
   task?: Task | null;
   initialStatus?: TaskStatus;
+  users?: User[];
 }
 
-export const TaskModal = ({ isOpen, onClose, onSave, task, initialStatus }: TaskModalProps) => {
+export const TaskModal = ({ isOpen, onClose, onSave, task, initialStatus, users = [] }: TaskModalProps) => {
   const [formData, setFormData] = useState<Partial<Task>>({
     title: '',
     description: '',
     priority: 'Medium' as TaskPriority,
     status: initialStatus || 'To Do',
     dueDate: new Date().toISOString().split('T')[0],
-    assigneeId: users[0].id,
+    assigneeId: users[0]?.id || '',
     tags: [],
   });
 
@@ -39,11 +39,11 @@ export const TaskModal = ({ isOpen, onClose, onSave, task, initialStatus }: Task
         priority: 'Medium',
         status: initialStatus || 'To Do',
         dueDate: new Date().toISOString().split('T')[0],
-        assigneeId: users[0].id,
+        assigneeId: users[0]?.id || '',
         tags: [],
       });
     }
-  }, [task, initialStatus, isOpen]);
+  }, [task, initialStatus, isOpen, users]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

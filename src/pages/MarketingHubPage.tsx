@@ -1,4 +1,4 @@
-
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   CalendarDays,
@@ -10,28 +10,29 @@ import {
 } from 'lucide-react';
 import { Card, Button, Badge } from '../components/ui';
 import toast from 'react-hot-toast';
+import { apiService } from '../services/apiService';
 
 const scheduledPosts = [
   {
     id: 1,
-    platform: 'Facebook',
-    initial: 'F',
+    platform: 'Social',
+    initial: 'S',
     color: 'bg-blue-500',
     text: 'Check out our new product launch! 🚀',
     time: 'Mar 15, 10:00 AM'
   },
   {
     id: 2,
-    platform: 'Twitter',
-    initial: 'T',
+    platform: 'Social',
+    initial: 'S',
     color: 'bg-sky-400',
     text: 'Join us for our webinar on CRM automation...',
     time: 'Mar 15, 2:00 PM'
   },
   {
     id: 3,
-    platform: 'LinkedIn',
-    initial: 'L',
+    platform: 'Social',
+    initial: 'S',
     color: 'bg-blue-700',
     text: 'How we helped our clients increase...',
     time: 'Mar 16, 9:00 AM'
@@ -45,13 +46,44 @@ const emailCampaigns = [
 ];
 
 const adCampaigns = [
-  { id: 1, name: 'Google Search Ads', platform: 'Google', budget: '$500/day', spend: '$3,240', conversions: 124 },
-  { id: 2, name: 'Facebook Retargeting', platform: 'Facebook', budget: '$300/day', spend: '$1,890', conversions: 78 },
-  { id: 3, name: 'LinkedIn B2B Ads', platform: 'LinkedIn', budget: '$400/day', spend: '$2,560', conversions: 34 }
+  { id: 1, name: 'Search Ads', platform: 'Search', budget: '$500/day', spend: '$3,240', conversions: 124 },
+  { id: 2, name: 'Retargeting Flow', platform: 'Social', budget: '$300/day', spend: '$1,890', conversions: 78 },
+  { id: 3, name: 'B2B Lead Gen', platform: 'Professional', budget: '$400/day', spend: '$2,560', conversions: 34 }
 ];
 
 export const MarketingHubPage = () => {
   const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(true);
+  const [syncError, setSyncError] = useState<string | null>(null);
+  const [campaigns, setCampaigns] = useState<any[]>([]);
+
+  useEffect(() => {
+    loadMarketingData();
+  }, []);
+
+  const loadMarketingData = async () => {
+    setIsLoading(true);
+    setSyncError(null);
+    try {
+      const data = await apiService.getCampaigns();
+      setCampaigns(data);
+    } catch (error: any) {
+      console.error('Error loading marketing data:', error);
+      if (error.status === 403 || error.status === 401) {
+        setSyncError('Marketing management is currently being synchronized. Please ensure your Ninja CRM account setup is complete.');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ninja-yellow"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 md:space-y-8 animate-in fade-in duration-500 pb-10">
@@ -60,6 +92,21 @@ export const MarketingHubPage = () => {
         <h1 className="text-3xl font-black text-ninja-dark tracking-tighter">Marketing Hub</h1>
         <p className="text-gray-400 font-medium text-sm">Central control for all your marketing activities</p>
       </div>
+
+      {/* Alert Case: Branded Setup Notice */}
+      {syncError && (
+        <Card className="p-4 border-l-4 border-l-ninja-purple bg-ninja-purple/5 border-ninja-purple/10">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-ninja-purple/10 rounded-lg text-ninja-purple">
+              <Megaphone size={18} />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-ninja-dark">Module Synchronization</p>
+              <p className="text-xs text-slate-500 font-medium">{syncError}</p>
+            </div>
+          </div>
+        </Card>
+      )}
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -74,7 +121,7 @@ export const MarketingHubPage = () => {
             <CalendarDays size={20} />
           </div>
           <div>
-            <div className="text-3xl font-black text-ninja-dark">124</div>
+            <div className="text-3xl font-black text-ninja-dark">{syncError ? '--' : '124'}</div>
             <div className="text-xs font-bold text-gray-400 mt-0.5">Scheduled Posts</div>
           </div>
         </Card>
@@ -90,7 +137,7 @@ export const MarketingHubPage = () => {
             <Mail size={20} />
           </div>
           <div>
-            <div className="text-3xl font-black text-purple-400">37K</div>
+            <div className="text-3xl font-black text-purple-400">{syncError ? '--' : '37K'}</div>
             <div className="text-xs font-bold text-gray-400 mt-0.5">Email Subscribers</div>
           </div>
         </Card>
@@ -106,8 +153,8 @@ export const MarketingHubPage = () => {
             <Megaphone size={20} />
           </div>
           <div>
-            <div className="text-3xl font-black text-ninja-dark">8</div>
-            <div className="text-xs font-bold text-gray-400 mt-0.5">Active Ad Campaigns</div>
+            <div className="text-3xl font-black text-ninja-dark">{syncError ? '--' : campaigns.length || '8'}</div>
+            <div className="text-xs font-bold text-gray-400 mt-0.5">Active Campaigns</div>
           </div>
         </Card>
 
@@ -221,7 +268,7 @@ export const MarketingHubPage = () => {
             </Button>
           </div>
           <div className="divide-y divide-gray-50">
-            {adCampaigns.map((ad) => (
+            {adCampaigns.map((ad: any) => (
               <div key={ad.id} className="p-5 hover:bg-gray-50/50 transition-colors cursor-pointer">
                 <div className="flex items-center justify-between mb-3">
                   <div>

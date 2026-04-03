@@ -11,7 +11,7 @@ interface TopbarProps {
 
 export const Topbar = ({ title, subtitle, actionText, onAction, onMenuClick }: TopbarProps) => {
   return (
-    <header className="flex items-center justify-between h-24 pt-4 px-4 md:px-8 bg-transparent shrink-0">
+    <header className="flex items-center justify-between h-20 pt-4 px-4 md:px-8 bg-transparent shrink-0">
       <div className="flex items-center gap-4">
         <button 
           onClick={onMenuClick}
@@ -28,8 +28,12 @@ export const Topbar = ({ title, subtitle, actionText, onAction, onMenuClick }: T
       </div>
 
       <div className="flex items-center gap-2 md:gap-6">
-        <div className="hidden lg:block w-48 xl:w-64">
-          <Input icon={Search} placeholder="Search..." className="bg-white border-none shadow-sm" />
+        <div className="hidden lg:block w-72 xl:w-96">
+          <Input 
+            icon={Search} 
+            placeholder="Search..." 
+            className="bg-gray-50/50 border-none shadow-none rounded-2xl h-12 focus:bg-white transition-all" 
+          />
         </div>
         
         <button className="lg:hidden p-2 text-gray-400 hover:text-ninja-dark transition-colors">
@@ -49,12 +53,12 @@ export const Topbar = ({ title, subtitle, actionText, onAction, onMenuClick }: T
           </div>
         )}
 
-        <div className="flex items-center gap-2 md:gap-3 border-l pl-3 md:pl-6 ml-2">
+        <div className="flex items-center gap-3 ml-2">
           <div className="hidden sm:block text-right">
-            <p className="text-xs md:text-sm font-semibold text-ninja-dark">Admin Ninja</p>
-            <p className="text-[10px] text-gray-500">Super Admin</p>
+            <p className="text-sm font-black text-ninja-dark leading-tight">Admin Ninja</p>
+            <p className="text-[11px] text-gray-400 font-bold leading-tight">Super Admin</p>
           </div>
-          <Avatar name="Admin Ninja" size="sm" className="md:size-md cursor-pointer hover:ring-2 hover:ring-ninja-yellow transition-all" />
+          <Avatar name="Admin Ninja" size="md" className="cursor-pointer hover:scale-105 transition-all rounded-full" />
         </div>
       </div>
     </header>

@@ -12,38 +12,53 @@ import {
 } from 'lucide-react';
 import { Card, Button } from '../components/ui';
 import toast from 'react-hot-toast';
-
-const surveys = [
-  {
-    id: 1,
-    name: 'Customer Satisfaction',
-    responses: 456,
-    completionRate: '78%',
-    status: 'Active'
-  },
-  {
-    id: 2,
-    name: 'NPS Score',
-    responses: 234,
-    completionRate: '92%',
-    status: 'Active'
-  },
-  {
-    id: 3,
-    name: 'Product Feedback',
-    responses: 189,
-    completionRate: '65%',
-    status: 'Active'
-  }
-];
+import { apiService } from '../services/apiService';
 
 export const SurveysPage = () => {
   const [showCreateModal, setShowCreateModal] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState('');
+  const [surveys, setSurveys] = React.useState<any[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [syncError, setSyncError] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    loadSurveys();
+  }, []);
+
+  const loadSurveys = async () => {
+    setIsLoading(true);
+    setSyncError(null);
+    try {
+      const data = await apiService.getSurveys();
+      const mapped = (Array.isArray(data) ? data : []).map((s: any) => ({
+        id: s.id,
+        name: s.name || 'Untitled Survey',
+        responses: 0,
+        completionRate: '0%',
+        status: 'Active'
+      }));
+      setSurveys(mapped);
+    } catch (error: any) {
+      console.error('Error loading surveys:', error);
+      if (error.status === 403 || error.status === 401) {
+        setSyncError('Survey management is currently being synchronized. Please ensure your Ninja CRM account setup is complete.');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const filteredSurveys = surveys.filter(s => 
     s.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ninja-yellow"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 md:space-y-8 animate-in fade-in duration-500 pb-10">
@@ -53,6 +68,21 @@ export const SurveysPage = () => {
         <p className="text-gray-400 font-medium font-bold text-sm">Collect feedback and measure satisfaction</p>
       </div>
 
+      {/* Alert Case: Branded Setup Notice */}
+      {syncError && (
+        <Card className="p-4 border-l-4 border-l-ninja-purple bg-ninja-purple/5 border-ninja-purple/10">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-ninja-purple/10 rounded-lg text-ninja-purple">
+              <Clipboard size={18} />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-ninja-dark">Module Synchronization</p>
+              <p className="text-xs text-slate-500 font-medium">{syncError}</p>
+            </div>
+          </div>
+        </Card>
+      )}
+
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
         <Card className="p-6 md:p-8 flex flex-col gap-2 shadow-sm border-gray-100 relative overflow-hidden group">
@@ -60,7 +90,7 @@ export const SurveysPage = () => {
             <ClipboardList size={100} />
           </div>
           <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Total Surveys</span>
-          <span className="text-3xl font-black text-ninja-dark font-black">3</span>
+          <span className="text-3xl font-black text-ninja-dark font-black">{syncError ? '--' : surveys.length}</span>
         </Card>
         
         <Card className="p-6 md:p-8 flex flex-col gap-2 shadow-sm border-gray-100 relative overflow-hidden group">

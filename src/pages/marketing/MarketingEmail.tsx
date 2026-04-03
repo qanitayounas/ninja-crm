@@ -2,26 +2,7 @@ import React from 'react';
 import { Plus, X, Send, Eye, MousePointer, MousePointerClick } from 'lucide-react';
 import { Card, Button, Input, Select, cn } from '../../components/ui';
 import toast from 'react-hot-toast';
-
-// --- Data ---
-const kpis = [
-  { label: 'Emails Sent', value: '6,312', color: 'bg-[#D4FF00]/30', iconColor: 'text-[#8aaa00]', icon: Send },
-  { label: 'Open Rate', value: '47.0%', color: 'bg-purple-100', iconColor: 'text-purple-400', icon: Eye },
-  { label: 'CTR (Click-Through)', value: '9.3%', color: 'bg-[#D4FF00]/30', iconColor: 'text-[#8aaa00]', icon: MousePointer },
-  { label: 'Total Clicks', value: '590', color: 'bg-purple-100', iconColor: 'text-purple-400', icon: MousePointerClick },
-];
-
-const campaigns = [
-  { id: 1, name: 'Weekly Newsletter #45', status: 'Finalized', sent: '5,420', opens: '2,341', clicks: '456', date: 'Mar 15, 2026' },
-  { id: 2, name: 'Black Friday Promotion', status: 'Scheduled', sent: '0', opens: '0', clicks: '0', date: 'Nov 25, 2026' },
-  { id: 3, name: 'Welcome New Clients', status: 'Active', sent: '892', opens: '623', clicks: '134', date: 'Mar 10, 2026' },
-  { id: 4, name: 'Abandoned Cart Reminder', status: 'Draft', sent: '0', opens: '0', clicks: '0', date: 'Mar 20, 2026' },
-];
-
-const statCampaigns = [
-  { name: 'Weekly Newsletter #45', sent: '5,420', opens: '2,341', clicks: '456', date: 'Mar 15, 2026' },
-  { name: 'Welcome New Clients', sent: '892', opens: '623', clicks: '134', date: 'Mar 10, 2026' },
-];
+import { apiService } from '../../services/apiService';
 
 const templates = [
   { name: 'Modern Welcome', category: 'Onboarding', emoji: '👋' },
@@ -45,6 +26,49 @@ export const MarketingEmail = () => {
   const [isTemplateModalOpen, setIsTemplateModalOpen] = React.useState(false);
   const [form, setForm] = React.useState({ name: '', subject: '', template: '' });
   const [templateForm, setTemplateForm] = React.useState({ name: '', category: 'Onboarding' });
+  const [campaigns, setCampaigns] = React.useState<any[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    loadCampaigns();
+  }, []);
+
+  const loadCampaigns = async () => {
+    setIsLoading(true);
+    try {
+      const data = await apiService.getCampaigns();
+      const mapped = data.map((c: any) => ({
+        id: c.id,
+        name: c.name || 'Untitled Campaign',
+        status: (c.status?.charAt(0).toUpperCase() + c.status?.slice(1)) || 'Draft',
+        sent: c.statistics?.sent || 0,
+        opens: c.statistics?.opened || 0,
+        clicks: c.statistics?.clicked || 0,
+        date: c.dateUpdated ? new Date(c.dateUpdated).toLocaleDateString() : 'N/A'
+      }));
+      setCampaigns(mapped);
+    } catch (error) {
+      console.error('Error loading campaigns:', error);
+      toast.error('Failed to load campaigns');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const totalSent = campaigns.reduce((acc, curr) => acc + curr.sent, 0);
+  const totalOpens = campaigns.reduce((acc, curr) => acc + curr.opens, 0);
+  const totalClicks = campaigns.reduce((acc, curr) => acc + curr.clicks, 0);
+  const openRate = totalSent > 0 ? ((totalOpens / totalSent) * 100).toFixed(1) : '0.0';
+  const ctr = totalSent > 0 ? ((totalClicks / totalSent) * 100).toFixed(1) : '0.0';
+
+  const kpis = [
+    { label: 'Emails Sent', value: totalSent.toLocaleString(), color: 'bg-[#D4FF00]/30', iconColor: 'text-[#8aaa00]', icon: Send },
+    { label: 'Open Rate', value: `${openRate}%`, color: 'bg-purple-100', iconColor: 'text-purple-400', icon: Eye },
+    { label: 'CTR (Click-Through)', value: `${ctr}%`, color: 'bg-[#D4FF00]/30', iconColor: 'text-[#8aaa00]', icon: MousePointer },
+    { label: 'Total Clicks', value: totalClicks.toLocaleString(), color: 'bg-purple-100', iconColor: 'text-purple-400', icon: MousePointerClick },
+  ];
+
+  const statCampaigns = campaigns.filter(c => c.sent > 0).slice(0, 5);
 
   const handleCreate = () => {
     if (!form.name || !form.subject) {
@@ -65,6 +89,14 @@ export const MarketingEmail = () => {
     setIsTemplateModalOpen(false);
     setTemplateForm({ name: '', category: 'Onboarding' });
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ninja-yellow"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-6 pb-10 animate-in fade-in duration-500 text-left">

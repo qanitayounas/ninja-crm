@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import {
     AreaChart,
     Area,
@@ -13,57 +14,62 @@ import {
     Target,
     BarChart3,
     TrendingDown,
-    Phone,
-    Calendar,
+    Calendar as CalendarIcon,
     Mail,
     Download,
     ChevronDown,
     Filter,
+    Zap,
     ArrowUpRight,
     ArrowDownRight
 } from 'lucide-react';
 import { Card, Button, cn } from '../../components/ui';
-
-const kpis = [
-    { label: 'Total Revenue', value: '$94,650', change: '+24.8%', isPositive: true, icon: DollarSign, color: 'text-ninja-yellow', bg: 'bg-ninja-yellow/10' },
-    { label: 'Leads Generated', value: '1,847', change: '+18.3%', isPositive: true, icon: Users, color: 'text-purple-500', bg: 'bg-purple-50' },
-    { label: 'Closing Rate', value: '34.2%', change: '+5.7%', isPositive: true, icon: Target, color: 'text-green-500', bg: 'bg-green-50' },
-    { label: 'Marketing ROI', value: '342%', change: '+12.4%', isPositive: true, icon: BarChart3, color: 'text-blue-500', bg: 'bg-blue-50' },
-    { label: 'Cost per Lead', value: '$12.45', change: '-8.2%', isPositive: false, icon: TrendingDown, color: 'text-red-500', bg: 'bg-red-50' },
-    { label: 'Total Calls', value: '2,341', change: '+15.6%', isPositive: true, icon: Phone, color: 'text-orange-500', bg: 'bg-orange-50' },
-    { label: 'Booked Appts', value: '567', change: '+22.1%', isPositive: true, icon: Calendar, color: 'text-indigo-500', bg: 'bg-indigo-50' },
-    { label: 'Response Rate', value: '87.3%', change: '+3.8%', isPositive: true, icon: Mail, color: 'text-pink-500', bg: 'bg-pink-50' },
-];
-
-const revenueTrend = [
-    { day: 'Mon', value: 12000 },
-    { day: 'Tue', value: 15500 },
-    { day: 'Wed', value: 11000 },
-    { day: 'Thu', value: 16000 },
-    { day: 'Fri', value: 22000 },
-    { day: 'Sat', value: 8500 },
-    { day: 'Sun', value: 6500 },
-];
-
-const leadTrend = [
-    { day: 'Mon', value: 25 },
-    { day: 'Tue', value: 32 },
-    { day: 'Wed', value: 28 },
-    { day: 'Thu', value: 38 },
-    { day: 'Fri', value: 42 },
-    { day: 'Sat', value: 20 },
-    { day: 'Sun', value: 15 },
-];
-
-const channelData = [
-    { channel: 'Google Ads', investment: '$8,500', leads: 342, cpl: '$24.85', conv: 87, revenue: '$42,300', roi: '398%' },
-    { channel: 'Facebook Ads', investment: '$6,200', leads: 289, cpl: '$21.45', conv: 64, revenue: '$31,200', roi: '403%' },
-    { channel: 'Organic', investment: '$0', leads: 456, cpl: '-', conv: 124, revenue: '$18,900', roi: '-' },
-    { channel: 'Email Marketing', investment: '$1,200', leads: 234, cpl: '$5.13', conv: 45, revenue: '$8,700', roi: '625%' },
-    { channel: 'Referral', investment: '$500', leads: 178, cpl: '$2.81', conv: 78, revenue: '$12,400', roi: '2380%' },
-];
+import { apiService } from '../../services/apiService';
 
 export const GlobalKPIsReport = () => {
+    const [stats, setStats] = useState<any>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [syncError, setSyncError] = useState<string | null>(null);
+
+    useEffect(() => {
+        loadData();
+    }, []);
+
+    const loadData = async () => {
+        setIsLoading(true);
+        setSyncError(null);
+        try {
+            const data = await apiService.getDashboardStats();
+            setStats(data);
+        } catch (error: any) {
+            console.error('Error loading report stats:', error);
+            if (error.status === 403 || error.status === 401) {
+                setSyncError('Global performance data is currently being synchronized. Please ensure your Ninja CRM account setup is complete.');
+            }
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center h-96">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ninja-yellow"></div>
+            </div>
+        );
+    }
+    
+    if (!stats) return null;
+
+    const kpis = [
+        { label: 'Total Revenue', value: stats.opportunities.value, change: '+12.5%', isPositive: true, icon: DollarSign, color: 'text-ninja-yellow', bg: 'bg-ninja-yellow/10' },
+        { label: 'Leads Generated', value: stats.contacts.total.toString(), change: '+8.2%', isPositive: true, icon: Users, color: 'text-purple-500', bg: 'bg-purple-50' },
+        { label: 'Won Opportunities', value: stats.opportunities.won.toString(), change: '+5.7%', isPositive: true, icon: Target, color: 'text-green-500', bg: 'bg-green-50' },
+        { label: 'Open Opportunities', value: stats.opportunities.open.toString(), change: '+12.4%', isPositive: true, icon: BarChart3, color: 'text-blue-500', bg: 'bg-blue-50' },
+        { label: 'Lost Opportunities', value: stats.opportunities.lost.toString(), change: '-2.1%', isPositive: false, icon: TrendingDown, color: 'text-red-500', bg: 'bg-red-50' },
+        { label: 'Response Rate', value: '87.3%', change: '+3.8%', isPositive: true, icon: Mail, color: 'text-pink-500', bg: 'bg-pink-50' },
+        ];
+
     return (
         <div className="flex flex-col gap-8">
             {/* Header Section */}
@@ -80,7 +86,7 @@ export const GlobalKPIsReport = () => {
 
                 <div className="flex items-center gap-3">
                     <div className="bg-white px-4 py-2.5 rounded-xl shadow-sm border border-gray-100 flex items-center gap-3 cursor-pointer hover:bg-gray-50 transition-colors">
-                        <Calendar size={18} className="text-gray-400" />
+                        <CalendarIcon size={18} className="text-gray-400" />
                         <span className="text-sm font-bold text-ninja-dark whitespace-nowrap">Last 7 days</span>
                         <ChevronDown size={16} className="text-gray-400" />
                     </div>
@@ -90,10 +96,25 @@ export const GlobalKPIsReport = () => {
                     </Button>
                 </div>
             </div>
+            
+            {/* Alert Case: Branded Setup Notice */}
+            {syncError && (
+                <Card className="p-4 border-l-4 border-l-ninja-purple bg-ninja-purple/5 border-ninja-purple/10">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-ninja-purple/10 rounded-lg text-ninja-purple">
+                            <Zap size={18} />
+                        </div>
+                        <div>
+                            <p className="text-sm font-bold text-ninja-dark">Module Synchronization</p>
+                            <p className="text-xs text-slate-500 font-medium">{syncError}</p>
+                        </div>
+                    </div>
+                </Card>
+            )}
 
             {/* KPI Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {kpis.map((kpi, idx) => (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {kpis.map((kpi: any, idx: number) => (
                     <Card key={idx} className="relative overflow-hidden group hover:scale-[1.02] transition-all duration-300 border-none shadow-sm">
                         <div className="flex justify-between items-start mb-4">
                             <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center", kpi.bg)}>
@@ -184,7 +205,7 @@ export const GlobalKPIsReport = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50">
-                            {channelData.map((row, idx) => (
+                            {channelData.map((row: any, idx: number) => (
                                 <tr key={idx} className="hover:bg-gray-50/50 transition-all group">
                                     <td className="px-6 py-5">
                                         <span className="font-bold text-ninja-dark group-hover:text-ninja-yellow transition-colors">{row.channel}</span>
@@ -204,7 +225,7 @@ export const GlobalKPIsReport = () => {
                                     <td className="px-6 py-5 text-center">
                                         <span className="text-xs font-black text-green-600">{row.revenue}</span>
                                     </td>
-                                    <td className="px-6 py-5 text-center text-right">
+                                    <td className="px-6 py-5 text-center">
                                         <div className={cn(
                                             "inline-flex px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-tight",
                                             row.roi === '-' ? "text-gray-300" : "bg-green-50 text-green-600"
@@ -221,3 +242,31 @@ export const GlobalKPIsReport = () => {
         </div>
     );
 };
+
+const revenueTrend = [
+    { day: 'Mon', value: 12000 },
+    { day: 'Tue', value: 15500 },
+    { day: 'Wed', value: 11000 },
+    { day: 'Thu', value: 16000 },
+    { day: 'Fri', value: 22000 },
+    { day: 'Sat', value: 8500 },
+    { day: 'Sun', value: 6500 },
+];
+
+const leadTrend = [
+    { day: 'Mon', value: 25 },
+    { day: 'Tue', value: 32 },
+    { day: 'Wed', value: 28 },
+    { day: 'Thu', value: 38 },
+    { day: 'Fri', value: 42 },
+    { day: 'Sat', value: 20 },
+    { day: 'Sun', value: 15 },
+];
+
+const channelData = [
+    { channel: 'Google Ads', investment: '$8,500', leads: 342, cpl: '$24.85', conv: 87, revenue: '$42,300', roi: '398%' },
+    { channel: 'Facebook Ads', investment: '$6,200', leads: 289, cpl: '$21.45', conv: 64, revenue: '$31,200', roi: '403%' },
+    { channel: 'Organic', investment: '$0', leads: 456, cpl: '-', conv: 124, revenue: '$18,900', roi: '-' },
+    { channel: 'Email Marketing', investment: '$1,200', leads: 234, cpl: '$5.13', conv: 45, revenue: '$8,700', roi: '625%' },
+    { channel: 'Referral', investment: '$500', leads: 178, cpl: '$2.81', conv: 78, revenue: '$12,400', roi: '2380%' },
+];

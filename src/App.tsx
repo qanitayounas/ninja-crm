@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { DashboardLayout } from './layouts/DashboardLayout';
 import { RoleProvider } from './context/RoleContext';
+import { apiService } from './services/apiService';
 
 // Pages
 import { LoginPage } from './pages/LoginPage';
@@ -70,19 +71,34 @@ import {
   SchoolProAutomation 
 } from "./pages/schoolpro/SchoolProSubPages";
 
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const isAuthenticated = apiService.isAuthenticated();
+  return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
+};
+
+const PublicRoute = ({ children }: { children: React.ReactNode }) => {
+  const isAuthenticated = apiService.isAuthenticated();
+  return isAuthenticated ? <Navigate to="/dashboard" replace /> : <>{children}</>;
+};
+
 function App() {
   return (
     <RoleProvider>
-      <BrowserRouter>
+      <BrowserRouter
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
         <Routes>
           {/* Public/Standalone Routes */}
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/signup" element={<SignupPage />} />
+          <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
+          <Route path="/signup" element={<PublicRoute><SignupPage /></PublicRoute>} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/pricing" element={<PricingPage />} />
 
           {/* Main Dashboard Routes */}
-          <Route path="/dashboard" element={<DashboardLayout />}>
+          <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
             <Route index element={<DashboardPage />} />
             <Route path="messages" element={<MessagesPage />} />
             <Route path="contacts" element={<ContactsPage />} />

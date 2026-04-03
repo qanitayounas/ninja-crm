@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   ChevronLeft,
   ChevronRight,
@@ -6,15 +6,65 @@ import {
   Clock,
   RefreshCw,
   MoreVertical,
-  Search
+  Search,
+  Calendar as CalendarIcon
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Card, Button, cn, Modal, Input, Select, Textarea } from '../components/ui';
-import { agendaData, calendarDays, timeSlots } from '../data/calendarData';
+import { calendarDays, timeSlots } from '../data/calendarData';
+import { apiService } from '../services/apiService';
 
 export const CalendarPage = () => {
   const [view, setView] = useState<'semana' | 'mes'>('semana');
   const [isAddEventModalOpen, setIsAddEventModalOpen] = useState(false);
+  const [appointments, setAppointments] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [syncError, setSyncError] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadAppointments();
+  }, []);
+
+  const loadAppointments = async () => {
+    setIsLoading(true);
+    setSyncError(null);
+    try {
+      const data = await apiService.getAppointments();
+      setAppointments(data || []);
+    } catch (error: any) {
+      console.error('Error loading appointments:', error);
+      if (error.status === 403 || error.status === 401) {
+        setSyncError('Calendar events are currently being synchronized. Please ensure your Ninja CRM account setup is complete.');
+      } else {
+        toast.error('Failed to load appointments');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const agendaData = appointments
+    .filter(app => {
+      const today = new Date().toISOString().split('T')[0];
+      return app.startTime.startsWith(today);
+    })
+    .slice(0, 10)
+    .map(app => ({
+      id: app.id,
+      title: app.title || 'Meeting',
+      time: new Date(app.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      duration: '45 min',
+      color: app.status === 'confirmed' ? 'border-l-ninja-yellow' : 'border-l-blue-400'
+    }));
+
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ninja-yellow"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-6 pb-10">
@@ -42,6 +92,21 @@ export const CalendarPage = () => {
           </Button>
         </div>
       </div>
+
+      {/* Alert Case: Branded Setup Notice */}
+      {syncError && (
+        <Card className="p-4 border-l-4 border-l-ninja-purple bg-ninja-purple/5 border-ninja-purple/10">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-ninja-purple/10 rounded-lg text-ninja-purple">
+              <CalendarIcon size={18} />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-ninja-dark">Module Synchronization</p>
+              <p className="text-xs text-slate-500 font-medium">{syncError}</p>
+            </div>
+          </div>
+        </Card>
+      )}
 
       <div className="flex flex-col xl:flex-row gap-6">
         {/* Left Column: Calendar View */}

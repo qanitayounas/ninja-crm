@@ -1,14 +1,31 @@
+import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Zap, Mail, Lock, ArrowRight, CheckCircle2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { Input } from '../components/ui';
+import { apiService } from '../services/apiService';
 
 export const LoginPage = () => {
   const navigate = useNavigate();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [remember, setRemember] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    navigate('/dashboard');
+    setIsSubmitting(true);
+    try {
+      await apiService.login(email, password, remember);
+      toast.success('Login successful!');
+      navigate('/dashboard');
+    } catch (error: any) {
+      toast.error(error.message || 'Login failed');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+// ... rest of the component remains the same, but update the Inputs ...
 
   const features = [
     'Real-time sales pipeline',
@@ -101,6 +118,8 @@ export const LoginPage = () => {
                   placeholder="admin@ninjacrm.com"
                   type="email"
                   required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="h-13 bg-slate-50 border border-slate-100 rounded-2xl focus-within:border-ninja-yellow/60 focus-within:bg-white transition-all"
                 />
               </div>
@@ -121,23 +140,32 @@ export const LoginPage = () => {
                   placeholder="••••••••"
                   type="password"
                   required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   className="h-13 bg-slate-50 border border-slate-100 rounded-2xl focus-within:border-ninja-yellow/60 focus-within:bg-white transition-all"
                 />
               </div>
 
               {/* Remember */}
               <div className="flex items-center gap-3 pl-1">
-                <input type="checkbox" id="remember" className="h-4 w-4 rounded border-gray-300 accent-ninja-dark" />
+                <input 
+                  type="checkbox" 
+                  id="remember" 
+                  checked={remember}
+                  onChange={(e) => setRemember(e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-300 accent-ninja-dark cursor-pointer" 
+                />
                 <label htmlFor="remember" className="text-sm text-gray-500 font-medium cursor-pointer">Keep me logged in</label>
               </div>
 
               {/* CTA */}
               <button
                 type="submit"
-                className="mt-1 w-full h-14 bg-ninja-dark text-ninja-yellow font-black text-base rounded-2xl flex items-center justify-center gap-2 hover:bg-ninja-dark/90 active:scale-[0.98] transition-all shadow-xl shadow-ninja-dark/20 group"
+                disabled={isSubmitting}
+                className="mt-1 w-full h-14 bg-ninja-dark text-ninja-yellow font-black text-base rounded-2xl flex items-center justify-center gap-2 hover:bg-ninja-dark/90 active:scale-[0.98] transition-all shadow-xl shadow-ninja-dark/20 group disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Sign In
-                <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                {isSubmitting ? 'Signing In...' : 'Sign In'}
+                {!isSubmitting && <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />}
               </button>
             </form>
 

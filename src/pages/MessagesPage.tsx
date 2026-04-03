@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Search,
   Phone,
@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Avatar, Input, Badge, Card, Button, cn } from '../components/ui';
-import messagesData from '../data/messages.json';
+import { apiService } from '../services/apiService';
 import type { Conversation } from '../types';
 
 const SourceIcon = ({ source }: { source: string }) => {
@@ -32,11 +32,73 @@ const SourceIcon = ({ source }: { source: string }) => {
 };
 
 export const MessagesPage = () => {
-  const [conversations] = useState<Conversation[]>(messagesData as any);
-  const [activeId, setActiveId] = useState<string | null>(conversations[0]?.id || null);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [activeId, setActiveId] = useState<string | null>(null);
   const [showInfo, setShowInfo] = useState(false);
   const [messageText, setMessageText] = useState('');
   const [channelFilter, setChannelFilter] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSending, setIsSending] = useState(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadConversations();
+  }, []);
+
+  useEffect(() => {
+    if (activeId) {
+      loadMessages(activeId);
+    }
+  }, [activeId]);
+
+  const loadConversations = async () => {
+    setIsLoading(true);
+    setSyncError(null);
+    try {
+      const data = await apiService.getConversations();
+      // Need names for conversations. For now, we'll use contact names if available
+      // or placeholder. In a full app, we'd fetch contact details in parallel.
+      setConversations(data);
+      if (data.length > 0 && !activeId) setActiveId(data[0].id);
+    } catch (error: any) {
+      console.error('Error loading conversations:', error);
+      if (error.status === 403 || error.status === 401) {
+        setSyncError('Message history is currently being synchronized. Please ensure your Ninja CRM account setup is complete.');
+      } else {
+        toast.error('Failed to load messages');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loadMessages = async (conversationId: string) => {
+    try {
+      const messages = await apiService.getMessages(conversationId);
+      setConversations(prev => prev.map(c => 
+        c.id === conversationId ? { ...c, messages } : c
+      ));
+    } catch (error) {
+      console.error('Error loading messages:', error);
+    }
+  };
+
+  const handleSendMessage = async () => {
+    if (!messageText.trim() || !activeId || !activeChat) return;
+    
+    setIsSending(true);
+    try {
+      await apiService.sendMessage(activeId, messageText, activeChat.contactId);
+      setMessageText('');
+      toast.success('Message sent');
+      // Reload messages to show the new one
+      loadMessages(activeId);
+    } catch (error) {
+      toast.error('Failed to send message');
+    } finally {
+      setIsSending(false);
+    }
+  };
 
   const filteredConversations = conversations.filter(c => {
     if (!channelFilter) return true;
@@ -46,6 +108,15 @@ export const MessagesPage = () => {
 
   const activeChat = conversations.find(c => c.id === activeId);
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-full min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ninja-yellow"></div>
+      </div>
+    );
+  }
+
+
   return (
     <div className="flex flex-col h-[calc(100vh-140px)] gap-4 md:gap-6 antialiased relative">
       <div className="flex flex-col md:flex-row md:items-center justify-between shrink-0">
@@ -54,6 +125,21 @@ export const MessagesPage = () => {
           <p className="text-gray-400 font-medium">Manage your conversations</p>
         </div>
       </div>
+
+      {/* Alert Case: Branded Setup Notice */}
+      {syncError && (
+        <Card className="p-4 border-l-4 border-l-ninja-purple bg-ninja-purple/5 border-ninja-purple/10">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-ninja-purple/10 rounded-lg text-ninja-purple">
+              <MessageSquare size={18} />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-ninja-dark">Module Synchronization</p>
+              <p className="text-xs text-slate-500 font-medium">{syncError}</p>
+            </div>
+          </div>
+        </Card>
+      )}
       <div className="flex flex-1 gap-4 md:gap-6 min-h-0">
         {/* Column 1: Chat List */}
         <Card className={cn(
@@ -188,17 +274,24 @@ export const MessagesPage = () => {
                     type="text"
                     value={messageText}
                     onChange={(e) => setMessageText(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                     placeholder="Type a message..."
-                    className="flex-1 bg-transparent border-none outline-none text-xs md:text-sm p-1.5 md:p-2"
+                    disabled={isSending}
+                    className="flex-1 bg-transparent border-none outline-none text-xs md:text-sm p-1.5 md:p-2 disabled:opacity-50"
                   />
                   <button className="hidden sm:block p-2 text-gray-400 hover:text-ninja-dark transition-colors">
                     <Smile size={20} />
                   </button>
-                  <button className="bg-ninja-yellow p-2 md:p-2.5 rounded-xl text-ninja-dark shadow-sm transition-transform active:scale-90">
-                    <Send size={18} className="md:w-5 md:h-5" />
+                  <button 
+                    onClick={handleSendMessage}
+                    disabled={isSending || !messageText.trim()}
+                    className="bg-ninja-yellow p-2 md:p-2.5 rounded-xl text-ninja-dark shadow-sm transition-transform active:scale-90 disabled:opacity-50 disabled:active:scale-100"
+                  >
+                    <Send size={18} className={cn("md:w-5 md:h-5", isSending && "animate-pulse")} />
                   </button>
                 </div>
               </div>
+
             </>
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center text-gray-400 p-8 text-center">

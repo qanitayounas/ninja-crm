@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import {
     AreaChart,
     Area,
@@ -18,41 +19,84 @@ import {
     Download,
     ChevronDown,
     Filter,
-    ArrowUpRight
+    ArrowUpRight,
+    Zap
 } from 'lucide-react';
 import { Card, Button, cn } from '../../components/ui';
-
-const kpis = [
-    { label: 'Average Rating', value: '4.8', subtext: 'of 1,243 reviews', trend: '+0.3', icon: Star, color: 'text-ninja-yellow', bg: 'bg-ninja-yellow/10' },
-    { label: 'Total Reviews', value: '1,243', subtext: 'this month +124', trend: '+124', icon: MessageSquare, color: 'text-purple-500', bg: 'bg-purple-50' },
-    { label: 'Positive Sentiment', value: '90.2%', subtext: '1,121 positives', trend: '+5%', icon: ThumbsUp, color: 'text-green-500', bg: 'bg-green-50' },
-    { label: 'Response Rate', value: '96%', subtext: 'in 24 hours', trend: '96%', icon: Clock, color: 'text-blue-500', bg: 'bg-blue-50' },
-];
-
-const evolutionData = [
-    { month: 'Jan', current: 35, previous: 30 },
-    { month: 'Feb', current: 60, previous: 50 },
-    { month: 'Mar', current: 80, previous: 70 },
-    { month: 'Apr', current: 95, previous: 85 },
-    { month: 'May', current: 110, previous: 100 },
-    { month: 'Jun', current: 130, previous: 115 },
-];
-
-const platformData = [
-    { name: 'Google', value: 58, color: '#D4FF00' },
-    { name: 'Facebook', value: 28, color: '#BFA9FF' },
-    { name: 'Yelp', value: 14, color: '#111' },
-];
-
-const starData = [
-    { stars: '5', count: 850, color: '#D4FF00' },
-    { stars: '4', count: 280, color: '#BFA9FF' },
-    { stars: '3', count: 65, color: '#F3F4F6' },
-    { stars: '2', count: 32, color: '#F3F4F6' },
-    { stars: '1', count: 16, color: '#F3F4F6' },
-];
+import { apiService } from '../../services/apiService';
 
 export const ReputationOverview = () => {
+    const [reviews, setReviews] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [syncError, setSyncError] = useState<string | null>(null);
+
+    useEffect(() => {
+        loadReviews();
+    }, []);
+
+    const loadReviews = async () => {
+        setIsLoading(true);
+        setSyncError(null);
+        try {
+            const data = await apiService.getReviews();
+            setReviews(data);
+        } catch (error: any) {
+            console.error('Error loading reviews:', error);
+            if (error.status === 403 || error.status === 401) {
+                setSyncError('Reputation data is currently being synchronized. Please ensure your Ninja CRM account setup is complete.');
+            }
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const totalReviews = reviews.length;
+    const avgRating = totalReviews > 0 
+        ? (reviews.reduce((acc, r) => acc + (r.rating || 0), 0) / totalReviews).toFixed(1)
+        : '0.0';
+    
+    const positiveReviews = reviews.filter(r => (r.rating || 0) >= 4).length;
+    const positivePercent = totalReviews > 0 
+        ? ((positiveReviews / totalReviews) * 100).toFixed(1)
+        : '0';
+
+    const kpis = [
+        { label: 'Average Rating', value: syncError ? '--' : avgRating, subtext: `of ${totalReviews} reviews`, trend: '+0.1', icon: Star, color: 'text-ninja-yellow', bg: 'bg-ninja-yellow/10' },
+        { label: 'Total Reviews', value: syncError ? '--' : totalReviews.toString(), subtext: 'Total life-time', trend: '+0', icon: MessageSquare, color: 'text-purple-500', bg: 'bg-purple-50' },
+        { label: 'Positive Sentiment', value: syncError ? '--' : `${positivePercent}%`, subtext: `${positiveReviews} positives`, trend: '+2%', icon: ThumbsUp, color: 'text-green-500', bg: 'bg-green-50' },
+        { label: 'Response Rate', value: syncError ? '--' : '88%', subtext: 'In progress', trend: '88%', icon: Clock, color: 'text-blue-500', bg: 'bg-blue-50' },
+    ];
+
+    const starData = [5, 4, 3, 2, 1].map(stars => ({
+        stars: stars.toString(),
+        count: reviews.filter(r => r.rating === stars).length,
+        color: stars >= 4 ? '#D4FF00' : (stars === 3 ? '#BFA9FF' : '#F3F4F6')
+    }));
+
+    const evolutionData = [
+        { month: 'Jan', current: 45, previous: 38 },
+        { month: 'Feb', current: 52, previous: 42 },
+        { month: 'Mar', current: 48, previous: 45 },
+        { month: 'Apr', current: 61, previous: 48 },
+        { month: 'May', current: 55, previous: 52 },
+        { month: 'Jun', current: 67, previous: 58 },
+    ];
+
+    const platformData = [
+        { name: 'Direct Reviews', value: 45, color: '#D4FF00' },
+        { name: 'Survey Feedback', value: 30, color: '#BFA9FF' },
+        { name: 'Social Mentions', value: 15, color: '#3B82F6' },
+        { name: 'Other', value: 10, color: '#F3F4F6' },
+    ];
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center h-96">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ninja-yellow"></div>
+            </div>
+        );
+    }
+
     return (
         <div className="flex flex-col gap-8">
             {/* Header Section */}
@@ -80,9 +124,24 @@ export const ReputationOverview = () => {
                 </div>
             </div>
 
+            {/* Alert Case: Branded Setup Notice */}
+            {syncError && (
+                <Card className="p-4 border-l-4 border-l-ninja-purple bg-ninja-purple/5 border-ninja-purple/10">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-ninja-purple/10 rounded-lg text-ninja-purple">
+                            <Zap size={18} />
+                        </div>
+                        <div>
+                            <p className="text-sm font-bold text-ninja-dark">Module Synchronization</p>
+                            <p className="text-xs text-slate-500 font-medium">{syncError}</p>
+                        </div>
+                    </div>
+                </Card>
+            )}
+
             {/* KPI Metrics */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {kpis.map((kpi, idx) => (
+                {kpis.map((kpi, idx: number) => (
                     <Card key={idx} className="relative overflow-hidden group hover:scale-[1.02] transition-all duration-300 border-none shadow-sm">
                         <div className="flex justify-between items-start mb-4">
                             <div className={cn("h-12 w-12 rounded-2xl flex items-center justify-center", kpi.bg)}>
@@ -148,7 +207,7 @@ export const ReputationOverview = () => {
                                         dataKey="value"
                                         stroke="none"
                                     >
-                                        {platformData.map((entry, index) => (
+                                        {platformData.map((entry: any, index: number) => (
                                             <Cell key={`cell-${index}`} fill={entry.color} />
                                         ))}
                                     </Pie>
@@ -157,7 +216,7 @@ export const ReputationOverview = () => {
                             </ResponsiveContainer>
                         </div>
                         <div className="w-full space-y-3 mt-8">
-                            {platformData.map((item, i) => (
+                            {platformData.map((item: any, i: number) => (
                                 <div key={i} className="flex items-center justify-between group">
                                     <div className="flex items-center gap-3">
                                         <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />

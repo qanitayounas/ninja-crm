@@ -52,6 +52,7 @@ import {
 import toast from 'react-hot-toast';
 import { cn } from '../components/ui';
 import { useRole } from '../context/RoleContext';
+import { apiService } from '../services/apiService';
 
 interface SidebarProps {
   isExpanded: boolean;
@@ -169,7 +170,9 @@ export const Sidebar = ({ isExpanded, setIsExpanded, isMobileOpen, setIsMobileOp
 
   const handleLogout = () => {
     setShowLogoutConfirm(false);
-    navigate('/');
+    apiService.logout();
+    navigate('/login');
+    toast.success('Logged out successfully');
   };
 
   const isSitesModule = location.pathname.startsWith('/dashboard/sites');
@@ -292,7 +295,7 @@ export const Sidebar = ({ isExpanded, setIsExpanded, isMobileOpen, setIsMobileOp
                   }
                 }}
                 className={cn(
-                  "relative group flex items-center gap-3 p-2 rounded-xl transition-all",
+                  "relative group flex items-center gap-3 p-2 rounded-full transition-all",
                   isActive ? "bg-ninja-yellow text-ninja-dark font-black shadow-sm" : "text-white/60 hover:text-white hover:bg-white/5 font-bold",
                   !isExpanded && "justify-center px-0"
                 )}

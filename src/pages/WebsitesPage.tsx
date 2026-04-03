@@ -11,10 +11,12 @@ import {
   Clock,
   FileText,
   X,
+  Zap,
   ChevronDown
 } from 'lucide-react';
 import { Card, Badge, Button, cn } from '../components/ui';
 import toast from 'react-hot-toast';
+import { apiService } from '../services/apiService';
 
 interface Website {
   id: string;
@@ -24,54 +26,54 @@ interface Website {
   updatedAt: string;
 }
 
-const websites: Website[] = [
-  {
-    id: '1',
-    title: 'Main Ninja Site',
-    category: 'Corporate',
-    status: 'Published',
-    updatedAt: '2026-03-20',
-  },
-  {
-    id: '2',
-    title: 'Q1 Campaign Landing Page',
-    category: 'Campaigns',
-    status: 'Published',
-    updatedAt: '2026-03-19',
-  },
-  {
-    id: '3',
-    title: 'Enterprise Product Page',
-    category: 'Products',
-    status: 'Draft',
-    updatedAt: '2026-03-21',
-  },
-  {
-    id: '4',
-    title: 'Support Portal',
-    category: 'Corporate',
-    status: 'Published',
-    updatedAt: '2026-03-18',
-  },
-  {
-    id: '5',
-    title: 'Webinar Landing Page',
-    category: 'Events',
-    status: 'Scheduled',
-    updatedAt: '2026-03-22',
-  },
-];
-
 export const WebsitesPage = () => {
   const [viewMode, setViewMode] = React.useState<'grid' | 'list'>('grid');
   const [showCreateModal, setShowCreateModal] = React.useState(false);
+  const [websites, setWebsites] = React.useState<Website[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [syncError, setSyncError] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    loadWebsites();
+  }, []);
+
+  const loadWebsites = async () => {
+    setIsLoading(true);
+    setSyncError(null);
+    try {
+      const data = await apiService.getFunnels();
+      const mapped = (Array.isArray(data) ? data : []).map((site: any) => ({
+        id: site.id,
+        title: site.name || 'Untitled Site',
+        category: 'Funnels',
+        status: 'Published' as const,
+        updatedAt: site.dateUpdated ? new Date(site.dateUpdated).toISOString().split('T')[0] : 'N/A',
+      }));
+      setWebsites(mapped);
+    } catch (error: any) {
+      console.error('Error loading websites:', error);
+      if (error.status === 403 || error.status === 401) {
+        setSyncError('Website synchronization is currently being processed. Please ensure your Ninja CRM account setup is complete.');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const stats = [
-    { label: 'Total Sites', value: websites.length, color: 'text-ninja-dark' },
-    { label: 'Published', value: websites.filter(s => s.status === 'Published').length, color: 'text-green-500' },
-    { label: 'Drafts', value: websites.filter(s => s.status === 'Draft').length, color: 'text-gray-400' },
-    { label: 'Scheduled', value: websites.filter(s => s.status === 'Scheduled').length, color: 'text-blue-500' },
+    { label: 'Total Sites', value: syncError ? '--' : websites.length, color: 'text-ninja-dark' },
+    { label: 'Published', value: syncError ? '--' : websites.filter(s => s.status === 'Published').length, color: 'text-green-500' },
+    { label: 'Drafts', value: syncError ? '--' : websites.filter(s => s.status === 'Draft').length, color: 'text-gray-400' },
+    { label: 'Scheduled', value: syncError ? '--' : websites.filter(s => s.status === 'Scheduled').length, color: 'text-blue-500' },
   ];
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ninja-yellow"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 md:space-y-8 animate-in fade-in duration-500 pb-10">
@@ -80,6 +82,21 @@ export const WebsitesPage = () => {
         <h1 className="text-3xl font-black text-ninja-dark tracking-tighter">Websites</h1>
         <p className="text-gray-400 font-medium">Manage corporate and commercial sites</p>
       </div>
+
+      {/* Alert Case: Branded Setup Notice */}
+      {syncError && (
+        <Card className="p-4 border-l-4 border-l-ninja-purple bg-ninja-purple/5 border-ninja-purple/10">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-ninja-purple/10 rounded-lg text-ninja-purple">
+              <Zap size={18} />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-ninja-dark">Module Synchronization</p>
+              <p className="text-xs text-slate-500 font-medium">{syncError}</p>
+            </div>
+          </div>
+        </Card>
+      )}
 
       {/* KPI Row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 w-full">

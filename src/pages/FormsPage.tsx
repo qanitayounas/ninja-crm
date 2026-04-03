@@ -17,31 +17,7 @@ import {
 } from 'lucide-react';
 import { Card, Button } from '../components/ui';
 import toast from 'react-hot-toast';
-
-const forms = [
-  {
-    id: 1,
-    name: 'Contact Form',
-    submissions: 234,
-    views: 1245,
-    conversion: '18.8%'
-  },
-  {
-    id: 2,
-    name: 'Webinar Registration',
-    submissions: 189,
-    views: 890,
-    conversion: '21.2%'
-  },
-  {
-    id: 3,
-    name: 'Demo Request',
-    submissions: 145,
-    views: 678,
-    conversion: '21.4%'
-  }
-];
-
+import { apiService } from '../services/apiService';
 const features = [
   { icon: MousePointer2, label: 'Drag & Drop Builder' },
   { icon: Calculator, label: 'Calculations & Scoring' },
@@ -54,10 +30,48 @@ const features = [
 export const FormsPage = () => {
   const [showCreateModal, setShowCreateModal] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState('');
+  const [forms, setForms] = React.useState<any[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [syncError, setSyncError] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    loadForms();
+  }, []);
+
+  const loadForms = async () => {
+    setIsLoading(true);
+    setSyncError(null);
+    try {
+      const data = await apiService.getForms();
+      const mapped = (Array.isArray(data) ? data : []).map((f: any) => ({
+        id: f.id,
+        name: f.name || 'Untitled Form',
+        submissions: 0,
+        views: 0,
+        conversion: '0%'
+      }));
+      setForms(mapped);
+    } catch (error: any) {
+      console.error('Error loading forms:', error);
+      if (error.status === 403 || error.status === 401) {
+        setSyncError('Form management is currently being synchronized. Please ensure your Ninja CRM account setup is complete.');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const filteredForms = forms.filter(f => 
     f.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ninja-yellow"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 md:space-y-8 animate-in fade-in duration-500 pb-10">
@@ -67,6 +81,21 @@ export const FormsPage = () => {
         <p className="text-gray-400 font-medium font-bold">Smart form builder</p>
       </div>
 
+      {/* Alert Case: Branded Setup Notice */}
+      {syncError && (
+        <Card className="p-4 border-l-4 border-l-ninja-purple bg-ninja-purple/5 border-ninja-purple/10">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-ninja-purple/10 rounded-lg text-ninja-purple">
+              <Zap size={18} />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-ninja-dark">Module Synchronization</p>
+              <p className="text-xs text-slate-500 font-medium">{syncError}</p>
+            </div>
+          </div>
+        </Card>
+      )}
+
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
         <Card className="p-6 md:p-8 flex flex-col gap-2 shadow-sm border-gray-100 relative overflow-hidden group">
@@ -74,7 +103,7 @@ export const FormsPage = () => {
             <FileText size={100} />
           </div>
           <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Total Forms</span>
-          <span className="text-3xl font-black text-ninja-dark font-black">3</span>
+          <span className="text-3xl font-black text-ninja-dark font-black">{syncError ? '--' : forms.length}</span>
         </Card>
         
         <Card className="p-6 md:p-8 flex flex-col gap-2 shadow-sm border-gray-100 relative overflow-hidden group">

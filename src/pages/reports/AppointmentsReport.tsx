@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import {
     BarChart,
     Bar,
@@ -11,48 +12,93 @@ import {
     Pie
 } from 'recharts';
 import {
-    Calendar,
+    Calendar as CalendarIcon,
     CheckCircle2,
     XCircle,
     Download,
     ChevronDown,
     Users,
-    TrendingUp
+    Zap,
+    Clock
 } from 'lucide-react';
 import { Card, Button, cn } from '../../components/ui';
-
-const appointmentKPIs = [
-    { label: 'Total Appointments', value: '482', change: '+12.5%', isPositive: true, icon: Calendar, color: 'text-ninja-yellow', bg: 'bg-ninja-yellow/10' },
-    { label: 'Confirmed', value: '315', change: '+8.2%', isPositive: true, icon: CheckCircle2, color: 'text-green-500', bg: 'bg-green-50' },
-    { label: 'No Shows', value: '42', change: '-15.4%', isPositive: true, icon: XCircle, color: 'text-red-500', bg: 'bg-red-50' },
-    { label: 'Scheduled Rate', value: '65.4%', change: '+4.1%', isPositive: true, icon: TrendingUp, color: 'text-blue-500', bg: 'bg-blue-50' },
-];
-
-const appointmentsByDay = [
-    { day: 'Mon', count: 45 },
-    { day: 'Tue', count: 52 },
-    { day: 'Wed', count: 48 },
-    { day: 'Thu', count: 61 },
-    { day: 'Fri', count: 55 },
-    { day: 'Sat', count: 25 },
-    { day: 'Sun', count: 12 },
-];
-
-const statusDistribution = [
-    { name: 'Confirmed', value: 315, color: '#D4FF00' },
-    { name: 'Pending', value: 85, color: '#BFA9FF' },
-    { name: 'Cancelled', value: 40, color: '#FEE2E2' },
-    { name: 'No Show', value: 42, color: '#EF4444' },
-];
-
-const topSetters = [
-    { name: 'Carlos Ruiz', appts: 124, conv: '42%', revenue: '$45,200', initial: 'CR' },
-    { name: 'Ana Martinez', appts: 108, conv: '38%', revenue: '$38,900', initial: 'AM' },
-    { name: 'David Lopez', appts: 89, conv: '35%', revenue: '$31,500', initial: 'DL' },
-    { name: 'Laura Sanchez', appts: 78, conv: '32%', revenue: '$27,400', initial: 'LS' },
-];
+import { apiService } from '../../services/apiService';
 
 export const AppointmentsReport = () => {
+    const [stats, setStats] = useState<any>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [syncError, setSyncError] = useState<string | null>(null);
+
+    useEffect(() => {
+        loadReportData();
+    }, []);
+
+    const loadReportData = async () => {
+        setIsLoading(true);
+        setSyncError(null);
+        try {
+            const appointments = await apiService.getAppointments();
+            
+            const total = appointments.length;
+            const confirmed = appointments.filter((a: any) => a.status === 'confirmed').length;
+            const cancelled = appointments.filter((a: any) => a.status === 'cancelled').length;
+            const noShow = appointments.filter((a: any) => a.status === 'noshow' || a.status === 'no-show').length;
+            const pending = total - confirmed - cancelled - noShow;
+
+            setStats({
+                total,
+                confirmed,
+                cancelled,
+                noShow,
+                pending,
+                statusDistribution: [
+                    { name: 'Confirmed', value: confirmed, color: '#D4FF00' },
+                    { name: 'Pending', value: pending, color: '#BFA9FF' },
+                    { name: 'Cancelled', value: cancelled, color: '#FEE2E2' },
+                    { name: 'No Show', value: noShow, color: '#EF4444' },
+                ],
+                kpis: [
+                    { label: 'Total Appointments', value: total.toString(), icon: CalendarIcon, color: 'text-ninja-yellow', bg: 'bg-ninja-yellow/10' },
+                    { label: 'Confirmed', value: confirmed.toString(), icon: CheckCircle2, color: 'text-green-500', bg: 'bg-green-50' },
+                    { label: 'Cancelled', value: cancelled.toString(), icon: XCircle, color: 'text-red-500', bg: 'bg-red-50' },
+                    { label: 'Pending', value: pending.toString(), icon: Clock, color: 'text-blue-500', bg: 'bg-blue-50' },
+                ]
+            });
+        } catch (error: any) {
+            console.error('Error loading appointment report:', error);
+            if (error.status === 403 || error.status === 401) {
+                setSyncError('Appointment reporting is currently being synchronized. Please ensure your Ninja CRM account setup is complete.');
+            }
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center h-96">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ninja-yellow"></div>
+            </div>
+        );
+    }
+
+    if (!stats) return null;
+
+    const { kpis, statusDistribution } = stats;
+
+    // Optional: Calculate count by day
+    const appointmentsByDay = [
+        { day: 'Mon', count: 0 },
+        { day: 'Tue', count: 0 },
+        { day: 'Wed', count: 0 },
+        { day: 'Thu', count: 0 },
+        { day: 'Fri', count: 0 },
+        { day: 'Sat', count: 0 },
+        { day: 'Sun', count: 0 },
+    ];
+
+    const topSetters: any[] = [];
+
     return (
         <div className="flex flex-col gap-8">
             {/* Header Section */}
@@ -69,7 +115,7 @@ export const AppointmentsReport = () => {
 
                 <div className="flex items-center gap-3">
                     <div className="bg-white px-4 py-2.5 rounded-xl shadow-sm border border-gray-100 flex items-center gap-3 cursor-pointer hover:bg-gray-50 transition-colors">
-                        <Calendar size={18} className="text-gray-400" />
+                        <CalendarIcon size={18} className="text-gray-400" />
                         <span className="text-sm font-bold text-ninja-dark whitespace-nowrap">This Week</span>
                         <ChevronDown size={16} className="text-gray-400" />
                     </div>
@@ -80,9 +126,24 @@ export const AppointmentsReport = () => {
                 </div>
             </div>
 
+            {/* Alert Case: Branded Setup Notice */}
+            {syncError && (
+                <Card className="p-4 border-l-4 border-l-ninja-purple bg-ninja-purple/5 border-ninja-purple/10">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-ninja-purple/10 rounded-lg text-ninja-purple">
+                            <Zap size={18} />
+                        </div>
+                        <div>
+                            <p className="text-sm font-bold text-ninja-dark">Module Synchronization</p>
+                            <p className="text-xs text-slate-500 font-medium">{syncError}</p>
+                        </div>
+                    </div>
+                </Card>
+            )}
+
             {/* KPI Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {appointmentKPIs.map((kpi, idx) => (
+                {kpis.map((kpi: any, idx: number) => (
                     <Card key={idx} className="border-none shadow-sm group hover:scale-[1.02] transition-all">
                         <div className="flex items-center gap-4">
                             <div className={cn("h-12 w-12 rounded-2xl flex items-center justify-center", kpi.bg)}>
@@ -92,9 +153,6 @@ export const AppointmentsReport = () => {
                                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{kpi.label}</p>
                                 <div className="flex items-baseline gap-2">
                                     <h4 className="text-2xl font-black text-ninja-dark">{kpi.value}</h4>
-                                    <span className={cn("text-[10px] font-black", kpi.isPositive ? "text-green-500" : "text-red-500")}>
-                                        {kpi.change}
-                                    </span>
                                 </div>
                             </div>
                         </div>
@@ -114,7 +172,7 @@ export const AppointmentsReport = () => {
                                 <YAxis axisLine={false} tickLine={false} tick={{ fill: '#9CA3AF', fontSize: 12, fontWeight: 600 }} />
                                 <Tooltip cursor={{ fill: '#F9FAFB' }} contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} />
                                 <Bar dataKey="count" radius={[6, 6, 0, 0]} barSize={40}>
-                                    {appointmentsByDay.map((entry, index) => (
+                                    {appointmentsByDay.map((entry: any, index: number) => (
                                         <Cell key={`cell-${index}`} fill={entry.count > 50 ? '#D4FF00' : '#E5E7EB'} />
                                     ))}
                                 </Bar>
@@ -135,7 +193,7 @@ export const AppointmentsReport = () => {
                                     paddingAngle={5}
                                     dataKey="value"
                                 >
-                                    {statusDistribution.map((entry, index) => (
+                                    {statusDistribution.map((entry: any, index: number) => (
                                         <Cell key={`cell-${index}`} fill={entry.color} />
                                     ))}
                                 </Pie>
@@ -144,7 +202,7 @@ export const AppointmentsReport = () => {
                         </ResponsiveContainer>
                     </div>
                     <div className="grid grid-cols-2 gap-4 mt-4 w-full">
-                        {statusDistribution.map((item) => (
+                        {statusDistribution.map((item: any) => (
                             <div key={item.name} className="flex items-center gap-2">
                                 <div className="h-2 w-2 rounded-full" style={{ backgroundColor: item.color }} />
                                 <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{item.name}</span>
@@ -175,7 +233,7 @@ export const AppointmentsReport = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50">
-                            {topSetters.map((setter, idx) => (
+                            {topSetters.map((setter: any, idx: number) => (
                                 <tr key={idx} className="hover:bg-gray-50/50 transition-all group">
                                     <td className="px-6 py-5">
                                         <div className="flex items-center gap-3">

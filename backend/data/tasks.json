@@ -1,0 +1,65 @@
+[
+  {
+    "id": "t1",
+    "title": "Follow up with John Smith",
+    "description": "Regarding the upcoming product launch and his interest in the premium plan.",
+    "dueDate": "2026-04-05",
+    "priority": "High",
+    "status": "To Do",
+    "assigneeId": "u1",
+    "creatorId": "u1",
+    "createdAt": "2026-03-31T10:00:00Z",
+    "updatedAt": "2026-03-31T10:00:00Z",
+    "contactId": "1",
+    "tags": [
+      "Sales",
+      "Follow-up"
+    ]
+  },
+  {
+    "id": "t2",
+    "title": "Website Redesign Proposal",
+    "description": "Prepare the initial pitch for the digital transformation project for Digital Solutions Ltd.",
+    "dueDate": "2026-04-10",
+    "priority": "Medium",
+    "status": "In Progress",
+    "assigneeId": "u2",
+    "creatorId": "u1",
+    "createdAt": "2026-03-30T09:00:00Z",
+    "updatedAt": "2026-03-30T15:00:00Z",
+    "contactId": "2",
+    "tags": [
+      "Marketing",
+      "Proposal"
+    ]
+  },
+  {
+    "id": "t3",
+    "title": "Technical Audit for Global Ventures",
+    "description": "Perform a full audit of their CRM integration and provide recommendations.",
+    "dueDate": "2026-03-29",
+    "priority": "High",
+    "status": "Review",
+    "assigneeId": "u1",
+    "creatorId": "u1",
+    "createdAt": "2026-03-25T11:00:00Z",
+    "updatedAt": "2026-03-31T16:00:00Z",
+    "contactId": "3",
+    "tags": [
+      "Technical",
+      "Audit"
+    ]
+  },
+  {
+    "id": "t-1775192262604",
+    "createdAt": "2026-04-03T04:57:42.604Z",
+    "updatedAt": "2026-04-03T04:58:20.060Z",
+    "title": "API TESTING ",
+    "description": "hello work on it ",
+    "priority": "Low",
+    "status": "Review",
+    "dueDate": "2026-04-03",
+    "assigneeId": "kFqrrNdHWYp662UKuMtY",
+    "tags": []
+  }
+]

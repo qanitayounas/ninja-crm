@@ -1,33 +1,54 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer 
 } from 'recharts';
 import { Card, Badge, Button, Modal, Input, Select } from '../components/ui';
 import { Plus, Play, Pause, Edit2, Trash2, Mail, Share2 } from 'lucide-react';
 import toast from 'react-hot-toast';
-
-const kpis = [
-  { title: "Reach", value: "27,011" },
-  { title: "Total Clicks", value: "6,745" },
-  { title: "Leads Generated", value: "989" },
-  { title: "Conversion Rate", value: "3.7%" },
-];
-
-const chartData = [
-  { name: 'Week 1', reach: 45, clicks: 12 },
-  { name: 'Week 2', reach: 68, clicks: 18 },
-  { name: 'Week 3', reach: 52, clicks: 15 },
-  { name: 'Week 4', reach: 92, clicks: 25 },
-];
-
-const campaigns = [
-  { id: 1, name: "Spring Product Launch", type: "Email Marketing", status: "Active", reach: "12,458", clicks: "3,247", leads: 487, conversion: "15.0%", budget: "$3,240 / $5,000" },
-  { id: 2, name: "Nurture Email Series", type: "Email Marketing", status: "Active", reach: "8,932", clicks: "2,156", leads: 324, conversion: "15.0%", budget: "$1,890 / $2,500" },
-  { id: 3, name: "Retargeting Campaign", type: "Social Media", status: "Paused", reach: "5,621", clicks: "1,342", leads: 178, conversion: "13.3%", budget: "$2,100 / $3,000" },
-];
+import { apiService } from '../services/apiService';
 
 export const CampaignsPage = () => {
+  const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    setIsLoading(true);
+    try {
+      const data = await apiService.getCampaigns();
+      setCampaigns(data);
+    } catch (error) {
+      console.error('Error loading campaigns:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const kpis = [
+    { title: "Total Campaigns", value: campaigns.length.toString() },
+    { title: "Active", value: campaigns.filter(c => c.status === 'active').length.toString() },
+    { title: "Paused", value: campaigns.filter(c => c.status === 'paused').length.toString() },
+    { title: "Conversion Avg", value: "3.7%" },
+  ];
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ninja-yellow"></div>
+      </div>
+    );
+  }
+
+  const chartData = [
+    { name: 'Week 1', reach: 45, clicks: 12 },
+    { name: 'Week 2', reach: 68, clicks: 18 },
+    { name: 'Week 3', reach: 52, clicks: 15 },
+    { name: 'Week 4', reach: 92, clicks: 25 },
+  ];
 
   return (
     <div className="space-y-6 md:space-y-8 animate-in fade-in duration-500 pb-10">
@@ -90,42 +111,50 @@ export const CampaignsPage = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {campaigns.map((camp) => (
-                <tr key={camp.id} className="hover:bg-slate-50/50 transition-colors group">
-                  <td className="px-6 py-4">
-                    <div>
-                      <h4 className="font-bold text-ninja-dark text-sm">{camp.name}</h4>
-                      <div className="flex items-center gap-1.5 mt-1 text-gray-400 text-xs font-medium">
-                        {camp.type === 'Email Marketing' ? <Mail size={12} /> : <Share2 size={12} />}
-                        {camp.type}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <Badge status={camp.status === 'Active' ? 'Qualified' : 'Pending'} className={camp.status === 'Active' ? 'bg-ninja-yellow text-ninja-dark border-none' : 'bg-gray-100 text-gray-500 border-none'}>
-                      {camp.status === 'Active' ? 'Active' : 'Paused'}
-                    </Badge>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600 font-medium">{camp.reach}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600 font-medium">{camp.clicks}</td>
-                  <td className="px-6 py-4 text-sm text-ninja-yellow font-black">{camp.leads}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600 font-medium">{camp.conversion}</td>
-                  <td className="px-6 py-4 text-xs font-bold text-ninja-purple">
-                    {camp.budget}
-                    {/* Tiny progress bar */}
-                    <div className="w-full bg-ninja-purple/10 h-1.5 mt-1.5 rounded-full overflow-hidden flex">
-                      <div className="h-full bg-ninja-purple" style={{ width: `${(parseInt(camp.budget.split(' / ')[0].replace(/\D/g, '')) / parseInt(camp.budget.split(' / ')[1].replace(/\D/g, ''))) * 100}%` }} />
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2 text-gray-400">
-                      <button className="p-1.5 hover:text-ninja-yellow transition-colors">{camp.status === 'Active' ? <Pause size={16} /> : <Play size={16} />}</button>
-                      <button className="p-1.5 hover:text-blue-500 transition-colors"><Edit2 size={16} /></button>
-                      <button className="p-1.5 hover:text-red-500 transition-colors"><Trash2 size={16} /></button>
-                    </div>
+              {campaigns.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="px-6 py-12 text-center text-gray-400 font-medium">
+                    No campaigns found in your account.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                campaigns.map((camp: any) => (
+                  <tr key={camp.id} className="hover:bg-slate-50/50 transition-colors group">
+                    <td className="px-6 py-4">
+                      <div>
+                        <h4 className="font-bold text-ninja-dark text-sm">{camp.name}</h4>
+                        <div className="flex items-center gap-1.5 mt-1 text-gray-400 text-xs font-medium">
+                          {camp.type?.toLowerCase().includes('email') ? <Mail size={12} /> : <Share2 size={12} />}
+                          {camp.type || 'Campaign'}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <Badge status={camp.status === 'active' ? 'Qualified' : 'Pending'} className={camp.status === 'active' ? 'bg-ninja-yellow text-ninja-dark border-none' : 'bg-gray-100 text-gray-500 border-none'}>
+                        {camp.status || 'Draft'}
+                      </Badge>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600 font-medium">{camp.reach || '0'}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600 font-medium">{camp.clicks || '0'}</td>
+                    <td className="px-6 py-4 text-sm text-ninja-yellow font-black">{camp.leads || '0'}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600 font-medium">{camp.conversion || '0%'}</td>
+                    <td className="px-6 py-4 text-xs font-bold text-ninja-purple">
+                      $0 / $0
+                      {/* Tiny progress bar */}
+                      <div className="w-full bg-ninja-purple/10 h-1.5 mt-1.5 rounded-full overflow-hidden flex">
+                        <div className="h-full bg-ninja-purple" style={{ width: `0%` }} />
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-2 text-gray-400">
+                        <button className="p-1.5 hover:text-ninja-yellow transition-colors">{camp.status === 'active' ? <Pause size={16} /> : <Play size={16} />}</button>
+                        <button className="p-1.5 hover:text-blue-500 transition-colors"><Edit2 size={16} /></button>
+                        <button className="p-1.5 hover:text-red-500 transition-colors"><Trash2 size={16} /></button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

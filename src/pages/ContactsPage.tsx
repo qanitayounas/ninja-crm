@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { 
+  Users,
   Search, 
   Filter, 
   MoreVertical, 
@@ -20,7 +21,6 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Card, Badge, Avatar, Input, Button, Modal, Select, Textarea, cn } from '../components/ui';
-import contactsData from '../data/contacts.json';
 import { apiService } from '../services/apiService';
 import type { Contact } from '../types';
 import type { SmartList } from '../data/smartLists';
@@ -35,7 +35,7 @@ const SourceIcon = ({ source }: { source: string }) => {
 };
 
 export const ContactsPage = () => {
-  const [contacts] = useState<Contact[]>(contactsData as Contact[]);
+  const [contacts, setContacts] = useState<Contact[]>([]);
   const [smartLists, setSmartLists] = useState<SmartList[]>([]);
   const [selectedSmartListId, setSelectedSmartListId] = useState<string>('all');
   const [search, setSearch] = useState('');
@@ -48,16 +48,32 @@ export const ContactsPage = () => {
   const [selectedColor, setSelectedColor] = useState('bg-ninja-yellow text-ninja-dark');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
+  const [syncError, setSyncError] = useState<string | null>(null);
 
   useEffect(() => {
-    loadSmartLists();
+    loadInitialData();
   }, []);
 
-  const loadSmartLists = async () => {
+  const loadInitialData = async () => {
     setIsLoading(true);
-    const data = await apiService.getSmartLists();
-    setSmartLists(data);
-    setIsLoading(false);
+    setSyncError(null);
+    try {
+      const [lists, contactData] = await Promise.all([
+        apiService.getSmartLists(),
+        apiService.getContacts()
+      ]);
+      setSmartLists(lists);
+      setContacts(contactData);
+    } catch (error: any) {
+      console.error('Error loading contacts:', error);
+      if (error.status === 403 || error.status === 401) {
+        setSyncError('Contact management is currently being synchronized. Please ensure your Ninja CRM account setup is complete.');
+      } else {
+        toast.error('Failed to load contacts');
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSaveSmartList = async () => {
@@ -193,7 +209,7 @@ export const ContactsPage = () => {
             <h1 className="text-3xl font-black text-ninja-dark tracking-tighter">
               {selectedSmartListId === 'all' ? 'Contacts' : smartLists.find(l => l.id === selectedSmartListId)?.name}
             </h1>
-            <p className="text-gray-400 font-medium">Manage your leads and clients</p>
+            <p className="text-gray-400 font-medium font-bold text-sm">Manage your leads and clients</p>
           </div>
           <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
             <Button variant="secondary" className="flex items-center gap-2 px-6 py-3 rounded-2xl w-full sm:w-auto justify-center bg-ninja-dark text-white hover:bg-ninja-dark/90">
@@ -206,6 +222,21 @@ export const ContactsPage = () => {
             </Button>
           </div>
         </div>
+
+        {/* Alert Case: Branded Setup Notice */}
+        {syncError && (
+          <Card className="p-4 border-l-4 border-l-ninja-purple bg-ninja-purple/5 border-ninja-purple/10">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-ninja-purple/10 rounded-lg text-ninja-purple">
+                <Users size={18} />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-ninja-dark">Module Synchronization</p>
+                <p className="text-xs text-slate-500 font-medium">{syncError}</p>
+              </div>
+            </div>
+          </Card>
+        )}
 
         {/* Filters Bar */}
         <Card className="p-3 md:p-4 border-none shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white rounded-3xl">

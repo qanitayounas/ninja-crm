@@ -6,10 +6,11 @@ import {
   TrendingUp, 
   MoreVertical,
   ChevronDown,
-  Layout
+  Layout,
+  GitBranch
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { Card, Button, Avatar, cn, Modal, Input, Select, Textarea } from '../components/ui';
+import { Card, Button, Avatar, cn, Modal, Input, Select, Textarea, Badge } from '../components/ui';
 import { apiService } from '../services/apiService';
 import type { Pipeline, PipelineStage, Deal } from '../data/pipelineData';
 
@@ -23,6 +24,7 @@ export const PipelinePage = () => {
   const [newSectionTitle, setNewSectionTitle] = useState('');
   const [newPipelineName, setNewPipelineName] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [syncError, setSyncError] = useState<string | null>(null);
 
   useEffect(() => {
     loadPipelines();
@@ -30,13 +32,57 @@ export const PipelinePage = () => {
 
   const loadPipelines = async () => {
     setIsLoading(true);
-    const data = await apiService.getPipelines();
-    setPipelines(data);
-    if (data.length > 0) {
-      setSelectedPipelineId(data[0].id);
-      setColumns(data[0].stages);
+    setSyncError(null);
+    try {
+      const [pipelineData, opportunitiesData] = await Promise.all([
+        apiService.getPipelines(),
+        apiService.getOpportunities()
+      ]);
+
+      // Map opportunities to their respective stages
+      const enrichedPipelines = pipelineData.map(pipeline => ({
+        ...pipeline,
+        stages: pipeline.stages.map(stage => {
+          const stageOpportunities = opportunitiesData.filter(opp => 
+            opp.pipelineId === pipeline.id && opp.pipelineStageId === stage.id
+          );
+          
+          return {
+            ...stage,
+            count: stageOpportunities.length,
+            totalValue: stageOpportunities.reduce((sum, opp) => sum + (opp.monetaryValue || 0), 0),
+            deals: stageOpportunities.map(opp => ({
+              id: opp.id,
+              title: opp.name,
+              company: opp.contact?.name || 'N/A',
+              value: opp.monetaryValue || 0,
+              probability: opp.probability || 100,
+              description: opp.status || 'No status',
+              owner: { 
+                name: opp.assignedToUser?.name || 'Unassigned', 
+                initials: (opp.assignedToUser?.name || 'U').substring(0, 1), 
+                color: 'bg-ninja-yellow text-ninja-dark' 
+              }
+            }))
+          };
+        })
+      }));
+
+      setPipelines(enrichedPipelines);
+      if (enrichedPipelines.length > 0) {
+        setSelectedPipelineId(enrichedPipelines[0].id);
+        setColumns(enrichedPipelines[0].stages);
+      }
+    } catch (error: any) {
+      console.error('Error loading pipeline data:', error);
+      if (error.status === 403 || error.status === 401) {
+        setSyncError('Deal pipelines are currently being synchronized. Please ensure your Ninja CRM account setup is complete.');
+      } else {
+        toast.error('Failed to load pipelines');
+      }
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   const handlePipelineChange = (id: string) => {
@@ -95,7 +141,7 @@ export const PipelinePage = () => {
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-3">
             <h1 className="text-3xl font-black text-ninja-dark tracking-tighter">Pipelines</h1>
-            <Badge className="bg-ninja-yellow/20 text-ninja-dark border-ninja-yellow/30">
+            <Badge status="info" className="bg-ninja-yellow/20 text-ninja-dark border-ninja-yellow/30">
               {pipelines.length} Total
             </Badge>
           </div>
@@ -127,6 +173,21 @@ export const PipelinePage = () => {
           <span>Add Deal</span>
         </Button>
       </div>
+
+      {/* Alert Case: Branded Setup Notice */}
+      {syncError && (
+        <Card className="p-4 border-l-4 border-l-ninja-purple bg-ninja-purple/5 border-ninja-purple/10">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-ninja-purple/10 rounded-lg text-ninja-purple">
+              <GitBranch size={18} />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-ninja-dark">Module Synchronization</p>
+              <p className="text-xs text-slate-500 font-medium">{syncError}</p>
+            </div>
+          </div>
+        </Card>
+      )}
 
       {/* Stats Section */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -351,15 +412,5 @@ const DealCard = ({ deal }: { deal: Deal }) => {
   );
 };
 
-const Badge = ({ children, className }: { children: React.ReactNode, className?: string }) => {
-  return (
-    <span className={cn(
-      "text-[10px] font-black px-3 py-1 rounded-full border uppercase tracking-widest",
-      className
-    )}>
-      {children}
-    </span>
-  );
-};
 
 
