@@ -1,52 +1,62 @@
-import React from 'react';
-import { 
-  Video, 
-  Users, 
-  Calendar, 
-  Plus, 
-  Search, 
-  X, 
-  ChevronDown, 
+import React, { useState, useEffect } from 'react';
+import {
+  Video,
+  Users,
+  Calendar,
+  Plus,
+  Search,
+  X,
+  ChevronDown,
   CheckCircle2,
   Clock
 } from 'lucide-react';
 import { Card, Badge, Button, cn } from '../components/ui';
 import toast from 'react-hot-toast';
-
-const webinars = [
-  {
-    id: 1,
-    title: 'Marketing Automation 101',
-    registrations: 245,
-    date: '25/3/2026',
-    status: 'Published',
-    type: 'Automated'
-  },
-  {
-    id: 2,
-    title: 'CRM for Startups',
-    registrations: 189,
-    date: '28/3/2025',
-    status: 'Published',
-    type: 'Live'
-  },
-  {
-    id: 3,
-    title: 'Sales Strategies 2026',
-    registrations: 67,
-    date: '5/4/2026',
-    status: 'Draft',
-    type: 'Recorded'
-  }
-];
+import { apiService } from '../services/apiService';
 
 export const WebinarsPage = () => {
   const [showCreateModal, setShowCreateModal] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState('');
+  const [loading, setLoading] = useState(true);
+  const [funnels, setFunnels] = useState<any[]>([]);
 
-  const filteredWebinars = webinars.filter(w => 
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      const results = await Promise.allSettled([
+        apiService.getFunnels(),
+      ]);
+      const funnelsData = results[0].status === 'fulfilled' ? results[0].value : [];
+      setFunnels(funnelsData);
+      setLoading(false);
+    };
+    loadData();
+  }, []);
+
+  // Map funnels to webinar-like items
+  const webinars = funnels.map((funnel: any, idx: number) => ({
+    id: funnel.id || idx + 1,
+    title: funnel.name || funnel.title || `Webinar ${idx + 1}`,
+    registrations: funnel.steps?.length || funnel.pages?.length || 0,
+    date: funnel.updatedAt ? new Date(funnel.updatedAt).toLocaleDateString() : funnel.createdAt ? new Date(funnel.createdAt).toLocaleDateString() : '',
+    status: funnel.status === 'draft' ? 'Draft' : 'Published',
+    type: funnel.type || 'Live',
+  }));
+
+  const publishedCount = webinars.filter(w => w.status === 'Published').length;
+  const totalRegistrations = webinars.reduce((sum, w) => sum + w.registrations, 0);
+
+  const filteredWebinars = webinars.filter(w =>
     w.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ninja-yellow"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 md:space-y-8 animate-in fade-in duration-500 pb-10">
@@ -63,23 +73,23 @@ export const WebinarsPage = () => {
             <Video size={100} />
           </div>
           <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Total Webinars</span>
-          <span className="text-3xl font-black text-ninja-dark">3</span>
+          <span className="text-3xl font-black text-ninja-dark">{webinars.length}</span>
         </Card>
-        
+
         <Card className="p-6 md:p-8 flex flex-col gap-2 shadow-sm border-gray-100 relative overflow-hidden group">
           <div className="absolute -right-4 -bottom-4 text-green-500/5 group-hover:scale-110 transition-transform duration-500">
             <CheckCircle2 size={100} />
           </div>
           <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Published</span>
-          <span className="text-3xl font-black text-ninja-yellow">2</span>
+          <span className="text-3xl font-black text-ninja-yellow">{publishedCount}</span>
         </Card>
 
         <Card className="p-6 md:p-8 flex flex-col gap-2 shadow-sm border-gray-100 relative overflow-hidden group">
           <div className="absolute -right-4 -bottom-4 text-purple-500/5 group-hover:scale-110 transition-transform duration-500">
             <Users size={100} />
           </div>
-          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Total Registrations</span>
-          <span className="text-3xl font-black text-ninja-dark opacity-10">501</span>
+          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Total Pages</span>
+          <span className="text-3xl font-black text-ninja-dark opacity-10">{totalRegistrations}</span>
         </Card>
       </div>
 
@@ -89,8 +99,8 @@ export const WebinarsPage = () => {
           <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-ninja-yellow transition-colors">
             <Search size={18} />
           </div>
-          <input 
-            type="text" 
+          <input
+            type="text"
             placeholder="Search webinars..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -98,7 +108,7 @@ export const WebinarsPage = () => {
           />
         </div>
 
-        <Button 
+        <Button
           onClick={() => setShowCreateModal(true)}
           className="w-full md:w-auto font-black px-6 py-3.5 rounded-2xl shadow-xl shadow-ninja-yellow/20 flex items-center justify-center gap-2 whitespace-nowrap"
         >
@@ -110,8 +120,8 @@ export const WebinarsPage = () => {
       {/* Webinars List */}
       <div className="space-y-4">
         {filteredWebinars.map((webinar) => (
-          <Card 
-            key={webinar.id} 
+          <Card
+            key={webinar.id}
             className="p-5 md:p-6 flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm border-gray-100 hover:shadow-md transition-all cursor-pointer group"
           >
             <div className="flex items-center gap-5 flex-1 w-full">
@@ -126,7 +136,7 @@ export const WebinarsPage = () => {
                 <div className="flex items-center gap-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
                   <span className="flex items-center gap-1.5">
                     <Users size={14} className="text-gray-300" />
-                    {webinar.registrations} registrations
+                    {webinar.registrations} pages
                   </span>
                   <span className="flex items-center gap-1.5 border-l pl-4 border-gray-100">
                     <Calendar size={14} className="text-gray-300" />
@@ -137,7 +147,7 @@ export const WebinarsPage = () => {
             </div>
 
             <div className="flex items-center gap-3 shrink-0">
-              <Badge 
+              <Badge
                 status={webinar.status}
                 className={cn(
                   "font-black text-[10px] uppercase px-4 py-1.5 rounded-full",
@@ -171,7 +181,7 @@ export const WebinarsPage = () => {
               <Video size={160} />
             </div>
 
-            <button 
+            <button
               onClick={() => setShowCreateModal(false)}
               className="absolute right-6 top-6 text-gray-400 hover:text-ninja-dark transition-colors z-10"
             >
@@ -188,8 +198,8 @@ export const WebinarsPage = () => {
                 <label className="text-xs font-black text-ninja-dark uppercase tracking-widest flex items-center gap-1.5">
                   Webinar Name <span className="text-ninja-yellow">*</span>
                 </label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   placeholder="e.g. Marketing Masterclass"
                   className="w-full px-4 py-3.5 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-ninja-yellow focus:ring-4 focus:ring-ninja-yellow/10 transition-all outline-none font-bold text-sm text-ninja-dark"
                 />
@@ -203,8 +213,8 @@ export const WebinarsPage = () => {
                   <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-ninja-yellow transition-colors">
                     <Clock size={16} />
                   </div>
-                  <input 
-                    type="datetime-local" 
+                  <input
+                    type="datetime-local"
                     className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-ninja-yellow focus:ring-4 focus:ring-ninja-yellow/10 transition-all outline-none font-bold text-sm text-ninja-dark"
                   />
                 </div>
@@ -224,7 +234,7 @@ export const WebinarsPage = () => {
                 </div>
               </div>
 
-              <Button 
+              <Button
                 onClick={() => {
                   toast.success('Webinar Created Successfully!');
                   setShowCreateModal(false);

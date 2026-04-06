@@ -2,6 +2,7 @@ import React from 'react';
 import { Plus, Clock, X, Code } from 'lucide-react';
 import { Button, Input, Select, cn } from '../../components/ui';
 import toast from 'react-hot-toast';
+// No GHL API exists for countdown timers - this is a local/static config feature
 
 const timers = [
   { id: 1, name: 'Black Friday Countdown', type: 'Specific Date', status: 'Active', remaining: '3d 12h 45m', ends: 'Nov 27, 2026' },

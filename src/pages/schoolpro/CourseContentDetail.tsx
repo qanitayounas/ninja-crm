@@ -1,15 +1,80 @@
-import { 
-  PlayCircle, 
-  CheckCircle2, 
-  Lock, 
-  Clock, 
-  BookOpen, 
-  ArrowLeft 
+import { useState, useEffect } from 'react';
+import {
+  PlayCircle,
+  CheckCircle2,
+  Lock,
+  Clock,
+  BookOpen,
+  ArrowLeft,
+  Loader2
 } from 'lucide-react';
 import { Card, cn } from '../../components/ui';
-import { courseContentData, learningStats } from '../../data/studentPortalData';
+import { apiService } from '../../services/apiService';
+
+// Fallback content data
+const fallbackCourseContent = [
+  { id: 1, title: 'Introduction', lessons: 3, duration: '30 min', status: 'Completed' },
+  { id: 2, title: 'Getting Started', lessons: 4, duration: '45 min', status: 'Active' },
+  { id: 3, title: 'Advanced Topics', lessons: 5, duration: '1h', status: 'Locked' },
+];
+// Stats are computed dynamically from API data
 
 export const CourseContentDetail = ({ onBack }: { onBack: () => void }) => {
+    const [loading, setLoading] = useState(true);
+    const [courses, setCourses] = useState<any[]>([]);
+    const [modules, setModules] = useState<any[]>([]);
+
+    useEffect(() => {
+        setLoading(true);
+        apiService.getCourses()
+            .then(async (coursesData) => {
+                const allCourses = coursesData || [];
+                setCourses(allCourses);
+                if (allCourses.length > 0) {
+                    const firstId = allCourses[0].id;
+                    try {
+                        const mods = await apiService.getCourseModules(firstId);
+                        setModules(mods || []);
+                    } catch {
+                        setModules([]);
+                    }
+                }
+            })
+            .catch(() => { setCourses([]); setModules([]); })
+            .finally(() => setLoading(false));
+    }, []);
+
+    const courseContentData = modules.length > 0
+        ? modules.map((m: any, i: number) => ({
+            id: m.id || i + 1,
+            title: m.name || m.title || `Module ${i + 1}`,
+            lessons: m.lessonCount || m.lessons || 0,
+            duration: m.duration || 'N/A',
+            status: m.status === 'completed' ? 'Completed' : m.status === 'active' ? 'Active' : i === 0 ? 'Completed' : i === modules.length - 1 ? 'Locked' : 'Active'
+          }))
+        : fallbackCourseContent;
+
+    const completedModules = courseContentData.filter((m: any) => m.status === 'Completed').length;
+    const totalLessons = courseContentData.reduce((s: number, m: any) => s + (m.lessons || 0), 0);
+    const progressPct = courseContentData.length > 0 ? Math.round((completedModules / courseContentData.length) * 100) : 0;
+
+    const learningStats = [
+        { label: 'Modules', value: String(courseContentData.length) },
+        { label: 'Total Lessons', value: String(totalLessons) },
+        { label: 'Completed', value: String(completedModules) },
+        { label: 'Progress', value: `${progressPct}%` },
+    ];
+
+    const courseName = courses.length > 0 ? (courses[0].name || courses[0].title || 'Course Content') : 'Course Content';
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center h-64">
+                <Loader2 className="h-8 w-8 animate-spin text-ninja-yellow" />
+            </div>
+        );
+    }
+
     return (
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 animate-in slide-in-from-right duration-700">
             {/* Main Content Column */}
@@ -24,7 +89,7 @@ export const CourseContentDetail = ({ onBack }: { onBack: () => void }) => {
                         Back to Portal
                     </button>
                     <h1 className="text-3xl font-black text-ninja-dark tracking-tight uppercase">Course Content</h1>
-                    <p className="text-gray-500 font-bold text-sm">Digital Marketing Strategies • 24 Lessons total</p>
+                    <p className="text-gray-500 font-bold text-sm">{courseName} • {totalLessons} Lessons total</p>
                 </div>
 
                 {/* Modules List */}
@@ -89,10 +154,10 @@ export const CourseContentDetail = ({ onBack }: { onBack: () => void }) => {
                     <div className="mt-8 pt-8 border-t border-gray-50">
                       <div className="flex justify-between items-end mb-3">
                           <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Total Progress</span>
-                          <span className="text-xl font-black text-ninja-yellow">68%</span>
+                          <span className="text-xl font-black text-ninja-yellow">{progressPct}%</span>
                       </div>
                       <div className="h-2 w-full bg-gray-50 rounded-full overflow-hidden">
-                          <div className="h-full bg-ninja-yellow shadow-[0_0_10px_rgba(212,255,0,0.5)] transition-all" style={{ width: '68%' }} />
+                          <div className="h-full bg-ninja-yellow shadow-[0_0_10px_rgba(212,255,0,0.5)] transition-all" style={{ width: `${progressPct}%` }} />
                       </div>
                     </div>
                 </Card>

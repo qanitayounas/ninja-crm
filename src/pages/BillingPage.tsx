@@ -12,34 +12,70 @@ import {
     AlertCircle
 } from 'lucide-react';
 import { Card, Button, Badge } from '../components/ui';
-import { currentPlan, paymentMethods } from '../data/billingData';
 import { cn } from '../components/ui';
 import { apiService } from '../services/apiService';
 
 export const BillingPage = () => {
     const [transactions, setTransactions] = useState<any[]>([]);
+    const [, setInvoices] = useState<any[]>([]);
+    const [subscriptions, setSubscriptions] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [syncError, setSyncError] = useState<string | null>(null);
 
+    // Derive plan info from subscriptions
+    const currentPlan = subscriptions.length > 0 ? {
+        name: subscriptions[0].name || 'Active Plan',
+        price: `$${((subscriptions[0].amount || 0) / 100).toFixed(2)}`,
+        interval: subscriptions[0].interval || 'month',
+        status: subscriptions[0].status === 'active' ? 'Active' : subscriptions[0].status || 'Active',
+        nextBillingDate: subscriptions[0].nextBillingDate ? new Date(subscriptions[0].nextBillingDate).toLocaleDateString() : 'N/A',
+        features: ['Unlimited Contacts', 'All Integrations', 'Priority Support', 'Custom Domains']
+    } : {
+        name: 'Ninja Pro', price: '$297', interval: 'month', status: 'Active',
+        nextBillingDate: 'N/A', features: ['Unlimited Contacts', 'All Integrations', 'Priority Support', 'Custom Domains']
+    };
+
+    const paymentMethods = [
+        { type: 'VISA', last4: '4242', expiry: '12/27', isPrimary: true, color: 'bg-gradient-to-br from-blue-600 to-blue-800' },
+        { type: 'MC', last4: '8888', expiry: '06/28', isPrimary: false, color: 'bg-gradient-to-br from-orange-500 to-red-600' }
+    ];
+
     useEffect(() => {
-        loadTransactions();
+        loadBillingData();
     }, []);
 
-    const loadTransactions = async () => {
+    const loadBillingData = async () => {
         setIsLoading(true);
         setSyncError(null);
         try {
-            const data = await apiService.getTransactions();
-            const mapped = (Array.isArray(data) ? data : []).map((order: any) => ({
-                id: (order.id || '').substring(0, 8).toUpperCase(),
+            const [ordersData, invoicesData, subsData] = await Promise.allSettled([
+                apiService.getOrders(),
+                apiService.getInvoices(),
+                apiService.getSubscriptions()
+            ]);
+
+            // Process orders/transactions
+            const orders = ordersData.status === 'fulfilled' ? ordersData.value : [];
+            const mapped = (Array.isArray(orders) ? orders : []).map((order: any) => ({
+                id: (order._id || order.id || '').substring(0, 8).toUpperCase(),
                 date: order.createdAt ? new Date(order.createdAt).toLocaleDateString() : 'N/A',
-                amount: order.totalAmount ? `$${(order.totalAmount / 100).toFixed(2)}` : '$0.00',
-                status: order.status === 'completed' ? 'Paid' : 'Pending',
-                method: 'Credit Card' // Default placeholder as GHL API v2 list doesn't always provide method details
+                amount: order.amount ? `$${(order.amount / 100).toFixed(2)}` : '$0.00',
+                status: order.status === 'completed' || order.status === 'paid' ? 'Paid' : 'Pending',
+                method: order.paymentMethod || 'Credit Card'
             }));
             setTransactions(mapped);
+
+            // Process invoices
+            if (invoicesData.status === 'fulfilled') {
+                setInvoices(Array.isArray(invoicesData.value) ? invoicesData.value : []);
+            }
+
+            // Process subscriptions
+            if (subsData.status === 'fulfilled') {
+                setSubscriptions(Array.isArray(subsData.value) ? subsData.value : []);
+            }
         } catch (error: any) {
-            console.error('Error loading transactions:', error);
+            console.error('Error loading billing data:', error);
             if (error.status === 403 || error.status === 401) {
                 setSyncError('Billing information is currently being synchronized. Please ensure your Ninja CRM account setup is complete.');
             }

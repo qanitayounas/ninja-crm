@@ -1,24 +1,91 @@
-import { 
-  PlayCircle, 
-  BookOpen, 
-  Star, 
-  Trophy, 
-  BookMarked, 
-  Clock, 
-  CheckCircle2, 
+import { useState, useEffect } from 'react';
+import {
+  PlayCircle,
+  BookOpen,
+  Star,
+  Trophy,
+  BookMarked,
+  Clock,
+  CheckCircle2,
   Flame,
-  Calendar
+  Calendar,
+  Loader2
 } from 'lucide-react';
 import { Card, cn } from '../../components/ui';
-import { 
-  studentProgressBanner, 
-  myLearningCourses, 
-  myAchievements, 
-  learningStats, 
-  upcomingActivities 
-} from '../../data/studentPortalData';
+import { apiService } from '../../services/apiService';
+
+const courseColors = [
+  'from-green-400 to-blue-500',
+  'from-yellow-400 to-green-500',
+  'from-blue-400 to-purple-500',
+  'from-pink-400 to-red-500',
+];
+
+// Fallback static data
+const fallbackAchievements = [
+  { id: 1, title: 'First Step', type: 'Badge', icon: 'star', isCompleted: true },
+  { id: 2, title: 'Studious', type: 'Badge', icon: 'book', isCompleted: true },
+  { id: 3, title: 'Quiz Master', type: 'Badge', icon: 'trophy', isCompleted: false },
+];
+const fallbackUpcoming = [
+  { title: 'Next Lesson', time: 'Soon' },
+  { title: 'Live Session', time: 'Upcoming' },
+];
 
 export const StudentPortalOverview = () => {
+    const [loading, setLoading] = useState(true);
+    const [courses, setCourses] = useState<any[]>([]);
+    const [contacts, setContacts] = useState<any[]>([]);
+
+    useEffect(() => {
+        setLoading(true);
+        Promise.all([
+            apiService.getCourses().catch(() => []),
+            apiService.getContacts().catch(() => [])
+        ]).then(([coursesData, contactsData]) => {
+            setCourses(coursesData || []);
+            setContacts(contactsData || []);
+        }).finally(() => setLoading(false));
+    }, []);
+
+    const totalStudents = contacts.length;
+    const totalLessons = courses.reduce((s: number, c: any) => s + (c.lessonCount || c.lessons || 0), 0);
+
+    const myLearningCourses = courses.map((c: any, i: number) => ({
+        id: c.id || i + 1,
+        title: c.name || c.title || `Course ${i + 1}`,
+        lastActivity: c.updatedAt ? new Date(c.updatedAt).toLocaleDateString() : 'N/A',
+        progress: c.completionRate || (c.status === 'completed' ? 100 : 50),
+        lessonsCompleted: c.completedLessons || Math.floor((c.lessonCount || 0) * 0.5),
+        totalLessons: c.lessonCount || c.lessons || 0,
+        nextLesson: c.status === 'completed' ? 'None' : 'Next lesson',
+        status: c.status === 'completed' ? 'Completed' : undefined,
+        color: courseColors[i % courseColors.length]
+    }));
+
+    const firstCourse = myLearningCourses[0];
+    const studentProgressBanner = firstCourse
+        ? { title: firstCourse.title, nextLesson: firstCourse.nextLesson || 'Next lesson', progress: firstCourse.progress, status: 'In progress', color: 'bg-ninja-yellow' }
+        : { title: 'No courses yet', nextLesson: 'N/A', progress: 0, status: 'Not started', color: 'bg-gray-400' };
+
+    const learningStats = [
+        { label: 'Students', value: String(totalStudents) },
+        { label: 'Total Lessons', value: String(totalLessons) },
+        { label: 'Courses', value: String(courses.length) },
+        { label: 'Completion', value: courses.length > 0 ? `${Math.round(myLearningCourses.reduce((s: number, c: any) => s + c.progress, 0) / myLearningCourses.length)}%` : '0%' },
+    ];
+
+    const myAchievements = fallbackAchievements;
+    const upcomingActivities = fallbackUpcoming;
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center h-64">
+                <Loader2 className="h-8 w-8 animate-spin text-ninja-yellow" />
+            </div>
+        );
+    }
+
     return (
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 animate-in fade-in duration-700">
             {/* Main Content Column */}
@@ -135,9 +202,9 @@ export const StudentPortalOverview = () => {
                                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{achievement.type}</p>
                                     </div>
                                 </div>
-                                {!achievement.isCompleted && achievement.progress && (
+                                {!achievement.isCompleted && (achievement as any).progress && (
                                     <div className="h-1.5 w-full bg-gray-50 rounded-full overflow-hidden">
-                                        <div className="h-full bg-ninja-yellow transition-all" style={{ width: `${achievement.progress}%` }} />
+                                        <div className="h-full bg-ninja-yellow transition-all" style={{ width: `${(achievement as any).progress}%` }} />
                                     </div>
                                 )}
                             </div>

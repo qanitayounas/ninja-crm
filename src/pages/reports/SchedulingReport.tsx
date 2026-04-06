@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import {
     BarChart,
     Bar,
@@ -21,36 +22,111 @@ import {
     AlertCircle
 } from 'lucide-react';
 import { Card, Button, cn } from '../../components/ui';
-
-const schedulingKPIs = [
-    { label: 'Booking Velocity', value: '1.2h', change: '-15%', isPositive: true, icon: Zap, color: 'text-ninja-yellow', bg: 'bg-ninja-yellow/10' },
-    { label: 'Avg. Lead Time', value: '3.5 Days', change: '+0.5d', isPositive: false, icon: Timer, color: 'text-purple-500', bg: 'bg-purple-50' },
-    { label: 'Conversion Rate', value: '18.4%', change: '+2.1%', isPositive: true, icon: MousePointer2, color: 'text-green-500', bg: 'bg-green-50' },
-    { label: 'Slot Utilization', value: '72%', change: '+5%', isPositive: true, icon: Layout, color: 'text-blue-500', bg: 'bg-blue-50' },
-];
-
-const popularTimeSlots = [
-    { time: '09:00', bookings: 124 },
-    { time: '10:00', bookings: 156 },
-    { time: '11:00', bookings: 142 },
-    { time: '12:00', bookings: 98 },
-    { time: '14:00', bookings: 110 },
-    { time: '15:00', bookings: 134 },
-    { time: '16:00', bookings: 168 },
-    { time: '17:00', bookings: 145 },
-];
-
-const bookingsTrend = [
-    { day: 'Mon', count: 320 },
-    { day: 'Tue', count: 350 },
-    { day: 'Wed', count: 300 },
-    { day: 'Thu', count: 420 },
-    { day: 'Fri', count: 450 },
-    { day: 'Sat', count: 180 },
-    { day: 'Sun', count: 120 },
-];
+import { apiService } from '../../services/apiService';
 
 export const SchedulingReport = () => {
+    const [isLoading, setIsLoading] = useState(true);
+    const [syncError, setSyncError] = useState<string | null>(null);
+    const [schedulingKPIs, setSchedulingKPIs] = useState<any[]>([]);
+    const [popularTimeSlots, setPopularTimeSlots] = useState<any[]>([]);
+    const [bookingsTrend, setBookingsTrend] = useState<any[]>([]);
+    const [healthScore, setHealthScore] = useState(0);
+
+    useEffect(() => {
+        loadData();
+    }, []);
+
+    const loadData = async () => {
+        setIsLoading(true);
+        setSyncError(null);
+        try {
+            const results = await Promise.allSettled([
+                apiService.getAppointments(),
+                apiService.getCalendarEvents()
+            ]);
+
+            const appointments = results[0].status === 'fulfilled' ? results[0].value : [];
+            const events = results[1].status === 'fulfilled' ? results[1].value : [];
+
+            const allEvents = [...appointments, ...events];
+            const total = allEvents.length;
+            const confirmed = allEvents.filter((e: any) => e.status === 'confirmed').length;
+            const cancelled = allEvents.filter((e: any) => e.status === 'cancelled').length;
+            const convRate = total > 0 ? ((confirmed / total) * 100).toFixed(1) : '0';
+            const utilization = total > 0 ? Math.min(100, Math.round((confirmed / Math.max(total, 1)) * 100)) : 0;
+
+            setSchedulingKPIs([
+                { label: 'Booking Velocity', value: total > 0 ? `${(total / 7).toFixed(1)}/day` : '0/day', change: `${total} total`, isPositive: true, icon: Zap, color: 'text-ninja-yellow', bg: 'bg-ninja-yellow/10' },
+                { label: 'Total Events', value: total.toString(), change: `${cancelled} cancelled`, isPositive: cancelled === 0, icon: Timer, color: 'text-purple-500', bg: 'bg-purple-50' },
+                { label: 'Confirmation Rate', value: `${convRate}%`, change: `${confirmed} confirmed`, isPositive: true, icon: MousePointer2, color: 'text-green-500', bg: 'bg-green-50' },
+                { label: 'Slot Utilization', value: `${utilization}%`, change: `${utilization}% utilized`, isPositive: utilization > 50, icon: Layout, color: 'text-blue-500', bg: 'bg-blue-50' },
+            ]);
+
+            // Popular time slots
+            const hourCounts: Record<string, number> = {};
+            allEvents.forEach((e: any) => {
+                const start = e.startTime || e.start || e.appoinmentStart;
+                if (start) {
+                    try {
+                        const d = new Date(start);
+                        const hour = `${d.getHours().toString().padStart(2, '0')}:00`;
+                        hourCounts[hour] = (hourCounts[hour] || 0) + 1;
+                    } catch { /* skip */ }
+                }
+            });
+
+            const timeSlots = Object.entries(hourCounts)
+                .map(([time, bookings]) => ({ time, bookings }))
+                .sort((a, b) => a.time.localeCompare(b.time));
+            setPopularTimeSlots(timeSlots.length > 0 ? timeSlots : [
+                { time: '09:00', bookings: 0 },
+                { time: '10:00', bookings: 0 },
+                { time: '11:00', bookings: 0 },
+                { time: '14:00', bookings: 0 },
+                { time: '15:00', bookings: 0 },
+                { time: '16:00', bookings: 0 },
+            ]);
+
+            // Bookings trend by day of week
+            const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+            const dayCounts: Record<string, number> = {};
+            days.forEach(d => { dayCounts[d] = 0; });
+
+            allEvents.forEach((e: any) => {
+                const start = e.startTime || e.start || e.appoinmentStart;
+                if (start) {
+                    try {
+                        const d = new Date(start);
+                        const dayName = days[((d.getDay() + 6) % 7)];
+                        dayCounts[dayName] = (dayCounts[dayName] || 0) + 1;
+                    } catch { /* skip */ }
+                }
+            });
+            setBookingsTrend(days.map(day => ({ day, count: dayCounts[day] || 0 })));
+
+            // Health score
+            const score = total > 0 ? Math.min(100, Math.round((confirmed / total) * 100)) : 0;
+            setHealthScore(score);
+        } catch (error: any) {
+            console.error('Error loading scheduling report:', error);
+            if (error.status === 403 || error.status === 401) {
+                setSyncError('Scheduling data is currently being synchronized. Please ensure your Ninja CRM account setup is complete.');
+            }
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center h-96">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ninja-yellow"></div>
+            </div>
+        );
+    }
+
+    const dashOffset = 351.858 - (351.858 * healthScore / 100);
+
     return (
         <div className="flex flex-col gap-8">
             {/* Header Section */}
@@ -77,6 +153,21 @@ export const SchedulingReport = () => {
                     </Button>
                 </div>
             </div>
+
+            {/* Sync Error */}
+            {syncError && (
+                <Card className="p-4 border-l-4 border-l-ninja-purple bg-ninja-purple/5 border-ninja-purple/10">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-ninja-purple/10 rounded-lg text-ninja-purple">
+                            <Zap size={18} />
+                        </div>
+                        <div>
+                            <p className="text-sm font-bold text-ninja-dark">Module Synchronization</p>
+                            <p className="text-xs text-slate-500 font-medium">{syncError}</p>
+                        </div>
+                    </div>
+                </Card>
+            )}
 
             {/* KPI Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -141,10 +232,14 @@ export const SchedulingReport = () => {
                             <Zap size={14} className="text-ninja-yellow" />
                             <span className="text-[10px] font-black text-ninja-yellow uppercase tracking-widest">Premium Optimization</span>
                         </div>
-                        <h3 className="text-3xl font-black text-white tracking-tight mb-4 leading-tight">Your Schedule Health is Excellent</h3>
+                        <h3 className="text-3xl font-black text-white tracking-tight mb-4 leading-tight">
+                            {healthScore >= 70 ? 'Your Schedule Health is Excellent' : healthScore >= 40 ? 'Your Schedule Health is Good' : 'Schedule Health Needs Attention'}
+                        </h3>
                         <p className="text-slate-400 font-medium text-lg leading-relaxed mb-8">
-                            Based on your last 30 days of data, your booking velocity has increased by <span className="text-ninja-yellow font-bold">15%</span>. 
-                            Consider opening more slots on Thursday afternoons to capture peak demand.
+                            Based on your data, your booking confirmation rate is <span className="text-ninja-yellow font-bold">{healthScore}%</span>.
+                            {healthScore >= 70
+                                ? ' Consider opening more slots during peak demand hours to maximize throughput.'
+                                : ' Focus on reducing cancellations and no-shows to improve your scheduling performance.'}
                         </p>
                         <div className="flex flex-wrap gap-4">
                             <div className="flex items-center gap-2 bg-white/5 p-3 rounded-2xl border border-white/10 shrink-0">
@@ -153,7 +248,7 @@ export const SchedulingReport = () => {
                             </div>
                             <div className="flex items-center gap-2 bg-white/5 p-3 rounded-2xl border border-white/10 shrink-0">
                                 <AlertCircle size={18} className="text-slate-400" />
-                                <span className="text-sm font-bold text-slate-400 whitespace-nowrap">3 slots suggested</span>
+                                <span className="text-sm font-bold text-slate-400 whitespace-nowrap">{popularTimeSlots.length} slots tracked</span>
                             </div>
                         </div>
                     </div>
@@ -161,11 +256,11 @@ export const SchedulingReport = () => {
                         <div className="relative h-32 w-32">
                             <svg className="h-full w-full rotate-[-90deg]">
                                 <circle cx="64" cy="64" r="56" className="stroke-white/10 fill-none stroke-[8px]" />
-                                <circle cx="64" cy="64" r="56" className="stroke-ninja-yellow fill-none stroke-[8px] transition-all duration-1000" strokeDasharray="351.858" strokeDashoffset="88" strokeLinecap="round" />
+                                <circle cx="64" cy="64" r="56" className="stroke-ninja-yellow fill-none stroke-[8px] transition-all duration-1000" strokeDasharray="351.858" strokeDashoffset={dashOffset.toString()} strokeLinecap="round" />
                             </svg>
                             <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                <span className="text-3xl font-black text-white">75%</span>
-                                <span className="text-[10px] font-black text-white/50 uppercase tracking-tight">Daily Goal</span>
+                                <span className="text-3xl font-black text-white">{healthScore}%</span>
+                                <span className="text-[10px] font-black text-white/50 uppercase tracking-tight">Health Score</span>
                             </div>
                         </div>
                         <Button className="w-full bg-ninja-yellow text-ninja-dark hover:bg-white transition-colors border-none shadow-xl shadow-ninja-yellow/10">Manage Slots</Button>

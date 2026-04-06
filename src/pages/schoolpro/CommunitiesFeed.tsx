@@ -1,16 +1,77 @@
-import { 
-  Heart, 
-  MessageCircle, 
-  Share2, 
-  MoreHorizontal, 
-  PlusCircle, 
-  TrendingUp, 
-  Users 
+import { useState, useEffect } from 'react';
+import {
+  Heart,
+  MessageCircle,
+  Share2,
+  MoreHorizontal,
+  PlusCircle,
+  TrendingUp,
+  Users,
+  Loader2
 } from 'lucide-react';
 import { Card, cn } from '../../components/ui';
-import { feedPosts, trendingTopics, activeCommunitiesSidebar } from '../../data/communitiesData';
+import { apiService } from '../../services/apiService';
+
+// Fallback feed data when API returns nothing
+const fallbackFeedPosts = [
+  { id: 1, user: 'Community Member', avatar: 'CM', time: 'Recently', content: 'Welcome to the community feed! Start a conversation.', likes: 0, comments: 0, shares: 0 }
+];
+const fallbackTopics = [
+  { tag: '#Courses', trend: 'up' },
+  { tag: '#Learning', trend: 'up' },
+];
+
+const communityColors = ['bg-ninja-yellow', 'bg-purple-500', 'bg-ninja-yellow'];
 
 export const CommunitiesFeed = () => {
+    const [loading, setLoading] = useState(true);
+    const [courses, setCourses] = useState<any[]>([]);
+
+    useEffect(() => {
+        setLoading(true);
+        apiService.getCourses()
+            .then((data) => setCourses(data || []))
+            .catch(() => setCourses([]))
+            .finally(() => setLoading(false));
+    }, []);
+
+    const activeCommunitiesSidebar = courses.length > 0
+        ? courses.slice(0, 3).map((c: any, i: number) => ({
+            title: c.name || c.title || `Community ${i + 1}`,
+            members: c.studentCount || c.students || 0,
+            color: communityColors[i % communityColors.length]
+          }))
+        : [{ title: 'No communities yet', members: 0, color: 'bg-gray-400' }];
+
+    // Build feed posts from course data
+    const feedPosts = courses.length > 0
+        ? courses.slice(0, 5).map((c: any, i: number) => ({
+            id: c.id || i + 1,
+            user: c.instructorName || c.name || `Course ${i + 1}`,
+            avatar: (c.name || 'C').substring(0, 2).toUpperCase(),
+            time: c.updatedAt ? new Date(c.updatedAt).toLocaleDateString() : 'Recently',
+            content: c.description || `Updates from ${c.name || 'this course'}. Join the discussion!`,
+            likes: c.studentCount || 0,
+            comments: c.lessonCount || 0,
+            shares: 0
+          }))
+        : fallbackFeedPosts;
+
+    const trendingTopics = courses.length > 0
+        ? courses.slice(0, 4).map((c: any) => ({
+            tag: `#${(c.name || c.title || 'Course').replace(/\s+/g, '')}`,
+            trend: 'up'
+          }))
+        : fallbackTopics;
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center h-64">
+                <Loader2 className="h-8 w-8 animate-spin text-ninja-yellow" />
+            </div>
+        );
+    }
+
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-in fade-in duration-700">
             {/* Main Feed Column */}

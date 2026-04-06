@@ -1,13 +1,13 @@
-import React from 'react';
-import { 
-  Folder, 
-  Search, 
-  Plus, 
-  Bell, 
-  RefreshCw, 
-  Archive, 
-  LayoutGrid, 
-  List, 
+import React, { useState, useEffect } from 'react';
+import {
+  Folder,
+  Search,
+  Plus,
+  Bell,
+  RefreshCw,
+  Archive,
+  LayoutGrid,
+  List,
   Clock,
   History,
   CheckCircle2,
@@ -17,22 +17,55 @@ import {
 } from 'lucide-react';
 import { Card, Button } from '../components/ui';
 import toast from 'react-hot-toast';
+import { apiService } from '../services/apiService';
 
-const folders = [
-  { id: 1, name: 'Corporate', count: 12, color: 'text-ninja-yellow' },
-  { id: 2, name: 'Campaigns', count: 8, color: 'text-blue-500' },
-  { id: 3, name: 'Products', count: 15, color: 'text-green-500' },
-  { id: 4, name: 'Events', count: 6, color: 'text-purple-500' }
-];
-
-const resentUpdates = [
-  { id: 1, name: 'Ninja Main Site', type: 'Website', time: '2026-03-20 14:32', icon: Globe },
-  { id: 2, name: 'Contact Form', type: 'Form', time: '2026-03-20 12:15', icon: CheckCircle2 },
-  { id: 3, name: 'Corporate Blog', type: 'Blog', time: '2026-03-19 18:45', icon: History },
-  { id: 4, name: 'Sales WhatsApp QR', type: 'QR Code', time: '2026-03-19 10:20', icon: Clock }
-];
+const folderColors = ['text-ninja-yellow', 'text-blue-500', 'text-green-500', 'text-purple-500', 'text-orange-500', 'text-red-500'];
 
 export const SitesSettingsPage = () => {
+  const [loading, setLoading] = useState(true);
+  const [funnels, setFunnels] = useState<any[]>([]);
+  const [links, setLinks] = useState<any[]>([]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      const results = await Promise.allSettled([
+        apiService.getFunnels(),
+        apiService.getLinks(),
+      ]);
+      setFunnels(results[0].status === 'fulfilled' ? results[0].value : []);
+      setLinks(results[1].status === 'fulfilled' ? results[1].value : []);
+      setLoading(false);
+    };
+    loadData();
+  }, []);
+
+  // Build folders from funnels
+  const folders = funnels.map((funnel: any, idx: number) => ({
+    id: funnel.id || idx + 1,
+    name: funnel.name || `Funnel ${idx + 1}`,
+    count: funnel.steps?.length || funnel.pages?.length || 0,
+    color: folderColors[idx % folderColors.length],
+  }));
+
+  // Build recent updates from links + funnels
+  const recentUpdates = [
+    ...funnels.slice(0, 2).map((f: any, idx: number) => ({
+      id: `f-${idx}`,
+      name: f.name || 'Funnel',
+      type: 'Funnel',
+      time: f.updatedAt ? new Date(f.updatedAt).toLocaleString() : '',
+      icon: Globe,
+    })),
+    ...links.slice(0, 2).map((l: any, idx: number) => ({
+      id: `l-${idx}`,
+      name: l.name || 'Link',
+      type: 'Link',
+      time: l.createdAt ? new Date(l.createdAt).toLocaleString() : '',
+      icon: CheckCircle2,
+    })),
+  ];
+
   const [activeFilter, setActiveFilter] = React.useState('All');
   const [defaultView, setDefaultView] = React.useState('Grid');
   const [preferences, setPreferences] = React.useState({
@@ -45,6 +78,14 @@ export const SitesSettingsPage = () => {
     setPreferences(prev => ({ ...prev, [key]: !prev[key] }));
     toast.success('Preference Updated');
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ninja-yellow"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 md:space-y-8 animate-in fade-in duration-500 pb-10">
@@ -202,7 +243,7 @@ export const SitesSettingsPage = () => {
           <h3 className="text-sm font-black text-ninja-dark uppercase tracking-widest">Recent Updates</h3>
         </div>
         <div className="divide-y divide-gray-50">
-          {resentUpdates.map((update) => (
+          {recentUpdates.map((update) => (
             <div key={update.id} className="p-6 flex items-center justify-between hover:bg-gray-50/50 transition-colors cursor-pointer group">
               <div className="flex items-center gap-4">
                 <div className="h-10 w-10 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 group-hover:bg-ninja-yellow/10 group-hover:text-ninja-yellow transition-all">

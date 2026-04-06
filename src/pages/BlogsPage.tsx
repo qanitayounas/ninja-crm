@@ -1,54 +1,63 @@
-import React from 'react';
-import { 
-  BookOpen, 
-  Users, 
-  Plus, 
-  Search, 
-  X, 
-  ChevronDown, 
+import React, { useState, useEffect } from 'react';
+import {
+  BookOpen,
+  Users,
+  Plus,
+  Search,
+  X,
+  ChevronDown,
   Layout
 } from 'lucide-react';
 import { Card, Badge, Button, cn } from '../components/ui';
 import toast from 'react-hot-toast';
-
-const blogs = [
-  {
-    id: 1,
-    name: 'Ninja Corporate Blog',
-    status: 'Published',
-    description: 'Official company blog',
-    posts: 45,
-    weeklyVisitors: '12,450',
-    updatedAt: '20/3/2026'
-  },
-  {
-    id: 2,
-    name: 'CRM Resources Blog',
-    status: 'Published',
-    description: 'Tips and tutorials',
-    posts: 28,
-    weeklyVisitors: '8,234',
-    updatedAt: '19/3/2026'
-  },
-  {
-    id: 3,
-    name: 'News Blog',
-    status: 'Draft',
-    description: 'Industry updates',
-    posts: 12,
-    weeklyVisitors: '3,450',
-    updatedAt: '21/3/2026'
-  }
-];
+import { apiService } from '../services/apiService';
 
 export const BlogsPage = () => {
   const [showCreateModal, setShowCreateModal] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState('');
+  const [blogs, setBlogs] = useState<any[]>([]);
+  const [authors, setAuthors] = useState<any[]>([]);
+  const [, setCategories] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const filteredBlogs = blogs.filter(b => 
+  useEffect(() => {
+    loadBlogData();
+  }, []);
+
+  const loadBlogData = async () => {
+    setIsLoading(true);
+    try {
+      const [blogsData, authorsData, catsData] = await Promise.allSettled([
+        apiService.getBlogs(),
+        apiService.getBlogAuthors(''),
+        apiService.getBlogCategories('')
+      ]);
+      if (blogsData.status === 'fulfilled') {
+        setBlogs((blogsData.value || []).map((b: any) => ({
+          id: b._id || b.id,
+          name: b.name || b.title || 'Untitled Blog',
+          status: b.status === 'published' ? 'Published' : 'Draft',
+          description: b.description || '',
+          posts: b.postCount || 0,
+          weeklyVisitors: b.weeklyVisitors || '--',
+          updatedAt: b.updatedAt ? new Date(b.updatedAt).toLocaleDateString() : '--'
+        })));
+      }
+      if (authorsData.status === 'fulfilled') setAuthors(authorsData.value || []);
+      if (catsData.status === 'fulfilled') setCategories(catsData.value || []);
+    } catch (error) {
+      console.error('Error loading blogs:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const filteredBlogs = blogs.filter(b =>
     b.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     b.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const totalPosts = blogs.reduce((acc, b) => acc + (b.posts || 0), 0);
 
   return (
     <div className="space-y-6 md:space-y-8 animate-in fade-in duration-500 pb-10">
@@ -58,6 +67,12 @@ export const BlogsPage = () => {
         <p className="text-gray-400 font-medium font-bold">Blog system for SEO positioning</p>
       </div>
 
+      {isLoading ? (
+        <div className="flex items-center justify-center h-32">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-ninja-yellow"></div>
+        </div>
+      ) : null}
+
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
         <Card className="p-6 md:p-8 flex flex-col gap-2 shadow-sm border-gray-100 relative overflow-hidden group">
@@ -65,23 +80,23 @@ export const BlogsPage = () => {
             <BookOpen size={100} />
           </div>
           <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Total Posts</span>
-          <span className="text-3xl font-black text-ninja-dark">85</span>
+          <span className="text-3xl font-black text-ninja-dark">{totalPosts}</span>
         </Card>
-        
+
         <Card className="p-6 md:p-8 flex flex-col gap-2 shadow-sm border-gray-100 relative overflow-hidden group">
           <div className="absolute -right-4 -bottom-4 text-green-500/5 group-hover:scale-110 transition-transform duration-500">
             <Layout size={100} />
           </div>
           <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Blog Sites</span>
-          <span className="text-3xl font-black text-ninja-yellow">2</span>
+          <span className="text-3xl font-black text-ninja-yellow">{blogs.length}</span>
         </Card>
 
         <Card className="p-6 md:p-8 flex flex-col gap-2 shadow-sm border-gray-100 relative overflow-hidden group">
           <div className="absolute -right-4 -bottom-4 text-purple-500/5 group-hover:scale-110 transition-transform duration-500">
             <Users size={100} />
           </div>
-          <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Weekly Visitors</span>
-          <span className="text-3xl font-black text-purple-500/30 font-black">24,134</span>
+          <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Authors</span>
+          <span className="text-3xl font-black text-purple-500/30 font-black">{authors.length}</span>
         </Card>
       </div>
 

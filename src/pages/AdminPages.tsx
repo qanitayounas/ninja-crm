@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Plus, Building, User, Users, Target, Zap, Settings, Globe, Bell, Shield, Database,
   CheckCircle2, Download, CreditCard, Lock
@@ -9,15 +9,61 @@ import type { Role } from '../context/RoleContext';
 import { Card, Badge, Avatar, Button, Input, cn } from '../components/ui';
 import subaccountsData from '../data/subaccounts.json';
 import { currentPlan, paymentMethods, invoiceHistory } from '../data/billingData';
+import { apiService } from '../services/apiService';
 
 export const SubaccountsPage = () => {
+  const [loading, setLoading] = useState(true);
+  const [, setSaasInfo] = useState<any>(null);
+  const [businesses, setBusinesses] = useState<any[]>([]);
+  const [location, setLocation] = useState<any>(null);
+
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      const results = await Promise.allSettled([
+        apiService.getSaasLocation(),
+        apiService.getBusinesses(),
+        apiService.getLocation(),
+      ]);
+      setSaasInfo(results[0].status === 'fulfilled' ? results[0].value : null);
+      setBusinesses(results[1].status === 'fulfilled' ? results[1].value : []);
+      setLocation(results[2].status === 'fulfilled' ? results[2].value : null);
+      setLoading(false);
+    };
+    loadData();
+  }, []);
+
+  // Merge API businesses with static subaccounts for display
+  const displaySubaccounts = businesses.length > 0
+    ? businesses.map((b: any, idx: number) => ({
+        id: b.id || idx,
+        name: b.name || 'Unknown',
+        plan: b.plan || 'Standard',
+        contactsCount: b.contactsCount || 0,
+        mrr: b.mrr || 0,
+        status: b.status || 'Active',
+      }))
+    : subaccountsData;
+
+  const totalSubaccounts = displaySubaccounts.length;
+  const activeAccounts = displaySubaccounts.filter((s: any) => (s.status || '').toLowerCase() === 'active').length;
+  const totalMrr = displaySubaccounts.reduce((sum: number, s: any) => sum + (Number(s.mrr) || 0), 0);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ninja-yellow"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 pb-10">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <h1 className="text-3xl font-black text-ninja-dark tracking-tighter">Subaccounts</h1>
-          <p className="text-gray-400 font-medium">Manage your clients and accounts</p>
+          <p className="text-gray-400 font-medium">Manage your clients and accounts{location?.name ? ` - ${location.name}` : ''}</p>
         </div>
         <Button className="flex items-center gap-2 px-8 py-3 rounded-2xl shadow-lg shadow-ninja-yellow/20 w-full sm:w-auto justify-center">
           <Plus size={20} />
@@ -32,7 +78,7 @@ export const SubaccountsPage = () => {
           </div>
           <div>
             <p className="text-xs text-white/50 font-bold uppercase tracking-wider">Total Subaccounts</p>
-            <p className="text-2xl font-bold">12</p>
+            <p className="text-2xl font-bold">{totalSubaccounts}</p>
           </div>
         </Card>
         <Card className="flex items-center gap-4 border-none shadow-sm">
@@ -41,7 +87,7 @@ export const SubaccountsPage = () => {
           </div>
           <div>
             <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">Active Accounts</p>
-            <p className="text-2xl font-bold text-ninja-dark">10</p>
+            <p className="text-2xl font-bold text-ninja-dark">{activeAccounts}</p>
           </div>
         </Card>
         <Card className="flex items-center gap-4 border-none shadow-sm">
@@ -50,7 +96,7 @@ export const SubaccountsPage = () => {
           </div>
           <div>
             <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">Total MRR</p>
-            <p className="text-2xl font-bold text-ninja-dark">$1,240</p>
+            <p className="text-2xl font-bold text-ninja-dark">${totalMrr.toLocaleString()}</p>
           </div>
         </Card>
       </div>
@@ -75,7 +121,7 @@ export const SubaccountsPage = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {subaccountsData.map((sub) => (
+              {displaySubaccounts.map((sub: any) => (
                 <tr key={sub.id} className="hover:bg-gray-50/30 transition-colors">
                   <td className="px-6 py-5">
                     <div className="flex items-center gap-3">
@@ -118,6 +164,26 @@ export const SubaccountsPage = () => {
 export const SettingsPage = () => {
   const [activeTab, setActiveTab] = useState('profile');
   const { role: currentRole, setRole } = useRole();
+  const [settingsLoading, setSettingsLoading] = useState(true);
+  const [locationData, setLocationData] = useState<any>(null);
+  const [customFields, setCustomFields] = useState<any[]>([]);
+  const [tags, setTags] = useState<any[]>([]);
+
+  useEffect(() => {
+    const loadSettings = async () => {
+      setSettingsLoading(true);
+      const results = await Promise.allSettled([
+        apiService.getLocation(),
+        apiService.getCustomFields(),
+        apiService.getTags(),
+      ]);
+      setLocationData(results[0].status === 'fulfilled' ? results[0].value : null);
+      setCustomFields(results[1].status === 'fulfilled' ? results[1].value : []);
+      setTags(results[2].status === 'fulfilled' ? results[2].value : []);
+      setSettingsLoading(false);
+    };
+    loadSettings();
+  }, []);
 
   const tabs = [
     { id: 'profile', label: 'My Profile', icon: User },
@@ -129,13 +195,21 @@ export const SettingsPage = () => {
     { id: 'integrations', label: 'Integrations', icon: Database },
   ];
 
+  if (settingsLoading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ninja-yellow"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-6 antialiased pb-10">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <h1 className="text-3xl font-black text-ninja-dark tracking-tighter">Settings</h1>
-          <p className="text-gray-400 font-medium">Manage your profile and preferences</p>
+          <p className="text-gray-400 font-medium">Manage your profile and preferences{locationData?.name ? ` - ${locationData.name}` : ''}</p>
         </div>
       </div>
 
@@ -397,7 +471,17 @@ export const SettingsPage = () => {
                   <Globe size={32} />
                 </div>
                 <h4 className="font-bold text-lg text-ninja-dark mb-2">GoHighLevel</h4>
-                <p className="text-xs text-gray-400 font-medium mb-6">Connect your GHL account to sync contacts and automations.</p>
+                <p className="text-xs text-gray-400 font-medium mb-2">Connect your GHL account to sync contacts and automations.</p>
+                {locationData && (
+                  <p className="text-[10px] font-bold text-green-500 uppercase tracking-widest mb-2">Connected: {locationData.name || locationData.companyName || 'Active'}</p>
+                )}
+                {customFields.length > 0 && (
+                  <p className="text-[10px] font-bold text-gray-400 mb-1">{customFields.length} custom fields synced</p>
+                )}
+                {tags.length > 0 && (
+                  <p className="text-[10px] font-bold text-gray-400 mb-4">{tags.length} tags synced</p>
+                )}
+                {!locationData && !customFields.length && !tags.length && <div className="mb-6" />}
                 <Button variant="secondary" className="w-full">Connect API</Button>
               </Card>
 

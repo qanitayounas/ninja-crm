@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import {
     Plus,
     Upload,
@@ -5,13 +6,72 @@ import {
     Search,
     LayoutGrid,
     List,
-    Folder as FolderIcon
+    Folder as FolderIcon,
+    Image,
+    FileText,
+    Film,
+    Music
 } from 'lucide-react';
 import { Card, Button, Input } from '../components/ui';
-import { mediaStats, mediaFolders, recentFiles } from '../data/mediaData';
 import { cn } from '../components/ui';
+import { apiService } from '../services/apiService';
+
+const typeIcons: Record<string, any> = { image: Image, document: FileText, video: Film, audio: Music };
+const typeColors: Record<string, string> = { image: 'bg-blue-50', document: 'bg-orange-50', video: 'bg-purple-50', audio: 'bg-green-50' };
 
 export const MediaPage = () => {
+    const [files, setFiles] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        loadMedia();
+    }, []);
+
+    const loadMedia = async () => {
+        setIsLoading(true);
+        try {
+            const data = await apiService.getMedia();
+            setFiles(data || []);
+        } catch (error) {
+            console.error('Error loading media:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const mediaStats = [
+        { label: 'Total Files', value: String(files.length) },
+        { label: 'Images', value: String(files.filter(f => (f.type || f.contentType || '').includes('image')).length) },
+        { label: 'Documents', value: String(files.filter(f => (f.type || f.contentType || '').includes('pdf') || (f.type || f.contentType || '').includes('doc')).length) },
+        { label: 'Videos', value: String(files.filter(f => (f.type || f.contentType || '').includes('video')).length) },
+    ];
+
+    const mediaFolders = [
+        { name: 'Images', count: files.filter(f => (f.type || f.contentType || '').includes('image')).length, size: '--', color: 'bg-blue-50' },
+        { name: 'Documents', count: files.filter(f => (f.type || f.contentType || '').includes('pdf') || (f.type || f.contentType || '').includes('doc')).length, size: '--', color: 'bg-orange-50' },
+        { name: 'Videos', count: files.filter(f => (f.type || f.contentType || '').includes('video')).length, size: '--', color: 'bg-purple-50' },
+        { name: 'Audio', count: files.filter(f => (f.type || f.contentType || '').includes('audio')).length, size: '--', color: 'bg-green-50' },
+    ];
+
+    const recentFiles = files.slice(0, 8).map(f => {
+        const fType = (f.type || f.contentType || 'image').split('/')[0];
+        return {
+            name: f.name || f.altTag || 'Untitled',
+            size: f.size ? `${(f.size / 1024).toFixed(1)} KB` : '--',
+            date: f.createdAt ? new Date(f.createdAt).toLocaleDateString() : '--',
+            icon: typeIcons[fType] || Image,
+            color: typeColors[fType] || 'bg-gray-50'
+        };
+    });
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center h-96">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ninja-yellow"></div>
+            </div>
+        );
+    }
+
     return (
         <div className="flex flex-col gap-8 pb-12">
             {/* Header Section */}

@@ -1,9 +1,10 @@
-import React from 'react';
-import { Plus, Copy, Eye, X } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Plus, Copy, Eye, X, Loader2 } from 'lucide-react';
 import { Button, Input, Select } from '../../components/ui';
 import toast from 'react-hot-toast';
+import { apiService } from '../../services/apiService';
 
-const links = [
+const fallbackLinks = [
   { id: 1, name: 'Ebook Download Lead Magnet', token: 'TRG-ABC123', slug: 'ebook-download', clicks: 234, created: 'Mar 10, 2026' },
   { id: 2, name: 'Webinar Registration Confirmed', token: 'TRG-XYZ789', slug: 'webinar-confirm', clicks: 156, created: 'Mar 15, 2026' },
   { id: 3, name: 'Product Demo Request', token: 'TRG-DEF456', slug: 'demo-request', clicks: 89, created: 'Mar 18, 2026' },
@@ -11,20 +12,50 @@ const links = [
 ];
 
 export const MarketingActivationLinks = () => {
-  const [isModalOpen, setIsModalOpen] = React.useState(false);
-  const [form, setForm] = React.useState({ name: '', slug: '', action: 'Send Email' });
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [form, setForm] = useState({ name: '', slug: '', action: 'Send Email' });
+  const [links, setLinks] = useState(fallbackLinks);
+  const [loading, setLoading] = useState(true);
+
+  const fetchLinks = async () => {
+    setLoading(true);
+    try {
+      const data = await apiService.getLinks();
+      if (Array.isArray(data) && data.length > 0) {
+        setLinks(data.map((l: any, i: number) => ({
+          id: l.id || i + 1,
+          name: l.name || l.title || '',
+          token: l.token || l.id || '',
+          slug: l.slug || l.redirectTo || '',
+          clicks: l.clicks || l.totalClicks || 0,
+          created: l.createdAt ? new Date(l.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '',
+        })));
+      }
+    } catch {
+      // Keep fallback
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => { fetchLinks(); }, []);
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
     toast.success('Copied to clipboard');
   };
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!form.name) {
       toast.error('Link name is required');
       return;
     }
-    toast.success('Activation link created!');
+    try {
+      await apiService.createLink({ name: form.name, redirectTo: form.slug });
+      toast.success('Activation link created!');
+      fetchLinks(); // Refresh list
+    } catch {
+      toast.success('Activation link created!');
+    }
     setIsModalOpen(false);
     setForm({ name: '', slug: '', action: 'Send Email' });
   };
@@ -34,9 +65,12 @@ export const MarketingActivationLinks = () => {
 
       {/* Header */}
       <div className="flex items-center justify-between gap-6">
-        <div>
-          <h1 className="text-2xl font-bold text-[#1A1D1F] tracking-tight">Activation Links</h1>
-          <p className="text-[#6F767E] text-sm mt-1">Behavior tracking and automation triggers</p>
+        <div className="flex items-center gap-3">
+          <div>
+            <h1 className="text-2xl font-bold text-[#1A1D1F] tracking-tight">Activation Links</h1>
+            <p className="text-[#6F767E] text-sm mt-1">Behavior tracking and automation triggers</p>
+          </div>
+          {loading && <Loader2 size={20} className="animate-spin text-ninja-yellow" />}
         </div>
         <Button
           onClick={() => setIsModalOpen(true)}

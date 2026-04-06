@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   QrCode,
   Download,
@@ -8,10 +8,12 @@ import {
   Package,
   Calendar,
   Building2,
-  ChevronDown
+  ChevronDown,
+  Loader2
 } from 'lucide-react';
 import { Card } from '../../components/ui';
 import toast from 'react-hot-toast';
+import { apiService } from '../../services/apiService';
 
 const useCases = [
   {
@@ -44,17 +46,35 @@ const useCases = [
   }
 ];
 
-const activeQRs = [
-  { id: 1, name: 'Main Display', location: 'Madrid Centre', scans: 342, reviews: 87 },
-  { id: 2, name: 'Product Packaging', location: 'All products', scans: 567, reviews: 124 },
-  { id: 3, name: 'Trade Show', location: 'Barcelona', scans: 234, reviews: 45 }
-];
-
 export const ReputationQRCodes = () => {
   const [qrName, setQrName] = useState('');
   const [redirect, setRedirect] = useState('universal');
   const [location, setLocation] = useState('');
   const [generated, setGenerated] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [links, setLinks] = useState<any[]>([]);
+
+  useEffect(() => {
+    setLoading(true);
+    apiService.getLinks()
+      .then((data) => setLinks(data || []))
+      .catch(() => setLinks([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const activeQRs = links.length > 0
+    ? links.map((link: any, i: number) => ({
+        id: link.id || i + 1,
+        name: link.name || link.title || `Link ${i + 1}`,
+        location: link.redirectTo || link.url || 'N/A',
+        scans: link.totalClicks || link.clicks || 0,
+        reviews: link.conversions || 0
+      }))
+    : [
+        { id: 1, name: 'Main Display', location: 'Madrid Centre', scans: 342, reviews: 87 },
+        { id: 2, name: 'Product Packaging', location: 'All products', scans: 567, reviews: 124 },
+        { id: 3, name: 'Trade Show', location: 'Barcelona', scans: 234, reviews: 45 }
+      ];
 
   const handleGenerate = () => {
     if (!qrName.trim()) {
@@ -64,6 +84,18 @@ export const ReputationQRCodes = () => {
     setGenerated(true);
     toast.success('QR Code Generated!');
   };
+
+  const totalScans = activeQRs.reduce((s: number, q: any) => s + q.scans, 0);
+  const totalReviewsFromQR = activeQRs.reduce((s: number, q: any) => s + q.reviews, 0);
+  const conversionRate = totalScans > 0 ? ((totalReviewsFromQR / totalScans) * 100).toFixed(1) : '0.0';
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-ninja-yellow" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-10">
@@ -226,21 +258,21 @@ export const ReputationQRCodes = () => {
             <QrCode size={80} />
           </div>
           <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Active QR Codes</span>
-          <span className="text-3xl font-black text-ninja-yellow">12</span>
+          <span className="text-3xl font-black text-ninja-yellow">{activeQRs.length}</span>
         </Card>
         <Card className="p-6 flex flex-col gap-2 border-none shadow-sm relative overflow-hidden group">
           <div className="absolute -right-4 -bottom-4 text-purple-400/5 group-hover:scale-110 transition-transform duration-500">
             <QrCode size={80} />
           </div>
           <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total Scans</span>
-          <span className="text-3xl font-black text-ninja-dark">1,847</span>
+          <span className="text-3xl font-black text-ninja-dark">{totalScans.toLocaleString()}</span>
         </Card>
         <Card className="p-6 flex flex-col gap-2 border-none shadow-sm relative overflow-hidden group">
           <div className="absolute -right-4 -bottom-4 text-ninja-yellow/5 group-hover:scale-110 transition-transform duration-500">
             <QrCode size={80} />
           </div>
           <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Conversion Rate</span>
-          <span className="text-3xl font-black text-ninja-yellow">34.2%</span>
+          <span className="text-3xl font-black text-ninja-yellow">{conversionRate}%</span>
         </Card>
       </div>
 

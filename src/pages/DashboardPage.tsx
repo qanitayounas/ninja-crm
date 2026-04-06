@@ -1,27 +1,26 @@
 import { useState, useEffect } from 'react';
-import { 
-  LineChart, 
-  Line, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   ResponsiveContainer,
-  PieChart, 
-  Pie, 
-  Cell 
+  PieChart,
+  Pie,
+  Cell
 } from 'recharts';
-import { 
-  ArrowUpRight, 
-  Users, 
-  GitBranch, 
-  Calendar as CalendarIcon, 
+import {
+  ArrowUpRight,
+  Users,
+  GitBranch,
+  Calendar as CalendarIcon,
   BarChart2 as BarChartIcon,
   Zap,
   TrendingUp
 } from 'lucide-react';
 import { Card, Badge, Avatar, cn } from '../components/ui';
-import dashboardData from '../data/dashboard.json';
 import { useNavigate } from 'react-router-dom';
 import { apiService } from '../services/apiService';
 import toast from 'react-hot-toast';
@@ -53,6 +52,10 @@ export const DashboardPage = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [syncError, setSyncError] = useState<string | null>(null);
+  const [stats, setStats] = useState<any>({ totalContacts: 0, totalOpportunities: 0, totalPipelines: 0 });
+  const [contacts, setContacts] = useState<any[]>([]);
+  const [leadGrowth, setLeadGrowth] = useState<any[]>([]);
+  const [recentActivity, setRecentActivity] = useState<any[]>([]);
 
   useEffect(() => {
     loadStats();
@@ -62,7 +65,33 @@ export const DashboardPage = () => {
     setIsLoading(true);
     setSyncError(null);
     try {
-      await apiService.getDashboardStats();
+      const [dashData, contactsData] = await Promise.all([
+        apiService.getDashboardStats(),
+        apiService.getContacts()
+      ]);
+      if (dashData) setStats(dashData);
+
+      // Build lead growth from contacts by month
+      const monthMap: Record<string, number> = {};
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      (contactsData || []).forEach((c: any) => {
+        const d = new Date(c.date);
+        const m = months[d.getMonth()] || 'Jan';
+        monthMap[m] = (monthMap[m] || 0) + 1;
+      });
+      const growth = months.map(m => ({ month: m, leads: monthMap[m] || 0 })).filter(m => m.leads > 0);
+      setLeadGrowth(growth.length > 0 ? growth : months.slice(0, 6).map(m => ({ month: m, leads: 0 })));
+      setContacts(contactsData || []);
+
+      // Build recent activity from contacts
+      const activity = (contactsData || []).slice(0, 5).map((c: any, i: number) => ({
+        id: i + 1,
+        contactName: c.name || 'Unknown',
+        action: 'Added as contact',
+        status: c.status || 'Lead',
+        time: c.date || 'Recently'
+      }));
+      setRecentActivity(activity);
     } catch (error: any) {
       console.error('Error loading dashboard stats:', error);
       if (error.status === 403 || error.status === 401) {
@@ -75,8 +104,9 @@ export const DashboardPage = () => {
     }
   };
 
-  // Merge real stats with mock data for charts/activity
-  const { leadGrowth, leadSources, recentActivity } = dashboardData;
+  const conversionRate = stats.totalContacts > 0
+    ? ((stats.totalOpportunities / stats.totalContacts) * 100).toFixed(1) + '%'
+    : '0%';
 
   if (isLoading) {
     return (
@@ -113,31 +143,31 @@ export const DashboardPage = () => {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-        <KPI 
-          label="Total Contacts" 
-          value={syncError ? '--' : '5'} 
-          trend="12.5%" 
+        <KPI
+          label="Total Contacts"
+          value={syncError ? '--' : String(stats.totalContacts)}
+          trend="12.5%"
           isPositive={true}
           onClick={() => navigate('/dashboard/contacts')}
         />
-        <KPI 
-          label="Total Deals" 
-          value={syncError ? '--' : '4'} 
-          trend="8.2%" 
+        <KPI
+          label="Total Deals"
+          value={syncError ? '--' : String(stats.totalOpportunities)}
+          trend="8.2%"
           isPositive={true}
           onClick={() => navigate('/dashboard/pipelines')}
         />
-        <KPI 
-          label="Pipelines" 
-          value={syncError ? '--' : '1'} 
-          trend="0%" 
+        <KPI
+          label="Pipelines"
+          value={syncError ? '--' : String(stats.totalPipelines)}
+          trend="0%"
           isPositive={true}
           onClick={() => navigate('/dashboard/pipelines')}
         />
-        <KPI 
-          label="Conversion Rate" 
-          value={syncError ? '--' : '4.8%'} 
-          trend="2.4%" 
+        <KPI
+          label="Conversion Rate"
+          value={syncError ? '--' : conversionRate}
+          trend="2.4%"
           isPositive={false}
           onClick={() => navigate('/dashboard/reports')}
         />
@@ -249,10 +279,10 @@ export const DashboardPage = () => {
               <PieChart>
                 <Pie
                   data={[
-                    { name: 'WHATSAPP', value: 400 },
-                    { name: 'MESSENGER', value: 300 },
-                    { name: 'INSTAGRAM', value: 300 },
-                    { name: 'SMS', value: 200 },
+                    { name: 'WHATSAPP', value: contacts.filter(c => c.source === 'WhatsApp').length || 1 },
+                    { name: 'MESSENGER', value: contacts.filter(c => c.source === 'Messenger').length || 1 },
+                    { name: 'INSTAGRAM', value: contacts.filter(c => c.source === 'Instagram').length || 1 },
+                    { name: 'SMS', value: contacts.filter(c => c.source === 'SMS').length || 1 },
                   ]}
                   innerRadius={70}
                   outerRadius={90}
@@ -260,7 +290,7 @@ export const DashboardPage = () => {
                   dataKey="value"
                   stroke="none"
                 >
-                  {leadSources.map((_, index) => (
+                  {[0, 1, 2, 3].map((index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>

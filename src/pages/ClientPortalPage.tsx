@@ -1,10 +1,10 @@
-import React from 'react';
-import { 
-  Lock, 
-  Users, 
-  Plus, 
-  X, 
-  ChevronDown, 
+import React, { useState, useEffect } from 'react';
+import {
+  Lock,
+  Users,
+  Plus,
+  X,
+  ChevronDown,
   Layers,
   FileText,
   Settings,
@@ -12,26 +12,51 @@ import {
 } from 'lucide-react';
 import { Card, Badge, Button } from '../components/ui';
 import toast from 'react-hot-toast';
-
-const portals = [
-  {
-    id: 1,
-    name: 'VIP Portal',
-    status: 'Active',
-    clients: 45,
-    resources: 78
-  },
-  {
-    id: 2,
-    name: 'Support Portal',
-    status: 'Active',
-    clients: 234,
-    resources: 156
-  }
-];
+import { apiService } from '../services/apiService';
 
 export const ClientPortalPage = () => {
   const [showCreateModal, setShowCreateModal] = React.useState(false);
+  const [loading, setLoading] = useState(true);
+  const [courses, setCourses] = useState<any[]>([]);
+  const [contactCount, setContactCount] = useState(0);
+
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      const results = await Promise.allSettled([
+        apiService.getCourses(),
+        apiService.getContacts(),
+      ]);
+      const coursesData = results[0].status === 'fulfilled' ? results[0].value : [];
+      const contacts = results[1].status === 'fulfilled' ? results[1].value : [];
+      setCourses(coursesData);
+      setContactCount(contacts.length);
+      setLoading(false);
+    };
+    loadData();
+  }, []);
+
+  // Build portals from courses
+  const portals = courses.length > 0
+    ? courses.map((course: any, idx: number) => ({
+        id: course.id || idx + 1,
+        name: course.title || course.name || `Portal ${idx + 1}`,
+        status: 'Active',
+        clients: contactCount,
+        resources: course.modules?.length || course.lessonsCount || 0,
+      }))
+    : [];
+
+  const totalClients = contactCount;
+  const totalResources = portals.reduce((sum, p) => sum + p.resources, 0);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ninja-yellow"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 md:space-y-8 animate-in fade-in duration-500 pb-10">
@@ -48,15 +73,15 @@ export const ClientPortalPage = () => {
             <Layers size={100} />
           </div>
           <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Active Portals</span>
-          <span className="text-3xl font-black text-ninja-yellow">2</span>
+          <span className="text-3xl font-black text-ninja-yellow">{portals.length}</span>
         </Card>
-        
+
         <Card className="p-6 md:p-8 flex flex-col gap-2 shadow-sm border-gray-100 relative overflow-hidden group">
           <div className="absolute -right-4 -bottom-4 text-purple-500/5 group-hover:scale-110 transition-transform duration-500">
             <Users size={100} />
           </div>
           <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Total Clients</span>
-          <span className="text-3xl font-black text-ninja-dark">279</span>
+          <span className="text-3xl font-black text-ninja-dark">{totalClients}</span>
         </Card>
 
         <Card className="p-6 md:p-8 flex flex-col gap-2 shadow-sm border-gray-100 relative overflow-hidden group">
@@ -64,13 +89,13 @@ export const ClientPortalPage = () => {
             <FileText size={100} />
           </div>
           <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Shared Resources</span>
-          <span className="text-3xl font-black text-purple-500/30 font-black">234</span>
+          <span className="text-3xl font-black text-purple-500/30 font-black">{totalResources}</span>
         </Card>
       </div>
 
       {/* Action Bar */}
       <div className="flex items-center justify-end">
-        <Button 
+        <Button
           onClick={() => setShowCreateModal(true)}
           className="font-black px-6 py-3.5 rounded-2xl shadow-xl shadow-ninja-yellow/20 flex items-center justify-center gap-2"
         >
@@ -81,6 +106,13 @@ export const ClientPortalPage = () => {
 
       {/* Portal List */}
       <div className="space-y-6">
+        {portals.length === 0 && (
+          <Card className="p-12 text-center border-none shadow-sm">
+            <Layers size={48} className="mx-auto mb-4 text-gray-200" />
+            <h3 className="text-lg font-bold text-ninja-dark">No portals found</h3>
+            <p className="text-gray-400 text-sm">Create your first client portal to get started</p>
+          </Card>
+        )}
         {portals.map((portal) => (
           <Card key={portal.id} className="p-0 overflow-hidden border-none shadow-sm group hover:shadow-xl transition-all duration-300">
             <div className="p-8 space-y-8">
@@ -91,7 +123,7 @@ export const ClientPortalPage = () => {
                   </div>
                   <div className="space-y-1">
                     <h3 className="text-xl font-black text-ninja-dark tracking-tight">{portal.name}</h3>
-                    <Badge 
+                    <Badge
                       status={portal.status}
                       className="bg-ninja-yellow/20 text-ninja-dark border-none font-black text-[10px] uppercase px-3 py-1 rounded-full"
                     >
@@ -140,7 +172,7 @@ export const ClientPortalPage = () => {
               <Lock size={160} />
             </div>
 
-            <button 
+            <button
               onClick={() => setShowCreateModal(false)}
               className="absolute right-6 top-6 text-gray-400 hover:text-ninja-dark transition-colors z-10"
             >
@@ -157,8 +189,8 @@ export const ClientPortalPage = () => {
                 <label className="text-xs font-black text-ninja-dark uppercase tracking-widest flex items-center gap-1.5">
                   Portal Name <span className="text-ninja-yellow">*</span>
                 </label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   placeholder="e.g. VIP Portal"
                   className="w-full px-4 py-3.5 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-ninja-yellow focus:ring-4 focus:ring-ninja-yellow/10 transition-all outline-none font-bold text-sm text-ninja-dark"
                 />
@@ -178,7 +210,7 @@ export const ClientPortalPage = () => {
                 </div>
               </div>
 
-              <Button 
+              <Button
                 onClick={() => {
                   toast.success('Client Portal Created Successfully!');
                   setShowCreateModal(false);

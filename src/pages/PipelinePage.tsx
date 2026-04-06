@@ -23,11 +23,13 @@ export const PipelinePage = () => {
   const [isAddPipelineModalOpen, setIsAddPipelineModalOpen] = useState(false);
   const [newSectionTitle, setNewSectionTitle] = useState('');
   const [newPipelineName, setNewPipelineName] = useState('');
+  const [contacts, setContacts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [syncError, setSyncError] = useState<string | null>(null);
 
   useEffect(() => {
     loadPipelines();
+    apiService.getContacts().then(c => setContacts(c)).catch(() => {});
   }, []);
 
   const loadPipelines = async () => {
@@ -275,35 +277,63 @@ export const PipelinePage = () => {
         <div className="flex flex-col gap-4">
           <div className="space-y-1.5">
             <label className="text-sm font-bold text-ninja-dark uppercase tracking-wider">Deal Title *</label>
-            <Input placeholder="e.g.: Website Redesign" className="rounded-xl border-gray-100 bg-gray-50/50" />
+            <Input id="deal-title" placeholder="e.g.: Website Redesign" className="rounded-xl border-gray-100 bg-gray-50/50" />
           </div>
           <div className="space-y-1.5">
-            <label className="text-sm font-bold text-ninja-dark uppercase tracking-wider">Company *</label>
-            <Input placeholder="Company Name" className="rounded-xl border-gray-100 bg-gray-50/50" />
+            <label className="text-sm font-bold text-ninja-dark uppercase tracking-wider">Contact *</label>
+            <Select id="deal-contact" className="rounded-xl border-gray-100 bg-gray-50/50">
+              <option value="">Select a contact...</option>
+              {contacts.map(c => (
+                <option key={c.id} value={c.id}>{c.name} {c.email ? `(${c.email})` : ''}</option>
+              ))}
+            </Select>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label className="text-sm font-bold text-ninja-dark uppercase tracking-wider">Value *</label>
-              <Input placeholder="$10,000" className="rounded-xl border-gray-100 bg-gray-50/50" />
+              <Input id="deal-value" placeholder="10000" type="number" className="rounded-xl border-gray-100 bg-gray-50/50" />
             </div>
             <div className="space-y-1.5">
-              <label className="text-sm font-bold text-ninja-dark uppercase tracking-wider">Owner</label>
-              <Select defaultValue="John" className="rounded-xl border-gray-100 bg-gray-50/50">
-                <option value="John">John</option>
-                <option value="Emily">Emily</option>
-                <option value="Sarah">Sarah</option>
+              <label className="text-sm font-bold text-ninja-dark uppercase tracking-wider">Stage</label>
+              <Select id="deal-stage" className="rounded-xl border-gray-100 bg-gray-50/50">
+                {columns.map(col => (
+                  <option key={col.id} value={col.id}>{col.title}</option>
+                ))}
               </Select>
             </div>
           </div>
           <div className="space-y-1.5">
             <label className="text-sm font-bold text-ninja-dark uppercase tracking-wider">Notes</label>
-            <Textarea placeholder="Additional details about this deal..." className="rounded-xl border-gray-100 bg-gray-50/50 min-h-[100px]" />
+            <Textarea id="deal-notes" placeholder="Additional details about this deal..." className="rounded-xl border-gray-100 bg-gray-50/50 min-h-[100px]" />
           </div>
           <div className="flex items-center gap-3 justify-end mt-4 pt-4 border-t border-gray-100">
             <Button variant="secondary" onClick={() => setIsAddDealModalOpen(false)} className="rounded-xl">Cancel</Button>
-            <Button onClick={() => {
-              toast.success('Deal added successfully!');
-              setIsAddDealModalOpen(false);
+            <Button onClick={async () => {
+              try {
+                const title = (document.getElementById('deal-title') as HTMLInputElement)?.value;
+                const contactId = (document.getElementById('deal-contact') as HTMLSelectElement)?.value;
+                const value = (document.getElementById('deal-value') as HTMLInputElement)?.value;
+                const stageId = (document.getElementById('deal-stage') as HTMLSelectElement)?.value;
+
+                if (!title) { toast.error('Deal title is required'); return; }
+                if (!contactId) { toast.error('Please select a contact'); return; }
+
+                await apiService.createOpportunity({
+                  name: title,
+                  pipelineId: selectedPipelineId,
+                  pipelineStageId: stageId || columns[0]?.id,
+                  contactId,
+                  monetaryValue: parseFloat(value || '0'),
+                  status: 'open'
+                });
+
+                toast.success('Deal created successfully!');
+                setIsAddDealModalOpen(false);
+                loadPipelines();
+              } catch (error: any) {
+                console.error('Error creating deal:', error);
+                toast.error(error?.providerError || 'Failed to create deal');
+              }
             }} className="rounded-xl px-8">
               Add Deal
             </Button>

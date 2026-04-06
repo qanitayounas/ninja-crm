@@ -5,10 +5,10 @@ import toast from 'react-hot-toast';
 import { apiService } from '../../services/apiService';
 
 const templates = [
-  { name: 'Modern Welcome', category: 'Onboarding', emoji: '👋' },
-  { name: 'Product Promotion', category: 'Sales', emoji: '🎁' },
-  { name: 'Minimalist Newsletter', category: 'Newsletter', emoji: '✉️' },
-  { name: 'Webinar Event', category: 'Events', emoji: '📅' },
+  { name: 'Modern Welcome', category: 'Onboarding', emoji: '>' },
+  { name: 'Product Promotion', category: 'Sales', emoji: '>' },
+  { name: 'Minimalist Newsletter', category: 'Newsletter', emoji: '>' },
+  { name: 'Webinar Event', category: 'Events', emoji: '>' },
 ];
 
 const statusStyles: Record<string, string> = {

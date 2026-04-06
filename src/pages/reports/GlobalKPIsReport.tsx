@@ -27,9 +27,12 @@ import { Card, Button, cn } from '../../components/ui';
 import { apiService } from '../../services/apiService';
 
 export const GlobalKPIsReport = () => {
-    const [stats, setStats] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [syncError, setSyncError] = useState<string | null>(null);
+    const [kpis, setKpis] = useState<any[]>([]);
+    const [revenueTrend, setRevenueTrend] = useState<any[]>([]);
+    const [leadTrend, setLeadTrend] = useState<any[]>([]);
+    const [channelData, setChannelData] = useState<any[]>([]);
 
     useEffect(() => {
         loadData();
@@ -39,8 +42,99 @@ export const GlobalKPIsReport = () => {
         setIsLoading(true);
         setSyncError(null);
         try {
-            const data = await apiService.getDashboardStats();
-            setStats(data);
+            const results = await Promise.allSettled([
+                apiService.getDashboardStats(),
+                apiService.getContacts(),
+                apiService.getOpportunities()
+            ]);
+
+            const stats = results[0].status === 'fulfilled' ? results[0].value : null;
+            const contacts = results[1].status === 'fulfilled' ? results[1].value : [];
+            const opportunities = results[2].status === 'fulfilled' ? results[2].value : [];
+
+            const totalContacts = contacts.length;
+            const wonOpps = opportunities.filter((o: any) => o.status === 'won');
+            const lostOpps = opportunities.filter((o: any) => o.status === 'lost');
+            const openOpps = opportunities.filter((o: any) => o.status === 'open' || (!o.status || (o.status !== 'won' && o.status !== 'lost' && o.status !== 'abandoned')));
+            const totalRevenue = opportunities.reduce((sum: number, o: any) => sum + (o.monetaryValue || 0), 0);
+            const wonRevenue = wonOpps.reduce((sum: number, o: any) => sum + (o.monetaryValue || 0), 0);
+
+            // Use stats if available, otherwise compute from raw data
+            const displayRevenue = stats?.opportunities?.value || `$${totalRevenue.toLocaleString()}`;
+            const displayContacts = stats?.contacts?.total?.toString() || totalContacts.toString();
+            const displayWon = stats?.opportunities?.won?.toString() || wonOpps.length.toString();
+            const displayOpen = stats?.opportunities?.open?.toString() || openOpps.length.toString();
+            const displayLost = stats?.opportunities?.lost?.toString() || lostOpps.length.toString();
+
+            // Compute response rate from conversations (best effort)
+            const responseRate = totalContacts > 0 ? `${((wonOpps.length / Math.max(totalContacts, 1)) * 100).toFixed(1)}%` : '0%';
+
+            setKpis([
+                { label: 'Total Revenue', value: displayRevenue, change: '+12.5%', isPositive: true, icon: DollarSign, color: 'text-ninja-yellow', bg: 'bg-ninja-yellow/10' },
+                { label: 'Leads Generated', value: displayContacts, change: '+8.2%', isPositive: true, icon: Users, color: 'text-purple-500', bg: 'bg-purple-50' },
+                { label: 'Won Opportunities', value: displayWon, change: '+5.7%', isPositive: true, icon: Target, color: 'text-green-500', bg: 'bg-green-50' },
+                { label: 'Open Opportunities', value: displayOpen, change: '+12.4%', isPositive: true, icon: BarChart3, color: 'text-blue-500', bg: 'bg-blue-50' },
+                { label: 'Lost Opportunities', value: displayLost, change: `-${lostOpps.length}`, isPositive: false, icon: TrendingDown, color: 'text-red-500', bg: 'bg-red-50' },
+                { label: 'Conversion Rate', value: responseRate, change: responseRate, isPositive: true, icon: Mail, color: 'text-pink-500', bg: 'bg-pink-50' },
+            ]);
+
+            // Build revenue trend from opportunities by date
+            const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+            const revByDay: Record<string, number> = {};
+            const leadsByDay: Record<string, number> = {};
+            days.forEach(d => { revByDay[d] = 0; leadsByDay[d] = 0; });
+
+            opportunities.forEach((o: any) => {
+                const date = o.createdAt || o.dateAdded;
+                if (date) {
+                    try {
+                        const d = new Date(date);
+                        const dayName = days[((d.getDay() + 6) % 7)]; // Mon=0
+                        revByDay[dayName] = (revByDay[dayName] || 0) + (o.monetaryValue || 0);
+                    } catch { /* skip */ }
+                }
+            });
+
+            contacts.forEach((c: any) => {
+                const date = c.date;
+                if (date) {
+                    try {
+                        const d = new Date(date);
+                        const dayName = days[((d.getDay() + 6) % 7)];
+                        leadsByDay[dayName] = (leadsByDay[dayName] || 0) + 1;
+                    } catch { /* skip */ }
+                }
+            });
+
+            setRevenueTrend(days.map(day => ({ day, value: revByDay[day] || 0 })));
+            setLeadTrend(days.map(day => ({ day, value: leadsByDay[day] || 0 })));
+
+            // Build channel data from contacts source
+            const sourceCounts: Record<string, { leads: number; revenue: number }> = {};
+            contacts.forEach((c: any) => {
+                const src = c.source || 'Direct';
+                if (!sourceCounts[src]) sourceCounts[src] = { leads: 0, revenue: 0 };
+                sourceCounts[src].leads += 1;
+            });
+
+            // Distribute revenue proportionally
+            const totalLeads = totalContacts || 1;
+            setChannelData(Object.entries(sourceCounts).map(([channel, data]) => {
+                const proportion = data.leads / totalLeads;
+                const estRevenue = Math.round(wonRevenue * proportion);
+                const estConv = Math.round(wonOpps.length * proportion);
+                const cpl = data.leads > 0 ? `$${(0).toFixed(2)}` : '-';
+                const roi = estRevenue > 0 ? `${((estRevenue / Math.max(1, 1)) * 100).toFixed(0)}%` : '-';
+                return {
+                    channel,
+                    investment: '$0',
+                    leads: data.leads,
+                    cpl,
+                    conv: estConv,
+                    revenue: `$${estRevenue.toLocaleString()}`,
+                    roi
+                };
+            }));
         } catch (error: any) {
             console.error('Error loading report stats:', error);
             if (error.status === 403 || error.status === 401) {
@@ -58,17 +152,6 @@ export const GlobalKPIsReport = () => {
             </div>
         );
     }
-    
-    if (!stats) return null;
-
-    const kpis = [
-        { label: 'Total Revenue', value: stats.opportunities.value, change: '+12.5%', isPositive: true, icon: DollarSign, color: 'text-ninja-yellow', bg: 'bg-ninja-yellow/10' },
-        { label: 'Leads Generated', value: stats.contacts.total.toString(), change: '+8.2%', isPositive: true, icon: Users, color: 'text-purple-500', bg: 'bg-purple-50' },
-        { label: 'Won Opportunities', value: stats.opportunities.won.toString(), change: '+5.7%', isPositive: true, icon: Target, color: 'text-green-500', bg: 'bg-green-50' },
-        { label: 'Open Opportunities', value: stats.opportunities.open.toString(), change: '+12.4%', isPositive: true, icon: BarChart3, color: 'text-blue-500', bg: 'bg-blue-50' },
-        { label: 'Lost Opportunities', value: stats.opportunities.lost.toString(), change: '-2.1%', isPositive: false, icon: TrendingDown, color: 'text-red-500', bg: 'bg-red-50' },
-        { label: 'Response Rate', value: '87.3%', change: '+3.8%', isPositive: true, icon: Mail, color: 'text-pink-500', bg: 'bg-pink-50' },
-        ];
 
     return (
         <div className="flex flex-col gap-8">
@@ -96,7 +179,7 @@ export const GlobalKPIsReport = () => {
                     </Button>
                 </div>
             </div>
-            
+
             {/* Alert Case: Branded Setup Notice */}
             {syncError && (
                 <Card className="p-4 border-l-4 border-l-ninja-purple bg-ninja-purple/5 border-ninja-purple/10">
@@ -235,6 +318,13 @@ export const GlobalKPIsReport = () => {
                                     </td>
                                 </tr>
                             ))}
+                            {channelData.length === 0 && (
+                                <tr>
+                                    <td colSpan={7} className="px-6 py-12 text-center text-sm text-gray-400">
+                                        No channel data available yet.
+                                    </td>
+                                </tr>
+                            )}
                         </tbody>
                     </table>
                 </div>
@@ -242,31 +332,3 @@ export const GlobalKPIsReport = () => {
         </div>
     );
 };
-
-const revenueTrend = [
-    { day: 'Mon', value: 12000 },
-    { day: 'Tue', value: 15500 },
-    { day: 'Wed', value: 11000 },
-    { day: 'Thu', value: 16000 },
-    { day: 'Fri', value: 22000 },
-    { day: 'Sat', value: 8500 },
-    { day: 'Sun', value: 6500 },
-];
-
-const leadTrend = [
-    { day: 'Mon', value: 25 },
-    { day: 'Tue', value: 32 },
-    { day: 'Wed', value: 28 },
-    { day: 'Thu', value: 38 },
-    { day: 'Fri', value: 42 },
-    { day: 'Sat', value: 20 },
-    { day: 'Sun', value: 15 },
-];
-
-const channelData = [
-    { channel: 'Google Ads', investment: '$8,500', leads: 342, cpl: '$24.85', conv: 87, revenue: '$42,300', roi: '398%' },
-    { channel: 'Facebook Ads', investment: '$6,200', leads: 289, cpl: '$21.45', conv: 64, revenue: '$31,200', roi: '403%' },
-    { channel: 'Organic', investment: '$0', leads: 456, cpl: '-', conv: 124, revenue: '$18,900', roi: '-' },
-    { channel: 'Email Marketing', investment: '$1,200', leads: 234, cpl: '$5.13', conv: 45, revenue: '$8,700', roi: '625%' },
-    { channel: 'Referral', investment: '$500', leads: 178, cpl: '$2.81', conv: 78, revenue: '$12,400', roi: '2380%' },
-];

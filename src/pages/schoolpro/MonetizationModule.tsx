@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { 
+import { useState, useEffect } from 'react';
+import {
   DollarSign,
   RefreshCw,
   TrendingUp,
@@ -7,19 +7,17 @@ import {
   Eye,
   Edit,
   Settings,
-  CheckCircle2
+  CheckCircle2,
+  Loader2
 } from 'lucide-react';
-import { 
+import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
 import { Card, cn } from '../../components/ui';
+import { apiService } from '../../services/apiService';
 import {
-  monetizationMetrics,
-  revenueEvolutionData,
   revenueDistribution,
-  salesByProductData,
-  pricingModels,
   subscriptionPlans,
   subscriptionSummary
 } from '../../data/monetizationData';
@@ -39,7 +37,7 @@ const colorMap: Record<string, string> = {
   package: 'bg-purple-100 text-purple-600'
 };
 
-const OverviewView = () => (
+const OverviewView = ({ revenueEvolutionData, salesByProductData }: { revenueEvolutionData: any[]; salesByProductData: any[] }) => (
   <div className="space-y-6">
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <Card className="lg:col-span-2 p-6 border-none shadow-sm">
@@ -102,7 +100,7 @@ const OverviewView = () => (
   </div>
 );
 
-const PricingView = () => (
+const PricingView = ({ pricingModels }: { pricingModels: any[] }) => (
   <div className="space-y-8">
     <div className="flex items-center justify-between">
       <h2 className="text-lg font-black text-ninja-dark uppercase tracking-tight">Active Pricing Models</h2>
@@ -224,8 +222,72 @@ const SubscriptionsView = () => (
   </div>
 );
 
+// Fallback chart data
+const fallbackRevenueEvolution = [
+  { month: 'Jan', revenue: 12000 },
+  { month: 'Feb', revenue: 18500 },
+  { month: 'Mar', revenue: 15000 },
+  { month: 'Apr', revenue: 25000 },
+  { month: 'May', revenue: 22000 },
+  { month: 'Jun', revenue: 30000 }
+];
+const fallbackSalesByProduct = [
+  { month: 'Jan', sales: 11000 },
+  { month: 'Feb', sales: 16500 },
+  { month: 'Mar', sales: 15000 },
+  { month: 'Apr', sales: 25000 },
+  { month: 'May', sales: 21000 },
+  { month: 'Jun', sales: 30000 }
+];
+
 export const MonetizationModule = () => {
   const [tab, setTab] = useState<MonTab>('overview');
+  const [loading, setLoading] = useState(true);
+  const [orders, setOrders] = useState<any[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
+
+  useEffect(() => {
+    setLoading(true);
+    Promise.all([
+      apiService.getOrders().catch(() => []),
+      apiService.getProducts().catch(() => [])
+    ]).then(([ordersData, productsData]) => {
+      setOrders(ordersData || []);
+      setProducts(productsData || []);
+    }).finally(() => setLoading(false));
+  }, []);
+
+  const totalRevenue = orders.reduce((s: number, o: any) => s + (o.amount || o.total || 0), 0);
+  const totalSales = orders.length;
+  const aov = totalSales > 0 ? (totalRevenue / totalSales).toFixed(0) : '0';
+
+  const monetizationMetrics = [
+    { label: 'Total Revenue', value: totalRevenue > 0 ? `$${totalRevenue.toLocaleString()}` : '$0', subtext: 'from orders', badge: `${totalSales}`, icon: 'dollar' },
+    { label: 'Products', value: String(products.length), subtext: 'available products', badge: String(products.length), icon: 'package' },
+    { label: 'AOV', value: `$${aov}`, subtext: 'average order value', badge: `$${aov}`, icon: 'trending' },
+    { label: 'Total Sales', value: String(totalSales), subtext: 'orders', badge: String(totalSales), icon: 'refresh' }
+  ];
+
+  const pricingModels = products.length > 0
+    ? products.map((p: any) => ({
+        product: p.name || p.title || 'Product',
+        type: p.productType || p.type || 'Product',
+        price: p.price ? `$${p.price}` : '$0',
+        sales: p.salesCount || 0,
+        revenue: p.price && p.salesCount ? `$${(p.price * p.salesCount).toLocaleString()}` : '$0',
+        status: p.status || 'Active'
+      }))
+    : [
+        { product: 'No products found', type: '-', price: '-', sales: 0, revenue: '-', status: '-' }
+      ];
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-ninja-yellow" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -262,8 +324,8 @@ export const MonetizationModule = () => {
         </div>
       </div>
 
-      {tab === 'overview' && <OverviewView />}
-      {tab === 'pricing' && <PricingView />}
+      {tab === 'overview' && <OverviewView revenueEvolutionData={fallbackRevenueEvolution} salesByProductData={fallbackSalesByProduct} />}
+      {tab === 'pricing' && <PricingView pricingModels={pricingModels} />}
       {tab === 'subscriptions' && <SubscriptionsView />}
     </div>
   );

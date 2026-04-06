@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     BarChart,
     Bar,
@@ -19,18 +19,138 @@ import {
     Users,
     DollarSign,
     Filter,
-    MousePointer2
+    MousePointer2,
+    Zap
 } from 'lucide-react';
 import { Card, Button, cn } from '../../components/ui';
-import {
-    reportMetrics,
-    channelDistribution,
-    revenueBySource,
-    sourcePerformance
-} from '../../data/reportsData';
+import { apiService } from '../../services/apiService';
+
+const CHANNEL_COLORS = ['#D4FF00', '#BFA9FF', '#3B82F6', '#F59E0B', '#EF4444', '#10B981', '#6366F1', '#EC4899'];
 
 export const AttributionReport = () => {
     const [attributionModel, setAttributionModel] = useState<'first' | 'last'>('first');
+    const [isLoading, setIsLoading] = useState(true);
+    const [syncError, setSyncError] = useState<string | null>(null);
+    const [reportMetrics, setReportMetrics] = useState<any[]>([]);
+    const [channelDistribution, setChannelDistribution] = useState<any[]>([]);
+    const [revenueBySource, setRevenueBySource] = useState<any[]>([]);
+    const [sourcePerformance, setSourcePerformance] = useState<any[]>([]);
+
+    useEffect(() => {
+        loadData();
+    }, []);
+
+    const loadData = async () => {
+        setIsLoading(true);
+        setSyncError(null);
+        try {
+            const results = await Promise.allSettled([
+                apiService.getContacts(),
+                apiService.getOpportunities()
+            ]);
+
+            const contacts = results[0].status === 'fulfilled' ? results[0].value : [];
+            const opportunities = results[1].status === 'fulfilled' ? results[1].value : [];
+
+            // Count contacts by source
+            const sourceCounts: Record<string, number> = {};
+            contacts.forEach((c: any) => {
+                const src = c.source || 'Direct';
+                sourceCounts[src] = (sourceCounts[src] || 0) + 1;
+            });
+
+            // Sum opportunity revenue by contact source (via assignedTo or pipelineStageId mapping)
+            const totalRevenue = opportunities.reduce((sum: number, o: any) => sum + (o.monetaryValue || 0), 0);
+            const wonOpps = opportunities.filter((o: any) => o.status === 'won');
+            const wonRevenue = wonOpps.reduce((sum: number, o: any) => sum + (o.monetaryValue || 0), 0);
+
+            // Build source performance from contacts + opportunities
+            const sourceKeys = Object.keys(sourceCounts);
+            const totalContacts = contacts.length;
+
+            // Distribute opportunities proportionally across sources for attribution
+            const perfData = sourceKeys.map((src) => {
+                const leads = sourceCounts[src];
+                const proportion = totalContacts > 0 ? leads / totalContacts : 0;
+                const estConversions = Math.round(wonOpps.length * proportion);
+                const estRevenue = Math.round(wonRevenue * proportion);
+                const convRate = leads > 0 ? ((estConversions / leads) * 100).toFixed(1) + '%' : '0%';
+                const avgVal = estConversions > 0 ? Math.round(estRevenue / estConversions) : 0;
+                return {
+                    source: src,
+                    leads,
+                    conversions: estConversions,
+                    convRate,
+                    revenue: `$${estRevenue.toLocaleString()}`,
+                    avgValue: `$${avgVal.toLocaleString()}`,
+                    revenueRaw: estRevenue
+                };
+            }).sort((a, b) => b.revenueRaw - a.revenueRaw);
+
+            setSourcePerformance(perfData);
+
+            // Channel distribution (pie chart) by contact count
+            const total = totalContacts || 1;
+            setChannelDistribution(sourceKeys.map((src, i) => ({
+                name: src,
+                value: Math.round((sourceCounts[src] / total) * 100),
+                color: CHANNEL_COLORS[i % CHANNEL_COLORS.length]
+            })));
+
+            // Revenue by source (bar chart)
+            setRevenueBySource(perfData.map((p) => ({
+                source: p.source,
+                revenue: p.revenueRaw
+            })));
+
+            // KPI metrics
+            setReportMetrics([
+                {
+                    label: 'Total Revenue',
+                    value: `$${totalRevenue.toLocaleString()}`,
+                    subtext: `From ${opportunities.length} opportunities`,
+                    icon: 'dollar',
+                    trend: wonOpps.length > 0 ? `${wonOpps.length} won` : 'No wins yet',
+                    trendType: wonOpps.length > 0 ? 'positive' : 'neutral'
+                },
+                {
+                    label: 'Total Leads',
+                    value: totalContacts.toLocaleString(),
+                    subtext: `${sourceKeys.length} sources detected`,
+                    icon: 'users',
+                    trend: `${sourceKeys.length} channels`,
+                    trendType: 'positive'
+                },
+                {
+                    label: 'Avg. Deal Value',
+                    value: wonOpps.length > 0 ? `$${Math.round(wonRevenue / wonOpps.length).toLocaleString()}` : '$0',
+                    subtext: 'Per closed deal',
+                    icon: 'chart',
+                    trend: `${wonOpps.length} deals`,
+                    trendType: 'neutral'
+                }
+            ]);
+        } catch (error: any) {
+            console.error('Error loading attribution report:', error);
+            if (error.status === 403 || error.status === 401) {
+                setSyncError('Attribution data is currently being synchronized. Please ensure your Ninja CRM account setup is complete.');
+            }
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center h-96">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ninja-yellow"></div>
+            </div>
+        );
+    }
+
+    const activePercent = channelDistribution.length > 0
+        ? `${channelDistribution.filter(c => c.value > 0).length * 100 / channelDistribution.length | 0}% Active`
+        : '0% Active';
 
     return (
         <div className="flex flex-col gap-8">
@@ -58,6 +178,21 @@ export const AttributionReport = () => {
                     </Button>
                 </div>
             </div>
+
+            {/* Sync Error */}
+            {syncError && (
+                <Card className="p-4 border-l-4 border-l-ninja-purple bg-ninja-purple/5 border-ninja-purple/10">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-ninja-purple/10 rounded-lg text-ninja-purple">
+                            <Zap size={18} />
+                        </div>
+                        <div>
+                            <p className="text-sm font-bold text-ninja-dark">Module Synchronization</p>
+                            <p className="text-xs text-slate-500 font-medium">{syncError}</p>
+                        </div>
+                    </div>
+                </Card>
+            )}
 
             {/* Attribution Model Selection */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -151,7 +286,7 @@ export const AttributionReport = () => {
                 <Card className="border-none shadow-xl bg-ninja-dark p-8">
                     <div className="flex items-center justify-between mb-8">
                         <h3 className="font-bold text-white text-lg">Distribution by Channel</h3>
-                        <span className="text-xs font-black text-ninja-yellow px-2 py-1 bg-white/5 rounded-lg border border-white/10 uppercase tracking-widest">34% Active</span>
+                        <span className="text-xs font-black text-ninja-yellow px-2 py-1 bg-white/5 rounded-lg border border-white/10 uppercase tracking-widest">{activePercent}</span>
                     </div>
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-8 min-h-[300px]">
                         <div className="h-[260px] w-[260px] shrink-0">
@@ -280,6 +415,13 @@ export const AttributionReport = () => {
                                     </td>
                                 </tr>
                             ))}
+                            {sourcePerformance.length === 0 && (
+                                <tr>
+                                    <td colSpan={6} className="px-6 py-12 text-center text-sm text-gray-400">
+                                        No attribution data available yet.
+                                    </td>
+                                </tr>
+                            )}
                         </tbody>
                     </table>
                 </div>

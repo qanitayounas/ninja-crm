@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Eye,
   TrendingUp,
@@ -9,7 +9,8 @@ import {
   PenLine,
   Image as ImageIcon,
   CheckCircle2,
-  Circle
+  Circle,
+  Loader2
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -24,13 +25,7 @@ import {
 } from 'recharts';
 import { Card, Badge } from '../../components/ui';
 import toast from 'react-hot-toast';
-
-const kpis = [
-  { label: 'Views', value: '2,789', sub: 'last month', trend: '+24%', icon: Eye, color: 'text-ninja-yellow', bg: 'bg-ninja-yellow/10' },
-  { label: 'Direct Searches', value: '1,892', sub: 'last month', trend: '+32%', icon: TrendingUp, color: 'text-purple-400', bg: 'bg-purple-400/10' },
-  { label: 'Total Actions', value: '891', sub: 'calls, web, etc.', trend: '+18%', icon: MousePointer2, color: 'text-ninja-yellow', bg: 'bg-ninja-yellow/10' },
-  { label: 'Rating', value: '4.8', sub: '721 reviews', trend: '4.8', icon: Star, color: 'text-purple-400', bg: 'bg-purple-400/10' },
-];
+import { apiService } from '../../services/apiService';
 
 const insightsData = [
   { month: 'Jan', views: 1350, searches: 720, actions: 420 },
@@ -68,6 +63,28 @@ const tabs = ['Profile', 'Posts', 'Insights', 'Optimization'];
 
 export const ReputationGoogleBusiness = () => {
   const [activeTab, setActiveTab] = useState('Profile');
+  const [loading, setLoading] = useState(true);
+  const [reviews, setReviews] = useState<any[]>([]);
+
+  useEffect(() => {
+    setLoading(true);
+    apiService.getReviews()
+      .then((data) => setReviews(data || []))
+      .catch(() => setReviews([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const totalReviews = reviews.length;
+  const avgRating = totalReviews > 0
+    ? (reviews.reduce((sum: number, r: any) => sum + (r.rating || 0), 0) / totalReviews).toFixed(1)
+    : '0.0';
+
+  const kpis = [
+    { label: 'Views', value: '2,789', sub: 'last month', trend: '+24%', icon: Eye, color: 'text-ninja-yellow', bg: 'bg-ninja-yellow/10' },
+    { label: 'Direct Searches', value: '1,892', sub: 'last month', trend: '+32%', icon: TrendingUp, color: 'text-purple-400', bg: 'bg-purple-400/10' },
+    { label: 'Total Actions', value: '891', sub: 'calls, web, etc.', trend: '+18%', icon: MousePointer2, color: 'text-ninja-yellow', bg: 'bg-ninja-yellow/10' },
+    { label: 'Rating', value: String(avgRating), sub: `${totalReviews} reviews`, trend: String(avgRating), icon: Star, color: 'text-purple-400', bg: 'bg-purple-400/10' },
+  ];
   const [form, setForm] = useState({
     name: 'Ninja CRM - Marketing & Sales Platform',
     category: 'Software Company',
@@ -80,6 +97,14 @@ export const ReputationGoogleBusiness = () => {
 
   const doneCount = optimizations.filter(o => o.done).length;
   const optimizationPct = Math.round((doneCount / optimizations.length) * 100);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-ninja-yellow" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-10">

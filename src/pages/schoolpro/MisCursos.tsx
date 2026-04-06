@@ -1,26 +1,77 @@
-import { 
-  Search, 
-  Filter, 
-  BookOpen, 
-  Users, 
-  Star, 
-  DollarSign, 
+import { useState, useEffect } from 'react';
+import {
+  Search,
+  Filter,
+  BookOpen,
+  Users,
+  Star,
+  DollarSign,
   PlayCircle,
-  MoreVertical
+  MoreVertical,
+  Loader2
 } from 'lucide-react';
 import { Card, cn } from '../../components/ui';
-import { myCoursesData } from '../../data/schoolProData';
+import { apiService } from '../../services/apiService';
+
+const gradientColors = [
+  'from-green-400 to-blue-500',
+  'from-yellow-400 to-green-500',
+  'from-blue-400 to-purple-500',
+  'from-pink-400 to-red-500',
+  'from-indigo-400 to-cyan-500',
+];
 
 export const MisCursos = () => {
+  const [loading, setLoading] = useState(true);
+  const [courses, setCourses] = useState<any[]>([]);
+
+  useEffect(() => {
+    setLoading(true);
+    apiService.getCourses()
+      .then((data) => {
+        const mapped = (data || []).map((c: any, i: number) => ({
+          id: c.id || i + 1,
+          title: c.name || c.title || `Course ${i + 1}`,
+          lessons: c.lessonCount || c.lessons || 0,
+          duration: c.duration || 'N/A',
+          students: c.studentCount || c.students || 0,
+          reviews: c.reviewCount || c.reviews || 0,
+          revenue: c.revenue || '$0',
+          status: c.status === 'published' || c.status === 'Published' ? 'Published' : 'Draft',
+          color: gradientColors[i % gradientColors.length]
+        }));
+        setCourses(mapped);
+      })
+      .catch(() => setCourses([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-ninja-yellow" />
+      </div>
+    );
+  }
+
+  if (courses.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 text-gray-400">
+        <BookOpen size={48} className="mb-4 text-gray-300" />
+        <p className="font-bold text-sm">No courses found</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 animate-in fade-in duration-700">
       {/* Search and Filters */}
       <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
         <div className="relative w-full md:max-w-md group">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-ninja-yellow transition-colors" size={18} />
-          <input 
-            type="text" 
-            placeholder="Search courses..." 
+          <input
+            type="text"
+            placeholder="Search courses..."
             className="w-full pl-12 pr-4 py-3 bg-white border border-gray-100 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-ninja-yellow/20 focus:border-ninja-yellow transition-all shadow-sm"
           />
         </div>
@@ -32,7 +83,7 @@ export const MisCursos = () => {
 
       {/* Courses Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {myCoursesData.map((course) => (
+        {courses.map((course) => (
           <CourseCard key={course.id} course={course} />
         ))}
       </div>

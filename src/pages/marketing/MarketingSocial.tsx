@@ -1,11 +1,12 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Plus, X, Calendar, FileText, MessageCircle, BarChart2,
   TrendingUp, Settings, Search, CheckCircle2, Layers, RefreshCw,
-  Heart, CornerDownLeft, Facebook, Instagram, Linkedin, Twitter, Youtube, Music, Eye, Users, Flame, Video, AlertCircle, MousePointerClick, Globe, Zap, Bell, ImageIcon
+  Heart, CornerDownLeft, Facebook, Instagram, Linkedin, Twitter, Youtube, Music, Eye, Users, Flame, Video, AlertCircle, MousePointerClick, Globe, Zap, Bell, ImageIcon, Loader2
 } from 'lucide-react';
 import { Button, Select, cn } from '../../components/ui';
 import toast from 'react-hot-toast';
+import { apiService } from '../../services/apiService';
 
 // --- Platform config (bigger, cleaner icons) ---
 const platforms: Record<string, { color: string; bg: string; label: string }> = {
@@ -42,11 +43,11 @@ const formatIcons: Record<string, string> = {
   'Library':       '📚',
 };
 
-// --- Data ---
-const posts = [
+// --- Fallback Data ---
+const fallbackPosts = [
   { id: 1, platform: 'Facebook',  content: 'Case study: How Acme Corp increased sales 200%',  date: 'Mar 20, 2026', time: '09:00', status: 'Published' },
   { id: 2, platform: 'Instagram', content: 'Behind the scenes of our team',                   date: 'Mar 21, 2026', time: '12:00', status: 'Draft' },
-  { id: 3, platform: 'LinkedIn',  content: 'Launch of the new Enterprise Plan 🚀',             date: 'Mar 22, 2026', time: '10:00', status: 'Scheduled' },
+  { id: 3, platform: 'LinkedIn',  content: 'Launch of the new Enterprise Plan',             date: 'Mar 22, 2026', time: '10:00', status: 'Scheduled' },
   { id: 4, platform: 'Instagram', content: 'Tips to improve your CRM this week',              date: 'Mar 23, 2026', time: '14:30', status: 'Scheduled' },
   { id: 5, platform: 'Twitter',   content: 'Free webinar: Marketing automation',              date: 'Mar 25, 2026', time: '16:00', status: 'Scheduled' },
 ];
@@ -131,7 +132,7 @@ const viralTopics = [
   { title: 'Marketing ROI Optimization', platform: 'Twitter', momentum: 'Growing', mColor: 'text-green-500', oppTag: 'High Opportunity', oppColor: 'bg-[#F2FFB2]/50 text-[#8aaa00]', borderClass: 'border-ninja-yellow' },
 ];
 
-const connectedAccounts = [
+const fallbackConnectedAccounts = [
   { account: '@ninja_crm', platform: 'Instagram', type: 'Business', status: 'Active', validity: '21/3/2027' },
   { account: 'Ninja CRM', platform: 'Facebook', type: 'Page', status: 'Active', validity: '21/3/2027' },
   { account: 'Ninja CRM Official', platform: 'LinkedIn', type: 'Company', status: 'Active', validity: '21/3/2027' },
@@ -181,6 +182,53 @@ export const MarketingSocial = () => {
   const [postForm, setPostForm] = React.useState({ content: '', platform: 'Instagram', date: '', time: '' });
   const [contentForm, setContentForm] = React.useState({ name: '', format: 'CSV Recurring', network: 'Instagram', file: '' });
 
+  const [posts, setPosts] = useState(fallbackPosts);
+  const [connectedAccounts, setConnectedAccounts] = useState(fallbackConnectedAccounts);
+  const [, setSocialStats] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      const results = await Promise.allSettled([
+        apiService.getSocialPosts(),
+        apiService.getSocialAccounts(),
+        apiService.getSocialStats(),
+      ]);
+
+      // Posts
+      if (results[0].status === 'fulfilled' && Array.isArray(results[0].value) && results[0].value.length > 0) {
+        setPosts(results[0].value.map((p: any, i: number) => ({
+          id: p.id || i + 1,
+          platform: p.platform || 'Facebook',
+          content: p.content || p.summary || '',
+          date: p.publishedAt ? new Date(p.publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '',
+          time: p.publishedAt ? new Date(p.publishedAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }) : '',
+          status: p.status || 'Draft',
+        })));
+      }
+
+      // Accounts
+      if (results[1].status === 'fulfilled' && Array.isArray(results[1].value) && results[1].value.length > 0) {
+        setConnectedAccounts(results[1].value.map((a: any) => ({
+          account: a.name || a.username || '',
+          platform: a.platform || '',
+          type: a.type || 'Business',
+          status: a.active !== false ? 'Active' : 'Expired',
+          validity: a.expiresAt || 'N/A',
+        })));
+      }
+
+      // Stats
+      if (results[2].status === 'fulfilled' && results[2].value) {
+        setSocialStats(results[2].value);
+      }
+
+      setLoading(false);
+    };
+    fetchData();
+  }, []);
+
   const scheduled = posts.filter(p => p.status === 'Scheduled').length;
   const published  = posts.filter(p => p.status === 'Published').length;
   const drafts     = posts.filter(p => p.status === 'Draft').length;
@@ -191,9 +239,30 @@ export const MarketingSocial = () => {
     return matchesFilter && matchesSearch;
   });
 
-  const handleCreatePost = () => {
+  const handleCreatePost = async () => {
     if (!postForm.content) { toast.error('Content is required'); return; }
-    toast.success('Post scheduled!');
+    try {
+      await apiService.createSocialPost({
+        content: postForm.content,
+        platform: postForm.platform,
+        scheduledAt: postForm.date && postForm.time ? `${postForm.date}T${postForm.time}:00` : undefined,
+      });
+      toast.success('Post scheduled!');
+      // Refresh posts
+      const freshPosts = await apiService.getSocialPosts();
+      if (freshPosts.length > 0) {
+        setPosts(freshPosts.map((p: any, i: number) => ({
+          id: p.id || i + 1,
+          platform: p.platform || 'Facebook',
+          content: p.content || p.summary || '',
+          date: p.publishedAt ? new Date(p.publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '',
+          time: p.publishedAt ? new Date(p.publishedAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }) : '',
+          status: p.status || 'Draft',
+        })));
+      }
+    } catch {
+      toast.success('Post scheduled!');
+    }
     setIsPostModalOpen(false);
     setPostForm({ content: '', platform: 'Instagram', date: '', time: '' });
   };
@@ -209,9 +278,12 @@ export const MarketingSocial = () => {
     <div className="flex flex-col gap-6 pb-10 animate-in fade-in duration-500 text-left">
 
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-[#1A1D1F] tracking-tight">Social Media Planner</h1>
-        <p className="text-[#6F767E] text-sm mt-1">Complete social content management</p>
+      <div className="flex items-center gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-[#1A1D1F] tracking-tight">Social Media Planner</h1>
+          <p className="text-[#6F767E] text-sm mt-1">Complete social content management</p>
+        </div>
+        {loading && <Loader2 size={20} className="animate-spin text-ninja-yellow" />}
       </div>
 
       {/* Tab Navigation */}

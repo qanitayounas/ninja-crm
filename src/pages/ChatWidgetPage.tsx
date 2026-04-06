@@ -1,11 +1,11 @@
-import React from 'react';
-import { 
-  MessageSquare, 
-  MessageCircle, 
-  Plus, 
-  Search, 
-  X, 
-  ChevronDown, 
+import React, { useState, useEffect } from 'react';
+import {
+  MessageSquare,
+  MessageCircle,
+  Plus,
+  Search,
+  X,
+  ChevronDown,
   Clock,
   Bot,
   Palette,
@@ -13,39 +13,58 @@ import {
 } from 'lucide-react';
 import { Card, Badge, Button } from '../components/ui';
 import toast from 'react-hot-toast';
-
-const widgets = [
-  {
-    id: 1,
-    name: 'Main Chat',
-    type: 'Proactive',
-    conversations: 456,
-    updated: '20/3/2026'
-  },
-  {
-    id: 2,
-    name: 'Technical Support',
-    type: 'Reactive',
-    conversations: 234,
-    updated: '19/3/2026'
-  },
-  {
-    id: 3,
-    name: 'Sales',
-    type: 'Proactive',
-    conversations: 189,
-    updated: '21/3/2026'
-  }
-];
+import { apiService } from '../services/apiService';
 
 export const ChatWidgetPage = () => {
   const [showCreateModal, setShowCreateModal] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState('');
   const [selectedColor] = React.useState('#D4FF00');
+  const [loading, setLoading] = useState(true);
+  const [conversations, setConversations] = useState<any[]>([]);
 
-  const filteredWidgets = widgets.filter(w => 
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      const results = await Promise.allSettled([
+        apiService.getConversations(),
+      ]);
+      const convos = results[0].status === 'fulfilled' ? results[0].value : [];
+      setConversations(convos);
+      setLoading(false);
+    };
+    loadData();
+  }, []);
+
+  // Group conversations into pseudo-widgets by channel
+  const widgetMap: Record<string, { name: string; type: string; conversations: number; updated: string }> = {};
+  conversations.forEach((c: any) => {
+    const channel = c.channel || 'General';
+    if (!widgetMap[channel]) {
+      widgetMap[channel] = { name: `${channel} Chat`, type: 'Proactive', conversations: 0, updated: c.timestamp || '' };
+    }
+    widgetMap[channel].conversations += 1;
+    if (c.timestamp && c.timestamp > widgetMap[channel].updated) {
+      widgetMap[channel].updated = c.timestamp;
+    }
+  });
+  const widgets = Object.entries(widgetMap).map(([_key, val], idx) => ({
+    id: idx + 1,
+    ...val,
+  }));
+
+  const totalConversations = conversations.length;
+
+  const filteredWidgets = widgets.filter(w =>
     w.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ninja-yellow"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 md:space-y-8 animate-in fade-in duration-500 pb-10">
@@ -62,15 +81,15 @@ export const ChatWidgetPage = () => {
             <MessageSquare size={100} />
           </div>
           <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Active Widgets</span>
-          <span className="text-3xl font-black text-ninja-dark font-black">3</span>
+          <span className="text-3xl font-black text-ninja-dark font-black">{widgets.length}</span>
         </Card>
-        
+
         <Card className="p-6 md:p-8 flex flex-col gap-2 shadow-sm border-gray-100 relative overflow-hidden group">
           <div className="absolute -right-4 -bottom-4 text-green-500/5 group-hover:scale-110 transition-transform duration-500">
             <Send size={100} />
           </div>
           <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Total Conversations</span>
-          <span className="text-3xl font-black text-ninja-yellow font-black">879</span>
+          <span className="text-3xl font-black text-ninja-yellow font-black">{totalConversations}</span>
         </Card>
 
         <Card className="p-6 md:p-8 flex flex-col gap-2 shadow-sm border-gray-100 relative overflow-hidden group">
@@ -88,8 +107,8 @@ export const ChatWidgetPage = () => {
           <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-ninja-yellow transition-colors">
             <Search size={18} />
           </div>
-          <input 
-            type="text" 
+          <input
+            type="text"
             placeholder="Search widgets..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -97,7 +116,7 @@ export const ChatWidgetPage = () => {
           />
         </div>
 
-        <Button 
+        <Button
           onClick={() => setShowCreateModal(true)}
           className="w-full md:w-auto font-black px-6 py-3.5 rounded-2xl shadow-xl shadow-ninja-yellow/20 flex items-center justify-center gap-2 whitespace-nowrap"
         >
@@ -119,6 +138,11 @@ export const ChatWidgetPage = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
+              {filteredWidgets.length === 0 && (
+                <tr>
+                  <td colSpan={4} className="px-6 py-12 text-center text-gray-400 font-bold text-sm">No conversations found</td>
+                </tr>
+              )}
               {filteredWidgets.map((widget) => (
                 <tr key={widget.id} className="group hover:bg-gray-50/50 transition-all cursor-pointer">
                   <td className="px-6 py-4">
@@ -160,7 +184,7 @@ export const ChatWidgetPage = () => {
               <MessageSquare size={160} />
             </div>
 
-            <button 
+            <button
               onClick={() => setShowCreateModal(false)}
               className="absolute right-6 top-6 text-gray-400 hover:text-ninja-dark transition-colors z-10"
             >
@@ -177,8 +201,8 @@ export const ChatWidgetPage = () => {
                 <label className="text-xs font-black text-ninja-dark uppercase tracking-widest flex items-center gap-1.5">
                   Widget Name <span className="text-ninja-yellow">*</span>
                 </label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   placeholder="e.g. Main Chat"
                   className="w-full px-4 py-3.5 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-ninja-yellow focus:ring-4 focus:ring-ninja-yellow/10 transition-all outline-none font-bold text-sm text-ninja-dark font-bold"
                 />
@@ -204,8 +228,8 @@ export const ChatWidgetPage = () => {
                 </label>
                 <div className="flex flex-col gap-3">
                   <div className="flex gap-2 p-2 bg-gray-50 rounded-2xl border border-gray-100">
-                    <div 
-                      className="h-10 flex-1 rounded-xl shadow-lg shadow-ninja-yellow/20" 
+                    <div
+                      className="h-10 flex-1 rounded-xl shadow-lg shadow-ninja-yellow/20"
                       style={{ backgroundColor: selectedColor }}
                     />
                     <div className="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center text-gray-400 group cursor-pointer hover:border-ninja-yellow transition-colors">
@@ -213,7 +237,7 @@ export const ChatWidgetPage = () => {
                     </div>
                   </div>
                   <div className="w-full h-2 rounded-full relative" style={{ background: 'linear-gradient(to right, #D4FF00, #00FFD4, #00D4FF, #D400FF, #FFD400)' }}>
-                    <div 
+                    <div
                       className="absolute top-1/2 -translate-y-1/2 h-4 w-4 bg-white border-2 border-ninja-dark rounded-full shadow-md cursor-pointer"
                       style={{ left: '10%' }}
                     />
@@ -221,7 +245,7 @@ export const ChatWidgetPage = () => {
                 </div>
               </div>
 
-              <Button 
+              <Button
                 onClick={() => {
                   toast.success('Widget Created Successfully!');
                   setShowCreateModal(false);

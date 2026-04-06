@@ -439,10 +439,36 @@ export const ContactsPage = () => {
 
           <div className="flex items-center gap-3 justify-end mt-2 pt-4 border-t border-gray-100">
             <Button variant="secondary" onClick={() => setIsAddModalOpen(false)} className="rounded-xl">Cancel</Button>
-            <Button onClick={() => {
-              toast.success('Contact added successfully!');
-              setIsAddModalOpen(false);
-              setSelectedTags([]);
+            <Button onClick={async () => {
+              try {
+                const nameInput = document.querySelector<HTMLInputElement>('input[placeholder="Full name"]');
+                const emailInput = document.querySelector<HTMLInputElement>('input[placeholder="email@example.com"]');
+                const phoneInput = document.querySelector<HTMLInputElement>('input[placeholder="+1 (555) 000-0000"]');
+                const companyInput = document.querySelector<HTMLInputElement>('input[placeholder="Company name"]');
+
+                if (!nameInput?.value || !emailInput?.value) {
+                  toast.error('Name and email are required');
+                  return;
+                }
+
+                const nameParts = nameInput.value.trim().split(' ');
+                await apiService.createContact({
+                  firstName: nameParts[0],
+                  lastName: nameParts.slice(1).join(' ') || '',
+                  email: emailInput.value,
+                  phone: phoneInput?.value || '',
+                  companyName: companyInput?.value || '',
+                  tags: selectedTags.map(t => t.name)
+                });
+
+                toast.success('Contact added successfully!');
+                setIsAddModalOpen(false);
+                setSelectedTags([]);
+                loadInitialData();
+              } catch (error) {
+                toast.error('Failed to create contact');
+                console.error(error);
+              }
             }} className="rounded-xl px-8">Add Client</Button>
           </div>
         </div>

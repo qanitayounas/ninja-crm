@@ -53,11 +53,11 @@
   {
     "id": "t-1775192262604",
     "createdAt": "2026-04-03T04:57:42.604Z",
-    "updatedAt": "2026-04-03T04:58:20.060Z",
+    "updatedAt": "2026-04-06T11:33:34.279Z",
     "title": "API TESTING ",
     "description": "hello work on it ",
-    "priority": "Low",
-    "status": "Review",
+    "priority": "Medium",
+    "status": "To Do",
     "dueDate": "2026-04-03",
     "assigneeId": "kFqrrNdHWYp662UKuMtY",
     "tags": []

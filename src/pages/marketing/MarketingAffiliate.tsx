@@ -1,16 +1,17 @@
-import React from 'react';
-import { Users, TrendingUp, ShoppingBag, DollarSign, Send, X } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Users, TrendingUp, ShoppingBag, DollarSign, Send, X, Loader2 } from 'lucide-react';
 import { Card, Button, Input, cn } from '../../components/ui';
 import toast from 'react-hot-toast';
+import { apiService } from '../../services/apiService';
 
-const affiliates = [
+const fallbackAffiliates = [
   { id: 1, name: 'Maria Gonzalez', email: 'maria@example.com', leads: 45, sales: 12, commission: '$1,890', status: 'Active' },
   { id: 2, name: 'Carlos Ruiz', email: 'carlos@example.com', leads: 78, sales: 23, commission: '$3,450', status: 'Active' },
   { id: 3, name: 'Ana Martinez', email: 'ana@example.com', leads: 34, sales: 8, commission: '$1,200', status: 'Active' },
   { id: 4, name: 'Jorge Lopez', email: 'jorge@example.com', leads: 12, sales: 2, commission: '$300', status: 'Pending' },
 ];
 
-const kpis = [
+const fallbackKpis = [
   { label: 'Active Affiliates', value: '3', color: 'bg-purple-100', iconColor: 'text-purple-400', icon: Users },
   { label: 'Leads Generated', value: '169', color: 'bg-[#D4FF00]/30', iconColor: 'text-[#8aaa00]', icon: TrendingUp },
   { label: 'Total Sales', value: '45', color: 'bg-[#D4FF00]/30', iconColor: 'text-[#8aaa00]', icon: ShoppingBag },
@@ -18,8 +19,41 @@ const kpis = [
 ];
 
 export const MarketingAffiliate = () => {
-  const [isModalOpen, setIsModalOpen] = React.useState(false);
-  const [form, setForm] = React.useState({ name: '', email: '', commission: '15' });
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [form, setForm] = useState({ name: '', email: '', commission: '15' });
+  const [affiliates, setAffiliates] = useState(fallbackAffiliates);
+  const [kpis, setKpis] = useState(fallbackKpis);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchContacts = async () => {
+      setLoading(true);
+      try {
+        const contacts = await apiService.getContacts();
+        if (Array.isArray(contacts) && contacts.length > 0) {
+          setAffiliates(contacts.slice(0, 20).map((c: any, i: number) => ({
+            id: c.id || i + 1,
+            name: `${c.firstName || ''} ${c.lastName || ''}`.trim() || c.name || 'Unknown',
+            email: c.email || '',
+            leads: 0,
+            sales: 0,
+            commission: '$0',
+            status: 'Active',
+          })));
+          setKpis([
+            { label: 'Active Affiliates', value: String(Math.min(contacts.length, 20)), color: 'bg-purple-100', iconColor: 'text-purple-400', icon: Users },
+            { label: 'Leads Generated', value: '169', color: 'bg-[#D4FF00]/30', iconColor: 'text-[#8aaa00]', icon: TrendingUp },
+            { label: 'Total Sales', value: '45', color: 'bg-[#D4FF00]/30', iconColor: 'text-[#8aaa00]', icon: ShoppingBag },
+            { label: 'Total Commissions', value: '$6,840', color: 'bg-purple-100', iconColor: 'text-purple-400', icon: DollarSign },
+          ]);
+        }
+      } catch {
+        // Keep fallback data
+      }
+      setLoading(false);
+    };
+    fetchContacts();
+  }, []);
 
   const handleSubmit = () => {
     if (!form.name || !form.email) {
@@ -36,9 +70,12 @@ export const MarketingAffiliate = () => {
 
       {/* Header */}
       <div className="flex items-center justify-between gap-6">
-        <div>
-          <h1 className="text-2xl font-bold text-[#1A1D1F] tracking-tight">Affiliate Manager</h1>
-          <p className="text-[#6F767E] text-sm mt-1">Affiliate system and commissions</p>
+        <div className="flex items-center gap-3">
+          <div>
+            <h1 className="text-2xl font-bold text-[#1A1D1F] tracking-tight">Affiliate Manager</h1>
+            <p className="text-[#6F767E] text-sm mt-1">Affiliate system and commissions</p>
+          </div>
+          {loading && <Loader2 size={20} className="animate-spin text-ninja-yellow" />}
         </div>
         <Button
           onClick={() => setIsModalOpen(true)}

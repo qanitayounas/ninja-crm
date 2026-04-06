@@ -1,35 +1,63 @@
-import { useState } from 'react';
-import { 
-    Send, 
-    CheckCircle, 
-    Clock, 
-    Calendar, 
-    Users, 
-    Mail, 
-    Smartphone, 
+import { useState, useEffect } from 'react';
+import {
+    Send,
+    CheckCircle,
+    Clock,
+    Calendar,
+    Users,
+    Mail,
+    Smartphone,
     MessageSquare,
-    Plus
+    Plus,
+    Loader2
 } from 'lucide-react';
 import { Card, Button, cn } from '../../components/ui';
-
-const stats = [
-    { label: 'Requests Sent', value: '1,847', subtext: 'this month', icon: Send, color: 'text-ninja-dark', bg: 'bg-ninja-yellow' },
-    { label: 'Response Rate', value: '42.3%', subtext: '782 completed', icon: CheckCircle, color: 'text-purple-500', bg: 'bg-purple-50' },
-    { label: 'Pending', value: '124', subtext: 'no response', icon: Clock, color: 'text-ninja-yellow', bg: 'bg-ninja-dark' },
-    { label: 'Scheduled', value: '67', subtext: 'next 7 days', icon: Calendar, color: 'text-blue-500', bg: 'bg-blue-50' },
-];
-
-const channelMetrics = [
-    { label: 'Email', value: '38.5%', subtext: 'response rate', icon: Mail, color: 'text-blue-500', bg: 'bg-blue-50' },
-    { label: 'WhatsApp', value: '62.3%', subtext: 'response rate', icon: MessageSquare, color: 'text-green-500', bg: 'bg-green-50' },
-    { label: 'SMS', value: '45.7%', subtext: 'response rate', icon: Smartphone, color: 'text-purple-500', bg: 'bg-purple-50' },
-];
+import { apiService } from '../../services/apiService';
 
 export const ReputationRequests = () => {
+    const [loading, setLoading] = useState(true);
+    const [contacts, setContacts] = useState<any[]>([]);
+    const [campaigns, setCampaigns] = useState<any[]>([]);
+
+    useEffect(() => {
+        setLoading(true);
+        Promise.all([
+            apiService.getContacts().catch(() => []),
+            apiService.getCampaigns().catch(() => [])
+        ]).then(([contactsData, campaignsData]) => {
+            setContacts(contactsData || []);
+            setCampaigns(campaignsData || []);
+        }).finally(() => setLoading(false));
+    }, []);
+
+    const totalContacts = contacts.length;
+    const totalCampaigns = campaigns.length;
+    const activeCampaigns = campaigns.filter((c: any) => c.status === 'active' || c.status === 'published').length;
+
+    const stats = [
+        { label: 'Contacts Available', value: totalContacts.toLocaleString(), subtext: 'in CRM', icon: Send, color: 'text-ninja-dark', bg: 'bg-ninja-yellow' },
+        { label: 'Campaigns', value: String(totalCampaigns), subtext: `${activeCampaigns} active`, icon: CheckCircle, color: 'text-purple-500', bg: 'bg-purple-50' },
+        { label: 'Pending', value: String(contacts.filter((c: any) => c.status === 'Lead').length), subtext: 'leads to request', icon: Clock, color: 'text-ninja-yellow', bg: 'bg-ninja-dark' },
+        { label: 'Qualified', value: String(contacts.filter((c: any) => c.status === 'Qualified').length), subtext: 'ready to request', icon: Calendar, color: 'text-blue-500', bg: 'bg-blue-50' },
+    ];
+
+    const channelMetrics = [
+        { label: 'Email', value: String(contacts.filter((c: any) => c.email).length), subtext: 'with email', icon: Mail, color: 'text-blue-500', bg: 'bg-blue-50' },
+        { label: 'WhatsApp', value: String(contacts.filter((c: any) => c.phone).length), subtext: 'with phone', icon: MessageSquare, color: 'text-green-500', bg: 'bg-green-50' },
+        { label: 'SMS', value: String(contacts.filter((c: any) => c.phone).length), subtext: 'with phone', icon: Smartphone, color: 'text-purple-500', bg: 'bg-purple-50' },
+    ];
     const [activeTab, setActiveTab] = useState<'send' | 'followup'>('send');
     const [selectedContactMethod, setSelectedContactMethod] = useState<'crm' | 'email' | 'phone'>('crm');
     const [selectedChannel, setSelectedChannel] = useState<'email' | 'whatsapp' | 'sms'>('email');
     const [selectedTiming, setSelectedTiming] = useState<'immediate' | 'scheduled'>('immediate');
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center h-64">
+                <Loader2 className="h-8 w-8 animate-spin text-ninja-yellow" />
+            </div>
+        );
+    }
 
     return (
         <div className="flex flex-col gap-8 animate-in fade-in duration-700">

@@ -101,6 +101,12 @@ export const WordPressPage = () => {
         ))}
       </div>
 
+      {/* API Note */}
+      <Card className="p-6 border-none shadow-sm bg-blue-50/50">
+        <p className="text-xs font-bold text-blue-600 uppercase tracking-widest">GHL API Integration Note</p>
+        <p className="text-sm font-medium text-gray-500 mt-1">WordPress integration is informational and read-only via the GoHighLevel API. Site management and hosting configuration are handled externally.</p>
+      </Card>
+
       {/* Benefits Section */}
       <Card className="p-10 border-none shadow-sm overflow-hidden relative">
         <div className="absolute right-0 top-0 p-10 text-green-500/5 pointer-events-none -mr-10 -mt-10">

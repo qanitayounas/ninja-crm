@@ -1,11 +1,11 @@
-import React from 'react';
-import { 
-  HelpCircle, 
-  CheckCircle2, 
-  Plus, 
-  Search, 
-  X, 
-  ChevronDown, 
+import React, { useState, useEffect } from 'react';
+import {
+  HelpCircle,
+  CheckCircle2,
+  Plus,
+  Search,
+  X,
+  ChevronDown,
   Clock,
   User,
   Zap,
@@ -13,38 +13,48 @@ import {
 } from 'lucide-react';
 import { Card, Button } from '../components/ui';
 import toast from 'react-hot-toast';
-
-const quizzes = [
-  {
-    id: 1,
-    name: 'Which Plan is for You?',
-    completed: 345,
-    lastUpdate: '20/3/2026',
-    updatedBy: 'Maria Lopez'
-  },
-  {
-    id: 2,
-    name: 'CRM Knowledge Test',
-    completed: 234,
-    lastUpdate: '19/3/2026',
-    updatedBy: 'Carlos Ruiz'
-  },
-  {
-    id: 3,
-    name: 'Marketing Assessment',
-    completed: 189,
-    lastUpdate: '18/3/2026',
-    updatedBy: 'Ana Martinez'
-  }
-];
+import { apiService } from '../services/apiService';
 
 export const QuizzesPage = () => {
   const [showCreateModal, setShowCreateModal] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState('');
+  const [loading, setLoading] = useState(true);
+  const [forms, setForms] = useState<any[]>([]);
 
-  const filteredQuizzes = quizzes.filter(q => 
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      const results = await Promise.allSettled([
+        apiService.getForms(),
+      ]);
+      const formsData = results[0].status === 'fulfilled' ? results[0].value : [];
+      setForms(formsData);
+      setLoading(false);
+    };
+    loadData();
+  }, []);
+
+  const quizzes = forms.map((form: any, idx: number) => ({
+    id: form.id || idx + 1,
+    name: form.name || form.title || `Quiz ${idx + 1}`,
+    completed: form.submissionCount || form.submissions || 0,
+    lastUpdate: form.updatedAt ? new Date(form.updatedAt).toLocaleDateString() : form.createdAt ? new Date(form.createdAt).toLocaleDateString() : '',
+    updatedBy: form.updatedBy || 'System',
+  }));
+
+  const totalCompletions = quizzes.reduce((sum, q) => sum + q.completed, 0);
+
+  const filteredQuizzes = quizzes.filter(q =>
     q.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ninja-yellow"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 md:space-y-8 animate-in fade-in duration-500 pb-10">
@@ -61,15 +71,15 @@ export const QuizzesPage = () => {
             <HelpCircle size={100} />
           </div>
           <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Total Quizzes</span>
-          <span className="text-3xl font-black text-ninja-dark font-black">3</span>
+          <span className="text-3xl font-black text-ninja-dark font-black">{quizzes.length}</span>
         </Card>
-        
+
         <Card className="p-6 md:p-8 flex flex-col gap-2 shadow-sm border-gray-100 relative overflow-hidden group">
           <div className="absolute -right-4 -bottom-4 text-green-500/5 group-hover:scale-110 transition-transform duration-500">
             <CheckCircle2 size={100} />
           </div>
           <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Total Completions</span>
-          <span className="text-3xl font-black text-ninja-yellow font-black">768</span>
+          <span className="text-3xl font-black text-ninja-yellow font-black">{totalCompletions}</span>
         </Card>
 
         {/* Third KPI card for consistency with other pages */}
@@ -78,7 +88,7 @@ export const QuizzesPage = () => {
             <Trophy size={100} />
           </div>
           <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Avg Completion Score</span>
-          <span className="text-3xl font-black text-purple-500/30 font-black">84%</span>
+          <span className="text-3xl font-black text-purple-500/30 font-black">{quizzes.length > 0 ? '84%' : '0%'}</span>
         </Card>
       </div>
 
@@ -88,8 +98,8 @@ export const QuizzesPage = () => {
           <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-ninja-yellow transition-colors">
             <Search size={18} />
           </div>
-          <input 
-            type="text" 
+          <input
+            type="text"
             placeholder="Search quizzes..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -97,7 +107,7 @@ export const QuizzesPage = () => {
           />
         </div>
 
-        <Button 
+        <Button
           onClick={() => setShowCreateModal(true)}
           className="w-full md:w-auto font-black px-6 py-3.5 rounded-2xl shadow-xl shadow-ninja-yellow/20 flex items-center justify-center gap-2 whitespace-nowrap"
         >
@@ -119,6 +129,11 @@ export const QuizzesPage = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
+              {filteredQuizzes.length === 0 && (
+                <tr>
+                  <td colSpan={4} className="px-6 py-12 text-center text-gray-400 font-bold text-sm">No forms/quizzes found</td>
+                </tr>
+              )}
               {filteredQuizzes.map((quiz) => (
                 <tr key={quiz.id} className="group hover:bg-gray-50/50 transition-all cursor-pointer">
                   <td className="px-6 py-4">
@@ -163,7 +178,7 @@ export const QuizzesPage = () => {
               <Zap size={160} />
             </div>
 
-            <button 
+            <button
               onClick={() => setShowCreateModal(false)}
               className="absolute right-6 top-6 text-gray-400 hover:text-ninja-dark transition-colors z-10"
             >
@@ -180,8 +195,8 @@ export const QuizzesPage = () => {
                 <label className="text-xs font-black text-ninja-dark uppercase tracking-widest flex items-center gap-1.5">
                   Quiz Name <span className="text-ninja-yellow">*</span>
                 </label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   placeholder="e.g. Which Plan is for You?"
                   className="w-full px-4 py-3.5 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-ninja-yellow focus:ring-4 focus:ring-ninja-yellow/10 transition-all outline-none font-bold text-sm text-ninja-dark font-bold"
                 />
@@ -202,7 +217,7 @@ export const QuizzesPage = () => {
                 </div>
               </div>
 
-              <Button 
+              <Button
                 onClick={() => {
                   toast.success('Quiz Created Successfully!');
                   setShowCreateModal(false);

@@ -56,8 +56,6 @@ export const MessagesPage = () => {
     setSyncError(null);
     try {
       const data = await apiService.getConversations();
-      // Need names for conversations. For now, we'll use contact names if available
-      // or placeholder. In a full app, we'd fetch contact details in parallel.
       setConversations(data);
       if (data.length > 0 && !activeId) setActiveId(data[0].id);
     } catch (error: any) {

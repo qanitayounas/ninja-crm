@@ -2,6 +2,7 @@ import React from 'react';
 import { Plus, Copy, Search, Folder, X } from 'lucide-react';
 import { Button, Input, Select, cn } from '../../components/ui';
 import toast from 'react-hot-toast';
+// No GHL API exists for snippets - this is a local/static config feature
 
 const snippets = [
   {

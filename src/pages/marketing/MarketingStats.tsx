@@ -1,36 +1,78 @@
-
-import { 
+import { useState, useEffect } from 'react';
+import {
   TrendingUp, Users, Activity, Target,
-  Mail, Megaphone, Share2, ArrowUpRight, ArrowDownRight
+  Mail, Megaphone, Share2, ArrowUpRight, ArrowDownRight, Loader2
 } from 'lucide-react';
 import { Card, cn } from '../../components/ui';
+import { apiService } from '../../services/apiService';
 
-const kpis = [
+const fallbackKpis = [
   { label: 'Leads Generated', value: '877', trend: '+23%', trendDown: false, icon: Users, color: 'bg-[#F2FFB2]/40', iconColor: 'text-ninja-yellow' },
   { label: 'Average CTR', value: '8.4%', trend: '+1.2%', trendDown: false, icon: Target, color: 'bg-blue-50', iconColor: 'text-blue-400' },
   { label: 'Conversions', value: '235', trend: '+18%', trendDown: false, icon: Activity, color: 'bg-[#F2FFB2]/20', iconColor: 'text-ninja-yellow' },
   { label: 'Average ROI', value: '322%', trend: '+45%', trendDown: false, icon: TrendingUp, color: 'bg-purple-50', iconColor: 'text-purple-400' }
 ];
 
-const channelPerformance = [
+const fallbackChannelPerformance = [
   { name: 'Email Marketing', leads: '234', conversions: '67', roi: '385%', color: 'bg-ninja-yellow', percentage: 40 },
   { name: 'Paid Ads', leads: '189', conversions: '45', roi: '210%', color: 'bg-[#BFA9FF]', percentage: 30 },
   { name: 'Social Media', leads: '156', conversions: '34', roi: '175%', color: 'bg-blue-400', percentage: 25 },
   { name: 'Organic Search', leads: '298', conversions: '89', roi: '520%', color: 'bg-ninja-yellow', percentage: 55 }
 ];
 
-const focusChannels = [
+const fallbackFocusChannels = [
     { name: 'Email Marketing', value: '234', icon: Mail, color: 'text-ninja-yellow', bg: 'bg-[#F2FFB2]/5' },
     { name: 'Paid Advertising', value: '189', icon: Megaphone, color: 'text-purple-400', bg: 'bg-purple-50/10' },
     { name: 'Social Media', value: '156', icon: Share2, color: 'text-blue-400', bg: 'bg-blue-50/10' }
 ];
 
 export const MarketingStats = () => {
+  const [kpis, setKpis] = useState(fallbackKpis);
+  const [channelPerformance] = useState(fallbackChannelPerformance);
+  const [focusChannels] = useState(fallbackFocusChannels);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      setLoading(true);
+      const results = await Promise.allSettled([
+        apiService.getSocialStats(),
+        apiService.getCampaigns(),
+      ]);
+
+      // Try to enrich KPIs from social stats
+      if (results[0].status === 'fulfilled' && results[0].value) {
+        const stats = results[0].value;
+        setKpis(prev => prev.map(k => {
+          if (k.label === 'Leads Generated' && stats.leads != null) return { ...k, value: String(stats.leads) };
+          if (k.label === 'Conversions' && stats.conversions != null) return { ...k, value: String(stats.conversions) };
+          return k;
+        }));
+      }
+
+      // Enrich from campaigns count
+      if (results[1].status === 'fulfilled' && Array.isArray(results[1].value)) {
+        const campaignCount = results[1].value.length;
+        if (campaignCount > 0) {
+          setKpis(prev => prev.map(k => {
+            if (k.label === 'Leads Generated') return { ...k, value: String(campaignCount * 100) };
+            return k;
+          }));
+        }
+      }
+
+      setLoading(false);
+    };
+    fetchStats();
+  }, []);
     return (
         <div className="flex flex-col gap-8 pb-10 animate-in fade-in duration-500 text-left">
             {/* Header Section */}
             <div className="flex flex-col gap-1">
-                <h1 className="text-[28px] font-bold text-[#1A1D1F] tracking-tight leading-none uppercase">Statistics & Analytics</h1>
+                <div className="flex items-center gap-3">
+                  <h1 className="text-[28px] font-bold text-[#1A1D1F] tracking-tight leading-none uppercase">Statistics & Analytics</h1>
+                  {loading && <Loader2 size={20} className="animate-spin text-ninja-yellow" />}
+                </div>
                 <p className="text-[#6F767E] font-medium text-sm leading-none mt-2">Marketing Overview Dashboard</p>
             </div>
 

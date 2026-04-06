@@ -1,9 +1,10 @@
-import React from 'react';
-import { 
+import React, { useState, useEffect } from 'react';
+import {
   CheckCircle2, ShoppingCart, Globe, Box, Truck, CreditCard, Play, X, ChevronDown, Plus
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Card, Badge, Button, cn } from '../components/ui';
+import { apiService } from '../services/apiService';
 
 const setupSteps = [
   { 
@@ -81,7 +82,35 @@ const setupSteps = [
 export const StoresPage = () => {
   const [showGuide, setShowGuide] = React.useState(true);
   const [showCreateModal, setShowCreateModal] = React.useState(false);
-  
+  const [products, setProducts] = useState<any[]>([]);
+  const [orders, setOrders] = useState<any[]>([]);
+  const [collections, setCollections] = useState<any[]>([]);
+  const [_isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    loadStoreData();
+  }, []);
+
+  const loadStoreData = async () => {
+    setIsLoading(true);
+    try {
+      const [prodsData, ordersData, collsData] = await Promise.allSettled([
+        apiService.getProducts(),
+        apiService.getOrders(),
+        apiService.getProductCollections()
+      ]);
+      if (prodsData.status === 'fulfilled') setProducts(prodsData.value || []);
+      if (ordersData.status === 'fulfilled') setOrders(ordersData.value || []);
+      if (collsData.status === 'fulfilled') setCollections(collsData.value || []);
+    } catch (error) {
+      console.error('Error loading store data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const totalRevenue = orders.reduce((acc, o) => acc + (o.amount || 0), 0);
+
   const completedCount = setupSteps.filter(s => s.isCompleted).length;
   const progressPercent = Math.round((completedCount / setupSteps.length) * 100);
 
@@ -169,20 +198,20 @@ export const StoresPage = () => {
       <div className="flex flex-col lg:flex-row gap-4 md:gap-6 items-start lg:items-center">
         <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-4 w-full">
           <Card className="p-5 flex flex-col gap-2 shadow-sm border-gray-100">
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Active Stores</span>
-            <span className="text-2xl font-black text-ninja-yellow">1</span>
+            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Collections</span>
+            <span className="text-2xl font-black text-ninja-yellow">{collections.length}</span>
           </Card>
           <Card className="p-5 flex flex-col gap-2 shadow-sm border-gray-100">
             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Total Products</span>
-            <span className="text-2xl font-black text-ninja-dark">53</span>
+            <span className="text-2xl font-black text-ninja-dark">{products.length}</span>
           </Card>
           <Card className="p-5 flex flex-col gap-2 shadow-sm border-gray-100">
             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Total Orders</span>
-            <span className="text-2xl font-black text-ninja-dark">246</span>
+            <span className="text-2xl font-black text-ninja-dark">{orders.length}</span>
           </Card>
           <Card className="p-5 flex flex-col gap-2 shadow-sm border-gray-100">
             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Revenue</span>
-            <span className="text-2xl font-black text-ninja-yellow">$13,300</span>
+            <span className="text-2xl font-black text-ninja-yellow">${(totalRevenue / 100).toLocaleString()}</span>
           </Card>
         </div>
         <Button 

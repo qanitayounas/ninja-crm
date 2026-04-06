@@ -1,10 +1,11 @@
-import { 
-  Eye, 
-  Users, 
-  ShoppingCart, 
-  TrendingUp, 
-  Clock, 
-  PieChart, 
+import { useState, useEffect } from 'react';
+import {
+  Eye,
+  Users,
+  ShoppingCart,
+  TrendingUp,
+  Clock,
+  PieChart,
   ChevronDown,
   Monitor,
   Smartphone,
@@ -12,21 +13,13 @@ import {
   Globe
 } from 'lucide-react';
 import { Card, cn } from '../components/ui';
-
-const kpis = [
-  { label: 'Page Views', value: '45,678', trend: '+12% vs previous period', icon: Eye, color: 'text-ninja-yellow', bg: 'bg-ninja-yellow/10' },
-  { label: 'Unique Visitors', value: '28,945', trend: '+8% vs previous period', icon: Users, color: 'text-purple-500', bg: 'bg-purple-50' },
-  { label: 'Sales', value: '234', trend: '+23% vs previous period', icon: ShoppingCart, color: 'text-blue-500', bg: 'bg-blue-50' },
-  { label: 'Conversion Rate', value: '5.2%', icon: TrendingUp, color: 'text-green-500', bg: 'bg-green-50' },
-  { label: 'Average Time', value: '3:45', icon: Clock, color: 'text-orange-500', bg: 'bg-orange-50' },
-  { label: 'Exit before 30s', value: '28%', icon: PieChart, color: 'text-red-500', bg: 'bg-red-50' },
-];
+import { apiService } from '../services/apiService';
 
 const countries = [
-  { name: 'United States', value: '12,450', percent: 65 },
-  { name: 'Mexico', value: '8,234', percent: 45 },
-  { name: 'Spain', value: '4,567', percent: 25 },
-  { name: 'Colombia', value: '3,734', percent: 20 },
+  { name: 'United States', value: '0', percent: 0 },
+  { name: 'Mexico', value: '0', percent: 0 },
+  { name: 'Spain', value: '0', percent: 0 },
+  { name: 'Colombia', value: '0', percent: 0 },
 ];
 
 const browsers = [
@@ -37,19 +30,63 @@ const browsers = [
 ];
 
 const devices = [
-  { name: 'Desktop', value: '15,678', percent: 54, icon: Monitor },
-  { name: 'Mobile', value: '10,234', percent: 35, icon: Smartphone },
-  { name: 'Tablet', value: '3,033', percent: 11, icon: Tablet },
+  { name: 'Desktop', value: '0', percent: 54, icon: Monitor },
+  { name: 'Mobile', value: '0', percent: 35, icon: Smartphone },
+  { name: 'Tablet', value: '0', percent: 11, icon: Tablet },
 ];
 
 const channels = [
-  { name: 'Organic Search', value: '12,450', percent: 75, color: 'bg-ninja-yellow' },
-  { name: 'Direct', value: '8,234', percent: 55, color: 'bg-purple-400' },
+  { name: 'Organic Search', value: '0', percent: 75, color: 'bg-ninja-yellow' },
+  { name: 'Direct', value: '0', percent: 55, color: 'bg-purple-400' },
   { name: 'Social Media', percent: 15, color: 'bg-blue-400' },
   { name: 'Referrals', percent: 5, color: 'bg-gray-400' },
 ];
 
 export const AnalyticsPage = () => {
+  const [loading, setLoading] = useState(true);
+  const [contactCount, setContactCount] = useState(0);
+  const [funnelCount, setFunnelCount] = useState(0);
+  const [funnelPageCount, setFunnelPageCount] = useState(0);
+
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      const results = await Promise.allSettled([
+        apiService.getContacts(),
+        apiService.getFunnels(),
+      ]);
+      const contacts = results[0].status === 'fulfilled' ? results[0].value : [];
+      const funnels = results[1].status === 'fulfilled' ? results[1].value : [];
+      setContactCount(contacts.length);
+      setFunnelCount(funnels.length);
+      // Estimate page views from funnels (each funnel step ~ pages)
+      setFunnelPageCount(funnels.reduce((sum: number, f: any) => sum + (f.steps?.length || f.pages?.length || 1), 0));
+      setLoading(false);
+    };
+    loadData();
+  }, []);
+
+  const conversionRate = contactCount > 0 && funnelPageCount > 0
+    ? ((contactCount / (funnelPageCount * 100)) * 100).toFixed(1)
+    : '0.0';
+
+  const kpis = [
+    { label: 'Page Views', value: loading ? '...' : funnelPageCount.toLocaleString(), trend: funnelPageCount > 0 ? 'From funnel pages' : undefined, icon: Eye, color: 'text-ninja-yellow', bg: 'bg-ninja-yellow/10' },
+    { label: 'Unique Visitors', value: loading ? '...' : contactCount.toLocaleString(), trend: contactCount > 0 ? 'From contacts' : undefined, icon: Users, color: 'text-purple-500', bg: 'bg-purple-50' },
+    { label: 'Funnels', value: loading ? '...' : funnelCount.toLocaleString(), icon: ShoppingCart, color: 'text-blue-500', bg: 'bg-blue-50' },
+    { label: 'Conversion Rate', value: loading ? '...' : `${conversionRate}%`, icon: TrendingUp, color: 'text-green-500', bg: 'bg-green-50' },
+    { label: 'Average Time', value: '3:45', icon: Clock, color: 'text-orange-500', bg: 'bg-orange-50' },
+    { label: 'Exit before 30s', value: '28%', icon: PieChart, color: 'text-red-500', bg: 'bg-red-50' },
+  ];
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ninja-yellow"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-10">
       {/* Header Section */}
@@ -116,7 +153,7 @@ export const AnalyticsPage = () => {
                   <span className="text-ninja-dark">{country.value}</span>
                 </div>
                 <div className="h-2 bg-gray-50 rounded-full overflow-hidden">
-                  <div 
+                  <div
                     className="h-full bg-ninja-yellow rounded-full transition-all duration-1000"
                     style={{ width: `${country.percent}%` }}
                   />
@@ -140,7 +177,7 @@ export const AnalyticsPage = () => {
                   <span className="text-ninja-dark">{browser.percent}%</span>
                 </div>
                 <div className="h-2 bg-gray-50 rounded-full overflow-hidden">
-                  <div 
+                  <div
                     className={cn("h-full rounded-full transition-all duration-1000", browser.color)}
                     style={{ width: `${browser.percent}%` }}
                   />
@@ -188,7 +225,7 @@ export const AnalyticsPage = () => {
                   {channel.value && <span className="text-ninja-dark">{channel.value}</span>}
                 </div>
                 <div className="h-2 bg-gray-50 rounded-full overflow-hidden">
-                  <div 
+                  <div
                     className={cn("h-full rounded-full transition-all duration-1000", channel.color || 'bg-gray-200')}
                     style={{ width: `${channel.percent}%` }}
                   />

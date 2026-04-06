@@ -1,12 +1,12 @@
-import React from 'react';
-import { 
-  QrCode, 
-  Scan, 
-  MousePointer2, 
-  Layout, 
-  Plus, 
-  X, 
-  ChevronDown, 
+import React, { useState, useEffect } from 'react';
+import {
+  QrCode,
+  Scan,
+  MousePointer2,
+  Layout,
+  Plus,
+  X,
+  ChevronDown,
   Download,
   Link as LinkIcon,
   MessageSquare,
@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { Card, Badge, Button } from '../components/ui';
 import toast from 'react-hot-toast';
+import { apiService } from '../services/apiService';
 
 const qrTypes = [
   { id: 'url', name: 'URL', icon: LinkIcon },
@@ -37,46 +38,66 @@ const qrTypes = [
   { id: 'survey', name: 'Survey', icon: ClipboardList }
 ];
 
-const activeQRs = [
-  {
-    id: 1,
-    name: 'Main Website QR',
-    type: 'URL',
-    scans: 1245,
-    unique: 890,
-    created: '15/3/2026'
-  },
-  {
-    id: 2,
-    name: 'Sales WhatsApp QR',
-    type: 'WhatsApp',
-    scans: 678,
-    unique: 534,
-    created: '18/3/2026'
-  },
-  {
-    id: 3,
-    name: 'Contact Form QR',
-    type: 'Form',
-    scans: 456,
-    unique: 345,
-    created: '19/3/2026'
-  },
-  {
-    id: 4,
-    name: 'Google Review QR',
-    type: 'Review Link',
-    scans: 234,
-    unique: 198,
-    created: '20/3/2026'
-  }
-];
-
 export const QRCodesPage = () => {
   const [showCreateModal, setShowCreateModal] = React.useState(false);
   const [selectedColor] = React.useState('#D4FF00');
+  const [loading, setLoading] = useState(true);
+  const [links, setLinks] = useState<any[]>([]);
+  const [newQrName, setNewQrName] = useState('');
+  const [newQrType, setNewQrType] = useState('URL');
+  const [newQrUrl, setNewQrUrl] = useState('');
 
-  const filteredQRs = activeQRs;
+  useEffect(() => {
+    loadLinks();
+  }, []);
+
+  const loadLinks = async () => {
+    setLoading(true);
+    const results = await Promise.allSettled([
+      apiService.getLinks(),
+    ]);
+    const linksData = results[0].status === 'fulfilled' ? results[0].value : [];
+    setLinks(linksData);
+    setLoading(false);
+  };
+
+  const activeQRs = links.map((link: any, idx: number) => ({
+    id: link.id || idx + 1,
+    name: link.name || link.title || `QR ${idx + 1}`,
+    type: 'URL',
+    scans: link.clickCount || link.clicks || 0,
+    unique: link.uniqueClicks || Math.round((link.clickCount || 0) * 0.8),
+    created: link.createdAt ? new Date(link.createdAt).toLocaleDateString() : '',
+  }));
+
+  const totalScans = activeQRs.reduce((sum, qr) => sum + qr.scans, 0);
+  const totalUnique = activeQRs.reduce((sum, qr) => sum + qr.unique, 0);
+
+  const handleCreateQR = async () => {
+    if (!newQrName || !newQrUrl) {
+      toast.error('Please fill in all fields');
+      return;
+    }
+    try {
+      await apiService.createLink({ name: newQrName, redirectTo: newQrUrl });
+      toast.success('QR Code Created Successfully!');
+      setShowCreateModal(false);
+      setNewQrName('');
+      setNewQrType('URL');
+      setNewQrUrl('');
+      loadLinks();
+    } catch {
+      toast.error('Failed to create QR code');
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ninja-yellow"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 md:space-y-8 animate-in fade-in duration-500 pb-10">
@@ -93,15 +114,15 @@ export const QRCodesPage = () => {
             <QrCode size={80} />
           </div>
           <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Total QRs</span>
-          <span className="text-3xl font-black text-ninja-dark font-black">4</span>
+          <span className="text-3xl font-black text-ninja-dark font-black">{activeQRs.length}</span>
         </Card>
-        
+
         <Card className="p-6 flex flex-col gap-2 shadow-sm border-gray-100 relative overflow-hidden group">
           <div className="absolute -right-4 -bottom-4 text-ninja-yellow/5 group-hover:scale-110 transition-transform duration-500">
             <Scan size={80} />
           </div>
           <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Total Scans</span>
-          <span className="text-3xl font-black text-ninja-yellow font-black">2613</span>
+          <span className="text-3xl font-black text-ninja-yellow font-black">{totalScans}</span>
         </Card>
 
         <Card className="p-6 flex flex-col gap-2 shadow-sm border-gray-100 relative overflow-hidden group">
@@ -109,7 +130,7 @@ export const QRCodesPage = () => {
             <MousePointer2 size={80} />
           </div>
           <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Unique Scans</span>
-          <span className="text-3xl font-black text-purple-500/30 font-black">1967</span>
+          <span className="text-3xl font-black text-purple-500/30 font-black">{totalUnique}</span>
         </Card>
 
         <Card className="p-6 flex flex-col gap-2 shadow-sm border-gray-100 relative overflow-hidden group">
@@ -146,7 +167,7 @@ export const QRCodesPage = () => {
           </button>
         </div>
 
-        <Button 
+        <Button
           onClick={() => setShowCreateModal(true)}
           className="w-full md:w-auto font-black px-6 py-3.5 rounded-2xl shadow-xl shadow-ninja-yellow/20 flex items-center justify-center gap-2 whitespace-nowrap"
         >
@@ -170,7 +191,12 @@ export const QRCodesPage = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {filteredQRs.map((qr) => (
+              {activeQRs.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-6 py-12 text-center text-gray-400 font-bold text-sm">No links found. Create your first QR code.</td>
+                </tr>
+              )}
+              {activeQRs.map((qr) => (
                 <tr key={qr.id} className="group hover:bg-gray-50/50 transition-all cursor-pointer">
                   <td className="px-6 py-4">
                     <span className="font-black text-ninja-dark group-hover:text-ninja-yellow transition-colors">{qr.name}</span>
@@ -210,7 +236,7 @@ export const QRCodesPage = () => {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setShowCreateModal(false)} />
           <Card className="relative w-full max-w-md bg-white rounded-[32px] p-8 shadow-2xl animate-in zoom-in-95 duration-200 border-none overflow-hidden">
-            <button 
+            <button
               onClick={() => setShowCreateModal(false)}
               className="absolute right-6 top-6 text-gray-400 hover:text-ninja-dark transition-colors z-10"
             >
@@ -227,9 +253,11 @@ export const QRCodesPage = () => {
                 <label className="text-xs font-black text-ninja-dark uppercase tracking-widest flex items-center gap-1.5">
                   QR Name <span className="text-ninja-yellow">*</span>
                 </label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   placeholder="e.g. Website QR"
+                  value={newQrName}
+                  onChange={(e) => setNewQrName(e.target.value)}
                   className="w-full px-4 py-3.5 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-ninja-yellow focus:ring-4 focus:ring-ninja-yellow/10 transition-all outline-none font-bold text-sm text-ninja-dark font-bold font-bold font-bold font-bold"
                 />
               </div>
@@ -239,7 +267,11 @@ export const QRCodesPage = () => {
                   QR Type
                 </label>
                 <div className="relative">
-                  <select className="w-full px-4 py-3.5 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-ninja-yellow focus:ring-4 focus:ring-ninja-yellow/10 transition-all outline-none font-bold text-sm text-ninja-dark appearance-none cursor-pointer font-bold font-bold font-bold font-bold">
+                  <select
+                    value={newQrType}
+                    onChange={(e) => setNewQrType(e.target.value)}
+                    className="w-full px-4 py-3.5 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-ninja-yellow focus:ring-4 focus:ring-ninja-yellow/10 transition-all outline-none font-bold text-sm text-ninja-dark appearance-none cursor-pointer font-bold font-bold font-bold font-bold"
+                  >
                     {qrTypes.map(type => (
                       <option key={type.id}>{type.name}</option>
                     ))}
@@ -252,9 +284,11 @@ export const QRCodesPage = () => {
                 <label className="text-xs font-black text-ninja-dark uppercase tracking-widest flex items-center gap-1.5">
                   Destination (URL, Phone, etc.)
                 </label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   placeholder="https://example.com"
+                  value={newQrUrl}
+                  onChange={(e) => setNewQrUrl(e.target.value)}
                   className="w-full px-4 py-3.5 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-ninja-yellow focus:ring-4 focus:ring-ninja-yellow/10 transition-all outline-none font-bold text-sm text-ninja-dark font-bold font-bold font-bold font-bold"
                 />
               </div>
@@ -265,8 +299,8 @@ export const QRCodesPage = () => {
                 </label>
                 <div className="flex flex-col gap-3">
                   <div className="flex gap-2 p-2 bg-gray-50 rounded-2xl border border-gray-100">
-                    <div 
-                      className="h-10 flex-1 rounded-xl shadow-lg border border-ninja-dark/10" 
+                    <div
+                      className="h-10 flex-1 rounded-xl shadow-lg border border-ninja-dark/10"
                       style={{ backgroundColor: selectedColor }}
                     />
                     <div className="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center text-gray-400 group cursor-pointer hover:border-ninja-yellow transition-colors">
@@ -276,11 +310,8 @@ export const QRCodesPage = () => {
                 </div>
               </div>
 
-              <Button 
-                onClick={() => {
-                  toast.success('QR Code Created Successfully!');
-                  setShowCreateModal(false);
-                }}
+              <Button
+                onClick={handleCreateQR}
                 className="w-full py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-ninja-yellow/20 mt-4 flex items-center justify-center gap-2 font-bold font-bold font-bold font-bold"
               >
                 Create QR

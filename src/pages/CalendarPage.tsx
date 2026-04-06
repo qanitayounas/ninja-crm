@@ -291,10 +291,60 @@ export const CalendarPage = () => {
 
           <div className="flex items-center gap-3 justify-end mt-2">
             <Button variant="secondary" onClick={() => setIsAddEventModalOpen(false)} className="border-none hover:bg-gray-100">Cancel</Button>
-            <Button 
-              onClick={() => {
-                toast.success('Event created successfully!');
-                setIsAddEventModalOpen(false);
+            <Button
+              onClick={async () => {
+                try {
+                  const titleInput = document.querySelector<HTMLInputElement>('input[placeholder="e.g.: Client Meeting"]');
+                  const timeInput = document.querySelector<HTMLInputElement>('input[type="time"]');
+                  if (!titleInput?.value) { toast.error('Title is required'); return; }
+
+                  // Get calendar and contacts
+                  const [calendars, contactsRaw] = await Promise.all([
+                    apiService.getCalendars(),
+                    apiService.getContacts()
+                  ]);
+
+                  if (!calendars || calendars.length === 0) {
+                    toast.error('No calendars found. Create one in GHL first.');
+                    return;
+                  }
+                  if (!contactsRaw || contactsRaw.length === 0) {
+                    toast.error('No contacts found. Add a contact first.');
+                    return;
+                  }
+
+                  // Use tomorrow and snap to 30-min slot boundary
+                  const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
+                  const dateStr = tomorrow.toISOString().split('T')[0];
+                  const timeVal = timeInput?.value || '10:00';
+                  const [hours, mins] = timeVal.split(':').map(Number);
+                  const snappedMins = Math.floor(mins / 15) * 15;
+                  const paddedH = String(hours).padStart(2, '0');
+                  const paddedM = String(snappedMins).padStart(2, '0');
+                  const startTime = new Date(`${dateStr}T${paddedH}:${paddedM}:00`).toISOString();
+                  const endTime = new Date(new Date(startTime).getTime() + 30 * 60000).toISOString();
+
+                  const payload = {
+                    calendarId: calendars[0].id,
+                    locationId: calendars[0].locationId,
+                    contactId: contactsRaw[0].id,
+                    title: titleInput.value,
+                    startTime,
+                    endTime,
+                    appointmentStatus: 'new'
+                  };
+
+                  console.log('Creating event:', payload);
+                  await apiService.createCalendarEvent(payload);
+                  toast.success('Event created successfully!');
+                  setIsAddEventModalOpen(false);
+                  loadAppointments();
+                } catch (error: any) {
+                  console.error('Event creation error:', error);
+                  const detail = error?.providerError;
+                  const msg = Array.isArray(detail) ? detail[0] : (typeof detail === 'string' ? detail : 'Failed to create event. Check console.');
+                  toast.error(msg);
+                }
               }}
               className="font-black px-10"
             >

@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import {
     BarChart,
     Bar,
@@ -17,41 +18,159 @@ import {
     Users,
     DollarSign,
     Target,
-    Phone
+    Phone,
+    Zap
 } from 'lucide-react';
 import { Card, Button, cn } from '../../components/ui';
-
-const topAgents = [
-    { rank: 2, name: 'Ana Martinez', revenue: '$142K', conversions: 108, initial: 'AM', color: 'bg-purple-100 text-purple-600', border: 'border-purple-200' },
-    { rank: 1, name: 'Carlos Ruiz', revenue: '$157K', conversions: 124, initial: 'CR', color: 'bg-ninja-yellow text-ninja-dark', border: 'border-ninja-yellow' },
-    { rank: 3, name: 'David Lopez', revenue: '$119K', conversions: 89, initial: 'DL', color: 'bg-orange-100 text-orange-600', border: 'border-orange-200' },
-];
-
-const revenueByAgent = [
-    { name: 'Carlos', value: 157000 },
-    { name: 'Ana', value: 142000 },
-    { name: 'David', value: 119000 },
-    { name: 'Laura', value: 98000 },
-    { name: 'Miguel', value: 84000 },
-];
-
-const convByAgent = [
-    { name: 'Carlos', value: 124 },
-    { name: 'Ana', value: 108 },
-    { name: 'David', value: 89 },
-    { name: 'Laura', value: 78 },
-    { name: 'Miguel', value: 64 },
-];
-
-const leaderboard = [
-    { rank: '#1', name: 'Carlos Ruiz', initial: 'CR', leads: 342, conv: 124, rate: '36.3%', revenue: '$157,700', calls: 567, emails: 892, resp: '2.3h', sat: 4.9 },
-    { rank: '#2', name: 'Ana Martinez', initial: 'AM', leads: 318, conv: 108, rate: '34.0%', revenue: '$142,300', calls: 512, emails: 734, resp: '2.8h', sat: 4.8 },
-    { rank: '#3', name: 'David Lopez', initial: 'DL', leads: 289, conv: 89, rate: '30.8%', revenue: '$118,900', calls: 445, emails: 678, resp: '3.1h', sat: 4.7 },
-    { rank: '#4', name: 'Laura Sanchez', initial: 'LS', leads: 267, conv: 78, rate: '29.2%', revenue: '$98,400', calls: 398, emails: 589, resp: '3.5h', sat: 4.6 },
-    { rank: '#5', name: 'Miguel Torres', initial: 'MT', leads: 234, conv: 64, rate: '27.4%', revenue: '$84,200', calls: 356, emails: 512, resp: '4.2h', sat: 4.5 },
-];
+import { apiService } from '../../services/apiService';
 
 export const AgentRankingReport = () => {
+    const [isLoading, setIsLoading] = useState(true);
+    const [syncError, setSyncError] = useState<string | null>(null);
+    const [topAgents, setTopAgents] = useState<any[]>([]);
+    const [revenueByAgent, setRevenueByAgent] = useState<any[]>([]);
+    const [convByAgent, setConvByAgent] = useState<any[]>([]);
+    const [leaderboard, setLeaderboard] = useState<any[]>([]);
+    const [teamSummary, setTeamSummary] = useState({ totalAgents: 0, totalRevenue: '$0', totalConv: 0, avgConvRate: '0%' });
+    const [bestAgent, setBestAgent] = useState({ convRate: { name: '-', rate: '0%' }, mostActive: { name: '-', count: '0' }, topSat: { name: '-', score: '0' } });
+
+    useEffect(() => {
+        loadData();
+    }, []);
+
+    const loadData = async () => {
+        setIsLoading(true);
+        setSyncError(null);
+        try {
+            const results = await Promise.allSettled([
+                apiService.getUsers(),
+                apiService.getOpportunities()
+            ]);
+
+            const users = results[0].status === 'fulfilled' ? results[0].value : [];
+            const opportunities = results[1].status === 'fulfilled' ? results[1].value : [];
+
+            const wonOpps = opportunities.filter((o: any) => o.status === 'won');
+            const totalRevenue = wonOpps.reduce((sum: number, o: any) => sum + (o.monetaryValue || 0), 0);
+
+            // Build agent stats - distribute opportunities across users
+            const agentStats = users.map((user: any, idx: number) => {
+                // Attempt to match opportunities by assignedTo
+                const userOpps = opportunities.filter((o: any) => o.assignedTo === user.id);
+                const userWonOpps = userOpps.filter((o: any) => o.status === 'won');
+                const revenue = userWonOpps.reduce((sum: number, o: any) => sum + (o.monetaryValue || 0), 0);
+                const leads = userOpps.length;
+                const conv = userWonOpps.length;
+                const rate = leads > 0 ? ((conv / leads) * 100).toFixed(1) : '0.0';
+
+                const nameParts = (user.name || '').split(' ');
+                const initial = nameParts.map((p: string) => p[0] || '').join('').toUpperCase().substring(0, 2) || '??';
+
+                const podiumColors = [
+                    { color: 'bg-ninja-yellow text-ninja-dark', border: 'border-ninja-yellow' },
+                    { color: 'bg-purple-100 text-purple-600', border: 'border-purple-200' },
+                    { color: 'bg-orange-100 text-orange-600', border: 'border-orange-200' },
+                ];
+
+                return {
+                    name: user.name || 'Unknown',
+                    initial,
+                    email: user.email || '',
+                    revenue,
+                    revenueDisplay: revenue >= 1000 ? `$${(revenue / 1000).toFixed(0)}K` : `$${revenue.toLocaleString()}`,
+                    leads,
+                    conv,
+                    rate: `${rate}%`,
+                    calls: 0,
+                    emails: 0,
+                    resp: '-',
+                    sat: 0,
+                    podiumColor: podiumColors[idx % podiumColors.length]
+                };
+            }).sort((a: any, b: any) => b.revenue - a.revenue);
+
+            // Assign ranks
+            agentStats.forEach((a: any, i: number) => { a.rank = i + 1; });
+
+            // Top 3 for podium (reorder: 2nd, 1st, 3rd)
+            const podium = agentStats.slice(0, 3);
+            const orderedPodium = podium.length >= 3
+                ? [podium[1], podium[0], podium[2]]
+                : podium;
+
+            setTopAgents(orderedPodium.map((a: any) => ({
+                rank: a.rank,
+                name: a.name,
+                revenue: a.revenueDisplay,
+                conversions: a.conv,
+                initial: a.initial,
+                color: a.rank === 1 ? 'bg-ninja-yellow text-ninja-dark' : a.rank === 2 ? 'bg-purple-100 text-purple-600' : 'bg-orange-100 text-orange-600',
+                border: a.rank === 1 ? 'border-ninja-yellow' : a.rank === 2 ? 'border-purple-200' : 'border-orange-200'
+            })));
+
+            // Charts
+            setRevenueByAgent(agentStats.slice(0, 5).map((a: any) => ({
+                name: a.name.split(' ')[0] || a.name,
+                value: a.revenue
+            })));
+
+            setConvByAgent(agentStats.slice(0, 5).map((a: any) => ({
+                name: a.name.split(' ')[0] || a.name,
+                value: a.conv
+            })));
+
+            // Leaderboard
+            setLeaderboard(agentStats.map((a: any) => ({
+                rank: `#${a.rank}`,
+                name: a.name,
+                initial: a.initial,
+                leads: a.leads,
+                conv: a.conv,
+                rate: a.rate,
+                revenue: `$${a.revenue.toLocaleString()}`,
+                calls: a.calls,
+                emails: a.emails,
+                resp: a.resp,
+                sat: a.sat
+            })));
+
+            // Team summary
+            const totalConv = agentStats.reduce((s: number, a: any) => s + a.conv, 0);
+            const totalLeads = agentStats.reduce((s: number, a: any) => s + a.leads, 0);
+            const avgRate = totalLeads > 0 ? ((totalConv / totalLeads) * 100).toFixed(1) : '0';
+            setTeamSummary({
+                totalAgents: users.length,
+                totalRevenue: totalRevenue >= 1000 ? `$${(totalRevenue / 1000).toFixed(0)}K` : `$${totalRevenue.toLocaleString()}`,
+                totalConv,
+                avgConvRate: `${avgRate}%`
+            });
+
+            // Best agent highlights
+            const byRate = [...agentStats].filter((a: any) => a.leads > 0).sort((a: any, b: any) => parseFloat(b.rate) - parseFloat(a.rate));
+            const byActivity = [...agentStats].sort((a: any, b: any) => b.leads - a.leads);
+            setBestAgent({
+                convRate: { name: byRate[0]?.name || '-', rate: byRate[0]?.rate || '0%' },
+                mostActive: { name: byActivity[0]?.name || '-', count: byActivity[0]?.leads?.toString() || '0' },
+                topSat: { name: agentStats[0]?.name || '-', score: '0' }
+            });
+        } catch (error: any) {
+            console.error('Error loading agent ranking:', error);
+            if (error.status === 403 || error.status === 401) {
+                setSyncError('Agent ranking data is currently being synchronized. Please ensure your Ninja CRM account setup is complete.');
+            }
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center h-96">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ninja-yellow"></div>
+            </div>
+        );
+    }
+
     return (
         <div className="flex flex-col gap-8">
             {/* Header Section */}
@@ -78,11 +197,26 @@ export const AgentRankingReport = () => {
                 </div>
             </div>
 
+            {/* Sync Error */}
+            {syncError && (
+                <Card className="p-4 border-l-4 border-l-ninja-purple bg-ninja-purple/5 border-ninja-purple/10">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-ninja-purple/10 rounded-lg text-ninja-purple">
+                            <Zap size={18} />
+                        </div>
+                        <div>
+                            <p className="text-sm font-bold text-ninja-dark">Module Synchronization</p>
+                            <p className="text-xs text-slate-500 font-medium">{syncError}</p>
+                        </div>
+                    </div>
+                </Card>
+            )}
+
             {/* Top 3 Podium */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
                 {topAgents.map((agent) => (
-                    <Card 
-                        key={agent.rank} 
+                    <Card
+                        key={agent.rank}
                         className={cn(
                             "flex flex-col items-center justify-center p-8 text-center transition-all duration-500 hover:scale-[1.05]",
                             agent.rank === 1 ? "bg-white border-2 border-ninja-yellow shadow-xl shadow-ninja-yellow/5 h-[340px]" : "bg-gray-50/50 border-none h-[280px]"
@@ -111,6 +245,9 @@ export const AgentRankingReport = () => {
                         )}
                     </Card>
                 ))}
+                {topAgents.length === 0 && (
+                    <div className="col-span-3 text-center py-12 text-sm text-gray-400">No agent data available yet.</div>
+                )}
             </div>
 
             {/* Charts Section */}
@@ -211,6 +348,13 @@ export const AgentRankingReport = () => {
                                     </td>
                                 </tr>
                             ))}
+                            {leaderboard.length === 0 && (
+                                <tr>
+                                    <td colSpan={10} className="px-6 py-12 text-center text-sm text-gray-400">
+                                        No agent data available yet.
+                                    </td>
+                                </tr>
+                            )}
                         </tbody>
                     </table>
                 </div>
@@ -224,8 +368,8 @@ export const AgentRankingReport = () => {
                     </div>
                     <div>
                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Best Conv. Rate</p>
-                        <h4 className="text-lg font-black text-ninja-dark">Carlos Ruiz</h4>
-                        <p className="text-xs text-gray-400 font-medium">36.3% conversion - Team benchmark</p>
+                        <h4 className="text-lg font-black text-ninja-dark">{bestAgent.convRate.name}</h4>
+                        <p className="text-xs text-gray-400 font-medium">{bestAgent.convRate.rate} conversion - Team benchmark</p>
                     </div>
                 </Card>
                 <Card className="flex items-center gap-4 border-none shadow-sm">
@@ -234,8 +378,8 @@ export const AgentRankingReport = () => {
                     </div>
                     <div>
                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Most Active</p>
-                        <h4 className="text-lg font-black text-ninja-dark">Carlos Ruiz</h4>
-                        <p className="text-xs text-gray-400 font-medium">567 calls - Highest activity volume</p>
+                        <h4 className="text-lg font-black text-ninja-dark">{bestAgent.mostActive.name}</h4>
+                        <p className="text-xs text-gray-400 font-medium">{bestAgent.mostActive.count} opportunities - Highest activity volume</p>
                     </div>
                 </Card>
                 <Card className="flex items-center gap-4 border-none shadow-sm">
@@ -243,9 +387,9 @@ export const AgentRankingReport = () => {
                         <Star size={24} className="fill-ninja-dark" />
                     </div>
                     <div>
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Highest Satisfaction</p>
-                        <h4 className="text-lg font-black text-ninja-dark">4.9/5.0</h4>
-                        <p className="text-xs text-gray-400 font-medium">Carlos Ruiz - Service excellence</p>
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Top Performer</p>
+                        <h4 className="text-lg font-black text-ninja-dark">{bestAgent.topSat.name}</h4>
+                        <p className="text-xs text-gray-400 font-medium">Highest revenue - Service excellence</p>
                     </div>
                 </Card>
             </div>
@@ -257,28 +401,28 @@ export const AgentRankingReport = () => {
                         <Users className="text-slate-300" size={32} />
                         <div>
                             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total Agents</p>
-                            <h4 className="text-3xl font-black text-ninja-dark font-black tracking-tight">5</h4>
+                            <h4 className="text-3xl font-black text-ninja-dark font-black tracking-tight">{teamSummary.totalAgents}</h4>
                         </div>
                     </div>
                     <div className="p-8 flex items-center gap-4 border-b md:border-b-0 md:border-r border-gray-50 flex-1">
                         <DollarSign className="text-green-500" size={32} />
                         <div>
                             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total Revenue</p>
-                            <h4 className="text-3xl font-black text-ninja-dark font-black tracking-tight">$601K</h4>
+                            <h4 className="text-3xl font-black text-ninja-dark font-black tracking-tight">{teamSummary.totalRevenue}</h4>
                         </div>
                     </div>
                     <div className="p-8 flex items-center gap-4 border-b md:border-b-0 md:border-r border-gray-50 flex-1">
                         <Target className="text-blue-500" size={32} />
                         <div>
                             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total Conversions</p>
-                            <h4 className="text-3xl font-black text-ninja-dark font-black tracking-tight">463</h4>
+                            <h4 className="text-3xl font-black text-ninja-dark font-black tracking-tight">{teamSummary.totalConv}</h4>
                         </div>
                     </div>
                     <div className="p-8 flex items-center gap-4 flex-1">
                         <Award className="text-ninja-yellow" size={32} />
                         <div>
                             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Average Conv.</p>
-                            <h4 className="text-3xl font-black text-ninja-dark font-black tracking-tight">31.5%</h4>
+                            <h4 className="text-3xl font-black text-ninja-dark font-black tracking-tight">{teamSummary.avgConvRate}</h4>
                         </div>
                     </div>
                 </div>

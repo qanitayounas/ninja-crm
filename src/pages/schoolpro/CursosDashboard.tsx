@@ -1,10 +1,11 @@
-import { 
-  AreaChart, 
-  Area, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
+import { useState, useEffect } from 'react';
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   ResponsiveContainer,
   PieChart,
   Pie,
@@ -12,17 +13,81 @@ import {
   BarChart,
   Bar
 } from 'recharts';
-import { 
-  DollarSign, 
-  Users, 
-  BarChart3, 
-  CheckCircle2, 
-  ArrowUpRight 
+import {
+  DollarSign,
+  Users,
+  BarChart3,
+  CheckCircle2,
+  ArrowUpRight,
+  Loader2
 } from 'lucide-react';
 import { Card, cn } from '../../components/ui';
-import { courseMetrics, incomeGrowthData, studentFunnelData, dailyActivityData } from '../../data/schoolProData';
+import { apiService } from '../../services/apiService';
+
+// Fallback chart data (used until we have historical data from API)
+const fallbackIncomeGrowthData = [
+  { month: 'Jan', income: 12000 },
+  { month: 'Feb', income: 18500 },
+  { month: 'Mar', income: 15000 },
+  { month: 'Apr', income: 25000 },
+  { month: 'May', income: 22000 },
+  { month: 'Jun', income: 30000 },
+];
+
+const fallbackDailyActivityData = [
+  { month: 'Jan', activity: 11000 },
+  { month: 'Feb', activity: 16500 },
+  { month: 'Mar', activity: 13500 },
+  { month: 'Apr', activity: 23000 },
+  { month: 'May', activity: 20000 },
+  { month: 'Jun', activity: 28000 },
+];
 
 export const CursosDashboard = () => {
+  const [loading, setLoading] = useState(true);
+  const [courses, setCourses] = useState<any[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
+
+  useEffect(() => {
+    setLoading(true);
+    Promise.all([
+      apiService.getCourses().catch(() => []),
+      apiService.getProducts().catch(() => [])
+    ]).then(([coursesData, productsData]) => {
+      setCourses(coursesData || []);
+      setProducts(productsData || []);
+    }).finally(() => setLoading(false));
+  }, []);
+
+  const totalStudents = courses.reduce((sum: number, c: any) => sum + (c.studentCount || c.students || 0), 0);
+  const totalRevenue = products.reduce((sum: number, p: any) => sum + (p.price || 0) * (p.salesCount || 0), 0);
+  const aov = totalStudents > 0 ? (totalRevenue / totalStudents).toFixed(2) : '0.00';
+  // completionRate computed inline where needed
+
+  const courseMetrics = [
+    { label: 'Total Revenue', value: totalRevenue > 0 ? `$${totalRevenue.toLocaleString()}` : '$0', subtext: 'from products', trend: '+24%', icon: 'dollar' },
+    { label: 'Active Students', value: String(totalStudents), subtext: 'across all courses', trend: '+18%', icon: 'users' },
+    { label: 'AOV', value: `$${aov}`, subtext: 'average order value', trend: `$${aov}`, icon: 'chart' },
+    { label: 'Courses', value: String(courses.length), subtext: `${products.length} products`, trend: String(courses.length), icon: 'check' },
+  ];
+
+  const studentFunnelData = [
+    { name: 'Courses', value: courses.length || 0, color: '#D4FF00' },
+    { name: 'Products', value: products.length || 0, color: '#BFA9FF' },
+    { name: 'Students', value: totalStudents || 0, color: '#0F0F0F' },
+  ];
+
+  const incomeGrowthData = fallbackIncomeGrowthData;
+  const dailyActivityData = fallbackDailyActivityData;
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-ninja-yellow" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 animate-in fade-in duration-700">
       {/* KPI Metrics */}

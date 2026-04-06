@@ -1,7 +1,8 @@
-import React from 'react';
-import { Plus, Zap, TrendingUp, Activity, Edit2, Copy, X, ChevronDown, Check } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Plus, Zap, TrendingUp, Activity, Edit2, Copy, X, ChevronDown, Check, Loader2 } from 'lucide-react';
 import { Card, cn } from '../../components/ui';
 import toast from 'react-hot-toast';
+import { apiService } from '../../services/apiService';
 
 /* ─────────────────────────────────────────
    Custom Dropdown Component
@@ -81,7 +82,7 @@ const CustomSelect = ({
 /* ─────────────────────────────────────────
    Data
 ───────────────────────────────────────── */
-const automations = [
+const fallbackAutomations = [
   {
     id: 1,
     name: 'Welcome New Leads',
@@ -116,7 +117,7 @@ const automations = [
   },
 ];
 
-const kpis = [
+const fallbackKpis = [
   { label: 'Active Automations', value: '3', icon: <Zap size={22} />, color: 'bg-ninja-yellow/20 text-ninja-dark' },
   { label: 'Total Executions', value: '479', icon: <Activity size={22} />, color: 'bg-purple-100 text-purple-600' },
   { label: 'Success Rate', value: '98.5%', icon: <TrendingUp size={22} />, color: 'bg-ninja-yellow/20 text-ninja-dark' },
@@ -296,7 +297,7 @@ const CreateAutomationModal = ({ open, onClose }: { open: boolean; onClose: () =
 /* ─────────────────────────────────────────
    Automation Card
 ───────────────────────────────────────── */
-const AutomationCard = ({ auto }: { auto: typeof automations[0] }) => {
+const AutomationCard = ({ auto }: { auto: typeof fallbackAutomations[0] }) => {
   const isActive = auto.status === 'Active';
   return (
     <div
@@ -384,7 +385,39 @@ const AutomationCard = ({ auto }: { auto: typeof automations[0] }) => {
    Main Page
 ───────────────────────────────────────── */
 export const MarketingAutomation = () => {
-  const [modalOpen, setModalOpen] = React.useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [automations, setAutomations] = useState(fallbackAutomations);
+  const [kpis, setKpis] = useState(fallbackKpis);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchWorkflows = async () => {
+      setLoading(true);
+      try {
+        const workflows = await apiService.getWorkflows();
+        if (Array.isArray(workflows) && workflows.length > 0) {
+          setAutomations(workflows.map((w: any, i: number) => ({
+            id: w.id || i + 1,
+            name: w.name || 'Untitled Workflow',
+            status: w.status === 'draft' ? 'Draft' : 'Active',
+            trigger: w.trigger || 'Manual',
+            actions: w.actions || [],
+            executions: w.executions || 0,
+          })));
+          const activeCount = workflows.filter((w: any) => w.status !== 'draft').length;
+          setKpis([
+            { label: 'Active Automations', value: String(activeCount), icon: <Zap size={22} />, color: 'bg-ninja-yellow/20 text-ninja-dark' },
+            { label: 'Total Executions', value: String(workflows.reduce((sum: number, w: any) => sum + (w.executions || 0), 0)), icon: <Activity size={22} />, color: 'bg-purple-100 text-purple-600' },
+            { label: 'Success Rate', value: '98.5%', icon: <TrendingUp size={22} />, color: 'bg-ninja-yellow/20 text-ninja-dark' },
+          ]);
+        }
+      } catch {
+        // Keep fallback data
+      }
+      setLoading(false);
+    };
+    fetchWorkflows();
+  }, []);
 
   return (
     <>
@@ -393,9 +426,12 @@ export const MarketingAutomation = () => {
       <div className="flex flex-col gap-8 animate-in fade-in duration-500">
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-black text-ninja-dark tracking-tight">Marketing Automation</h1>
-            <p className="text-sm font-bold text-gray-400 mt-1">Workflows and automated flows</p>
+          <div className="flex items-center gap-3">
+            <div>
+              <h1 className="text-3xl font-black text-ninja-dark tracking-tight">Marketing Automation</h1>
+              <p className="text-sm font-bold text-gray-400 mt-1">Workflows and automated flows</p>
+            </div>
+            {loading && <Loader2 size={20} className="animate-spin text-ninja-yellow" />}
           </div>
           <button
             onClick={() => setModalOpen(true)}

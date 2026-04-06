@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import {
     BarChart,
     Bar,
@@ -20,118 +21,150 @@ import {
     Download,
     ChevronDown,
     Calendar as CalendarIcon,
-    Filter
+    Filter,
+    Zap
 } from 'lucide-react';
 import { Card, Button, cn } from '../../components/ui';
-
-const kpis = [
-    { 
-        label: 'Total Calls', 
-        value: '2,571', 
-        subtext: 'in the period', 
-        trend: '+15%', 
-        trendType: 'positive', 
-        icon: Phone, 
-        color: 'text-ninja-yellow', 
-        bg: 'bg-ninja-yellow/10' 
-    },
-    { 
-        label: 'Answered', 
-        value: '1,847', 
-        subtext: 'response rate', 
-        trend: '71.8%', 
-        trendType: 'positive', 
-        icon: PhoneIncoming, 
-        color: 'text-green-500', 
-        bg: 'bg-green-50' 
-    },
-    { 
-        label: 'Missed Calls', 
-        value: '423', 
-        subtext: 'lost opportunities', 
-        trend: 'Critical', 
-        trendType: 'danger', 
-        icon: PhoneMissed, 
-        color: 'text-red-500', 
-        bg: 'bg-red-50' 
-    },
-    { 
-        label: 'Average Duration', 
-        value: '9:45', 
-        subtext: 'minutes per call', 
-        trend: '9:45', 
-        trendType: 'neutral', 
-        icon: Clock, 
-        color: 'text-purple-500', 
-        bg: 'bg-purple-50' 
-    }
-];
-
-const statusData = [
-    { name: 'Answered', value: 1847, color: '#22C55E' },
-    { name: 'Missed', value: 423, color: '#EF4444' },
-    { name: 'Voicemail', value: 234, color: '#F59E0B' },
-    { name: 'Rejected', value: 67, color: '#6B7280' },
-];
-
-const sourceData = [
-    { name: 'Google Ads', value: 460 },
-    { name: 'Facebook Ads', value: 340 },
-    { name: 'Organic', value: 580 },
-    { name: 'Referrals', value: 230 },
-    { name: 'Direct', value: 680 },
-];
-
-const trendData = [
-    { day: 'Mon', incoming: 320, outgoing: 210 },
-    { day: 'Tue', incoming: 450, outgoing: 340 },
-    { day: 'Wed', incoming: 410, outgoing: 290 },
-    { day: 'Thu', incoming: 520, outgoing: 380 },
-    { day: 'Fri', incoming: 480, outgoing: 310 },
-    { day: 'Sat', incoming: 150, outgoing: 90 },
-    { day: 'Sun', incoming: 120, outgoing: 80 },
-];
-
-const detailedCalls = [
-    {
-        name: 'Maria Gonzalez',
-        phone: '+34 612 345 678',
-        type: 'Incoming',
-        duration: '12:34',
-        status: 'Answered',
-        agent: 'Carlos Ruiz',
-        date: '2 hours ago',
-    },
-    {
-        name: 'Juan Perez',
-        phone: '+34 823 456 789',
-        type: 'Outgoing',
-        duration: '08:45',
-        status: 'Answered',
-        agent: 'Ana Martinez',
-        date: '3 hours ago',
-    },
-    {
-        name: 'Laura Sanchez',
-        phone: '+34 034 567 890',
-        type: 'Incoming',
-        duration: '00:00',
-        status: 'Missed',
-        agent: '-',
-        date: '4 hours ago',
-    },
-    {
-        name: 'Pedro Lopez',
-        phone: '+34 545 678 901',
-        type: 'Incoming',
-        duration: '15:23',
-        status: 'Answered',
-        agent: 'Carlos Ruiz',
-        date: '5 hours ago',
-    },
-];
+import { apiService } from '../../services/apiService';
 
 export const CallsReport = () => {
+    const [isLoading, setIsLoading] = useState(true);
+    const [syncError, setSyncError] = useState<string | null>(null);
+    const [kpis, setKpis] = useState<any[]>([]);
+    const [statusData, setStatusData] = useState<any[]>([]);
+    const [sourceData, setSourceData] = useState<any[]>([]);
+    const [trendData, setTrendData] = useState<any[]>([]);
+    const [detailedCalls, setDetailedCalls] = useState<any[]>([]);
+
+    useEffect(() => {
+        loadData();
+    }, []);
+
+    const loadData = async () => {
+        setIsLoading(true);
+        setSyncError(null);
+        try {
+            const conversations = await apiService.getConversations();
+
+            const total = conversations.length;
+            const smsConvos = conversations.filter((c: any) => c.channel === 'SMS');
+            const emailConvos = conversations.filter((c: any) => c.channel === 'Email');
+            const messengerConvos = conversations.filter((c: any) => c.channel === 'Messenger');
+            const instagramConvos = conversations.filter((c: any) => c.channel === 'Instagram');
+            const withMessages = conversations.filter((c: any) => c.lastMessage && c.lastMessage !== 'No messages');
+            const unread = conversations.filter((c: any) => c.unreadCount > 0);
+
+            const responseRate = total > 0 ? ((withMessages.length / total) * 100).toFixed(1) : '0';
+
+            setKpis([
+                {
+                    label: 'Total Conversations',
+                    value: total.toLocaleString(),
+                    subtext: 'in the period',
+                    trend: `${total} total`,
+                    trendType: 'positive',
+                    icon: Phone,
+                    color: 'text-ninja-yellow',
+                    bg: 'bg-ninja-yellow/10'
+                },
+                {
+                    label: 'With Messages',
+                    value: withMessages.length.toLocaleString(),
+                    subtext: 'response rate',
+                    trend: `${responseRate}%`,
+                    trendType: 'positive',
+                    icon: PhoneIncoming,
+                    color: 'text-green-500',
+                    bg: 'bg-green-50'
+                },
+                {
+                    label: 'Unread',
+                    value: unread.length.toLocaleString(),
+                    subtext: 'need attention',
+                    trend: unread.length > 10 ? 'Critical' : 'OK',
+                    trendType: unread.length > 10 ? 'danger' : 'positive',
+                    icon: PhoneMissed,
+                    color: 'text-red-500',
+                    bg: 'bg-red-50'
+                },
+                {
+                    label: 'Channels Active',
+                    value: new Set(conversations.map((c: any) => c.channel)).size.toString(),
+                    subtext: 'communication channels',
+                    trend: `${new Set(conversations.map((c: any) => c.channel)).size} types`,
+                    trendType: 'neutral',
+                    icon: Clock,
+                    color: 'text-purple-500',
+                    bg: 'bg-purple-50'
+                }
+            ]);
+
+            // Status distribution (by channel type as proxy)
+            setStatusData([
+                { name: 'SMS', value: smsConvos.length, color: '#22C55E' },
+                { name: 'Email', value: emailConvos.length, color: '#EF4444' },
+                { name: 'Messenger', value: messengerConvos.length, color: '#F59E0B' },
+                { name: 'Instagram', value: instagramConvos.length, color: '#6B7280' },
+            ].filter(d => d.value > 0));
+
+            // Source data by channel
+            const channelCounts: Record<string, number> = {};
+            conversations.forEach((c: any) => {
+                const ch = c.channel || 'Other';
+                channelCounts[ch] = (channelCounts[ch] || 0) + 1;
+            });
+            setSourceData(Object.entries(channelCounts).map(([name, value]) => ({ name, value })));
+
+            // Trend data - group by timestamp date
+            const dayMap: Record<string, { incoming: number; outgoing: number }> = {};
+            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            days.forEach(d => { dayMap[d] = { incoming: 0, outgoing: 0 }; });
+            conversations.forEach((c: any) => {
+                if (c.timestamp) {
+                    try {
+                        const date = new Date(c.timestamp);
+                        const dayName = days[date.getDay()];
+                        if (dayName) {
+                            dayMap[dayName].incoming += 1;
+                            if (c.unreadCount === 0) dayMap[dayName].outgoing += 1;
+                        }
+                    } catch { /* skip invalid dates */ }
+                }
+            });
+            setTrendData(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => ({
+                day,
+                incoming: dayMap[day]?.incoming || 0,
+                outgoing: dayMap[day]?.outgoing || 0
+            })));
+
+            // Detailed call log from recent conversations
+            setDetailedCalls(conversations.slice(0, 10).map((c: any) => ({
+                name: c.contactName || 'Unknown',
+                phone: c.contactId ? c.contactId.substring(0, 12) + '...' : '-',
+                type: c.unreadCount > 0 ? 'Incoming' : 'Outgoing',
+                duration: '-',
+                status: c.lastMessage !== 'No messages' ? 'Answered' : 'Missed',
+                agent: '-',
+                date: c.timestamp || 'Unknown',
+            })));
+        } catch (error: any) {
+            console.error('Error loading calls report:', error);
+            if (error.status === 403 || error.status === 401) {
+                setSyncError('Calls data is currently being synchronized. Please ensure your Ninja CRM account setup is complete.');
+            }
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center h-96">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ninja-yellow"></div>
+            </div>
+        );
+    }
+
     return (
         <div className="flex flex-col gap-8">
             {/* Header Section */}
@@ -158,6 +191,21 @@ export const CallsReport = () => {
                     </Button>
                 </div>
             </div>
+
+            {/* Sync Error */}
+            {syncError && (
+                <Card className="p-4 border-l-4 border-l-ninja-purple bg-ninja-purple/5 border-ninja-purple/10">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-ninja-purple/10 rounded-lg text-ninja-purple">
+                            <Zap size={18} />
+                        </div>
+                        <div>
+                            <p className="text-sm font-bold text-ninja-dark">Module Synchronization</p>
+                            <p className="text-xs text-slate-500 font-medium">{syncError}</p>
+                        </div>
+                    </div>
+                </Card>
+            )}
 
             {/* KPI Metrics */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -187,7 +235,7 @@ export const CallsReport = () => {
             {/* Charts Section */}
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
                 <Card className="lg:col-span-2 border-none shadow-xl bg-ninja-dark flex flex-col p-8">
-                    <h3 className="font-bold text-white text-lg mb-8">Calls by Status</h3>
+                    <h3 className="font-bold text-white text-lg mb-8">Conversations by Channel</h3>
                     <div className="flex-1 flex flex-col items-center justify-center min-h-[300px]">
                         <div className="h-[240px] w-full">
                             <ResponsiveContainer width="100%" height="100%">
@@ -260,7 +308,7 @@ export const CallsReport = () => {
                                     barSize={45}
                                 >
                                     {sourceData.map((_, index) => (
-                                        <Cell key={`cell-${index}`} fill={index === 4 ? '#D4FF00' : '#BFA9FF'} />
+                                        <Cell key={`cell-${index}`} fill={index === sourceData.length - 1 ? '#D4FF00' : '#BFA9FF'} />
                                     ))}
                                 </Bar>
                             </BarChart>
@@ -272,7 +320,7 @@ export const CallsReport = () => {
             {/* Trend Section */}
             <Card className="border-none shadow-sm">
                 <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
-                    <h3 className="font-bold text-ninja-dark text-lg">Call Trend (7 days)</h3>
+                    <h3 className="font-bold text-ninja-dark text-lg">Conversation Trend (7 days)</h3>
                     <div className="flex items-center gap-6">
                         <div className="flex items-center gap-2">
                             <div className="h-2 w-2 rounded-full bg-ninja-yellow shadow-[0_0_8px_rgba(212,255,0,0.5)]" />
@@ -405,6 +453,13 @@ export const CallsReport = () => {
                                     </td>
                                 </tr>
                             ))}
+                            {detailedCalls.length === 0 && (
+                                <tr>
+                                    <td colSpan={7} className="px-6 py-12 text-center text-sm text-gray-400">
+                                        No conversation data available yet.
+                                    </td>
+                                </tr>
+                            )}
                         </tbody>
                     </table>
                 </div>

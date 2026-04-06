@@ -1,15 +1,60 @@
-import { 
-  Users, 
-  MessageSquare, 
-  TrendingUp, 
-  UserPlus, 
-  Search, 
-  ChevronRight 
+import { useState, useEffect } from 'react';
+import {
+  Users,
+  MessageSquare,
+  TrendingUp,
+  UserPlus,
+  Search,
+  ChevronRight,
+  Loader2
 } from 'lucide-react';
 import { Card, cn } from '../../components/ui';
-import { communityMetrics, myCommunities } from '../../data/communitiesData';
+import { apiService } from '../../services/apiService';
+
+const communityColors = ['bg-ninja-yellow', 'bg-purple-500', 'bg-ninja-yellow', 'bg-blue-500'];
 
 export const CommunitiesOverview = () => {
+    const [loading, setLoading] = useState(true);
+    const [courses, setCourses] = useState<any[]>([]);
+
+    useEffect(() => {
+        setLoading(true);
+        apiService.getCourses()
+            .then((data) => setCourses(data || []))
+            .catch(() => setCourses([]))
+            .finally(() => setLoading(false));
+    }, []);
+
+    const myCommunities = courses.length > 0
+        ? courses.map((c: any, i: number) => ({
+            id: c.id || i + 1,
+            title: c.name || c.title || `Community ${i + 1}`,
+            type: 'Course',
+            members: c.studentCount || c.students || 0,
+            posts: c.lessonCount || c.lessons || 0,
+            engagement: (c.studentCount || 0) > 100 ? 'High' : 'Medium',
+            color: communityColors[i % communityColors.length]
+          }))
+        : [];
+
+    const totalMembers = myCommunities.reduce((s: number, c: any) => s + c.members, 0);
+    const totalPosts = myCommunities.reduce((s: number, c: any) => s + c.posts, 0);
+
+    const communityMetrics = [
+        { label: 'Total Members', value: String(totalMembers), subtext: 'active across all spaces', icon: 'users' },
+        { label: 'Posts this Month', value: String(totalPosts), subtext: 'from courses', icon: 'message' },
+        { label: 'Communities', value: String(myCommunities.length), subtext: 'active communities', icon: 'chart' },
+        { label: 'Courses', value: String(courses.length), subtext: 'total courses', icon: 'user-plus' },
+    ];
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center h-64">
+                <Loader2 className="h-8 w-8 animate-spin text-ninja-yellow" />
+            </div>
+        );
+    }
+
     return (
         <div className="space-y-8 animate-in fade-in duration-700">
             {/* KPI Metrics */}

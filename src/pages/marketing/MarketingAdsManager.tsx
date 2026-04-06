@@ -1,31 +1,55 @@
-import React from 'react';
-import { 
-  Plus, 
-  Search, 
-  Play, 
-  Clock, 
-  Pause, 
+import { useState, useEffect } from 'react';
+import {
+  Plus,
+  Search,
+  Play,
+  Clock,
+  Pause,
   AlertCircle,
-  Megaphone
+  Megaphone,
+  Loader2
 } from 'lucide-react';
 import { Card, Button, Input, Select, Modal, cn } from '../../components/ui';
 import toast from 'react-hot-toast';
+import { apiService } from '../../services/apiService';
 
 export const MarketingAdsManager = () => {
-    const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false);
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [campaignCount, setCampaignCount] = useState('3');
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+      const fetchCampaigns = async () => {
+        setLoading(true);
+        try {
+          const campaigns = await apiService.getCampaigns();
+          if (Array.isArray(campaigns)) {
+            const activeCount = campaigns.filter((c: any) => c.status === 'active' || c.status === 'Active').length || campaigns.length;
+            setCampaignCount(String(activeCount));
+          }
+        } catch {
+          // Keep fallback value
+        }
+        setLoading(false);
+      };
+      fetchCampaigns();
+    }, []);
 
     return (
         <div className="flex flex-col gap-8 pb-10 animate-in fade-in duration-500 text-left">
             {/* Header Section */}
             <div className="flex flex-col gap-1">
-                <h1 className="text-[28px] font-bold text-[#1A1D1F] tracking-tight leading-none">Ads Manager</h1>
+                <div className="flex items-center gap-3">
+                  <h1 className="text-[28px] font-bold text-[#1A1D1F] tracking-tight leading-none">Ads Manager</h1>
+                  {loading && <Loader2 size={20} className="animate-spin text-ninja-yellow" />}
+                </div>
                 <p className="text-[#6F767E] font-medium text-sm leading-none mt-2">Manage your advertising campaigns</p>
             </div>
 
             {/* KPI Summary Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {[
-                    { label: 'Active Campaigns', value: '3', color: 'bg-[#F2FFB2]/40', iconColor: 'text-[#D4FF00]', icon: Megaphone },
+                    { label: 'Active Campaigns', value: campaignCount, color: 'bg-[#F2FFB2]/40', iconColor: 'text-[#D4FF00]', icon: Megaphone },
                     { label: 'In Review', value: '1', color: 'bg-blue-50', iconColor: 'text-blue-400', icon: Clock },
                     { label: 'Paused', value: '1', color: 'bg-gray-100', iconColor: 'text-gray-400', icon: Pause },
                     { label: 'With Error', value: '1', color: 'bg-red-50', iconColor: 'text-red-400', icon: AlertCircle }

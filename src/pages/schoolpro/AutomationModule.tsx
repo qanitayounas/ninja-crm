@@ -1,31 +1,30 @@
-import { 
-  Zap, 
-  TrendingUp, 
-  Mail, 
-  Award, 
-  Edit, 
-  Pause, 
+import { useState, useEffect } from 'react';
+import {
+  Zap,
+  TrendingUp,
+  Mail,
+  Award,
+  Edit,
+  Pause,
   Trash2,
   Bell,
   Users,
   BarChart3,
   Calendar,
-  Plus
+  Plus,
+  Loader2
 } from 'lucide-react';
 import { Card, cn } from '../../components/ui';
-import { 
-  automationMetrics, 
-  configuredAutomations, 
-  topAutomations, 
-  overallPerformance,
+import {
   automationTemplates,
   triggerList,
   triggerCategories
 } from '../../data/automationSchoolData';
+import { apiService } from '../../services/apiService';
 
 type AutomationTab = 'automations' | 'templates' | 'triggers';
 
-const KpiCard = ({ metric }: { metric: typeof automationMetrics[0] }) => {
+const KpiCard = ({ metric }: { metric: any }) => {
   const iconMap: Record<string, JSX.Element> = {
     zap: <Zap size={20} />,
     trending: <TrendingUp size={20} />,
@@ -49,7 +48,7 @@ const KpiCard = ({ metric }: { metric: typeof automationMetrics[0] }) => {
   );
 };
 
-const AutomationsView = () => (
+const AutomationsView = ({ configuredAutomations, topAutomations, overallPerformance }: { configuredAutomations: any[]; topAutomations: any[]; overallPerformance: any[] }) => (
   <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
     <div className="lg:col-span-2 space-y-4">
       <h2 className="text-lg font-black text-ninja-dark uppercase tracking-tight">Configured Automations</h2>
@@ -76,7 +75,7 @@ const AutomationsView = () => (
           <div>
             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Actions:</p>
             <div className="flex flex-wrap gap-2">
-              {auto.actions.map((action, i) => (
+              {auto.actions.map((action: any, i: number) => (
                 <span key={i} className="px-3 py-1 bg-gray-50 text-gray-500 rounded-xl text-xs font-bold">{action}</span>
               ))}
             </div>
@@ -221,32 +220,90 @@ const TriggersView = () => (
   </div>
 );
 
-export const AutomationModule = ({ activeTab, setActiveTab }: { activeTab: AutomationTab; setActiveTab: (t: AutomationTab) => void }) => (
-  <div className="space-y-8">
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-      {automationMetrics.map((m, i) => <KpiCard key={i} metric={m} />)}
-    </div>
+export const AutomationModule = ({ activeTab, setActiveTab }: { activeTab: AutomationTab; setActiveTab: (t: AutomationTab) => void }) => {
+  const [loading, setLoading] = useState(true);
+  const [workflows, setWorkflows] = useState<any[]>([]);
 
-    {/* Tab Navigation - scrollable on mobile */}
-    <div className="w-full overflow-x-auto scrollbar-none -mx-1 px-1">
-      <div className="flex items-center bg-white p-1.5 rounded-2xl shadow-sm border border-gray-100 w-max min-w-full sm:w-fit sm:min-w-0">
-        {(['automations', 'templates', 'triggers'] as AutomationTab[]).map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={cn(
-              "px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all capitalize whitespace-nowrap",
-              activeTab === tab ? "bg-ninja-dark text-white shadow-lg" : "text-gray-400 hover:text-gray-600"
-            )}
-          >
-            {tab}
-          </button>
-        ))}
+  useEffect(() => {
+    setLoading(true);
+    apiService.getWorkflows()
+      .then((data) => setWorkflows(data || []))
+      .catch(() => setWorkflows([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const activeWorkflows = workflows.filter((w: any) => w.status === 'active' || w.status === 'Active');
+
+  const configuredAutomations = workflows.length > 0
+    ? workflows.map((w: any, i: number) => ({
+        id: w.id || i + 1,
+        title: w.name || w.title || `Workflow ${i + 1}`,
+        status: w.status === 'active' || w.status === 'Active' ? 'Active' : 'Paused',
+        trigger: w.trigger || w.triggerType || 'Manual',
+        actions: w.actions || ['Action'],
+        executed: w.executionCount || w.executed || 0,
+        successRate: w.successRate || 'N/A'
+      }))
+    : [];
+
+  const topAutomations = configuredAutomations
+    .sort((a: any, b: any) => b.executed - a.executed)
+    .slice(0, 3)
+    .map((a: any, i: number) => ({
+      rank: i + 1,
+      title: a.title,
+      executions: a.executed,
+      successRate: a.successRate
+    }));
+
+  const overallPerformance = [
+    { label: 'Total Workflows', value: String(workflows.length), unit: 'configured', color: 'bg-ninja-yellow/10 text-ninja-dark' },
+    { label: 'Active', value: String(activeWorkflows.length), unit: 'running now', color: 'bg-purple-50 text-purple-600' },
+    { label: 'Paused', value: String(workflows.length - activeWorkflows.length), unit: 'on hold', color: 'bg-blue-50 text-blue-600' }
+  ];
+
+  const automationMetrics = [
+    { label: 'Active Automations', value: String(activeWorkflows.length), icon: 'zap' },
+    { label: 'Total Workflows', value: String(workflows.length), icon: 'trending' },
+    { label: 'Configured', value: String(configuredAutomations.length), icon: 'mail' },
+    { label: 'Success Rate', value: configuredAutomations.length > 0 ? configuredAutomations[0].successRate : 'N/A', icon: 'award' },
+  ];
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-ninja-yellow" />
       </div>
-    </div>
+    );
+  }
 
-    {activeTab === 'automations' && <AutomationsView />}
-    {activeTab === 'templates' && <TemplatesView />}
-    {activeTab === 'triggers' && <TriggersView />}
-  </div>
-);
+  return (
+    <div className="space-y-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {automationMetrics.map((m, i) => <KpiCard key={i} metric={m} />)}
+      </div>
+
+      {/* Tab Navigation - scrollable on mobile */}
+      <div className="w-full overflow-x-auto scrollbar-none -mx-1 px-1">
+        <div className="flex items-center bg-white p-1.5 rounded-2xl shadow-sm border border-gray-100 w-max min-w-full sm:w-fit sm:min-w-0">
+          {(['automations', 'templates', 'triggers'] as AutomationTab[]).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={cn(
+                "px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all capitalize whitespace-nowrap",
+                activeTab === tab ? "bg-ninja-dark text-white shadow-lg" : "text-gray-400 hover:text-gray-600"
+              )}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {activeTab === 'automations' && <AutomationsView configuredAutomations={configuredAutomations} topAutomations={topAutomations} overallPerformance={overallPerformance} />}
+      {activeTab === 'templates' && <TemplatesView />}
+      {activeTab === 'triggers' && <TriggersView />}
+    </div>
+  );
+};
