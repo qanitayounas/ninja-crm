@@ -3,11 +3,11 @@ import {
   Users,
   Search, 
   Filter, 
-  MoreVertical, 
-  Plus, 
-  Download, 
-  Instagram, 
-  MessageCircle, 
+  MoreVertical,
+  Plus,
+  Download,
+  Instagram,
+  MessageCircle,
   MessageSquare,
   Mail,
   ChevronLeft,
@@ -17,7 +17,11 @@ import {
   Star,
   Settings,
   X,
-  Menu
+  Menu,
+  Trash2,
+  Edit2,
+  Eye,
+  UserPlus
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Card, Badge, Avatar, Input, Button, Modal, Select, Textarea, cn } from '../components/ui';
@@ -49,6 +53,9 @@ export const ContactsPage = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [syncError, setSyncError] = useState<string | null>(null);
+  const [openActionId, setOpenActionId] = useState<string | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     loadInitialData();
@@ -324,9 +331,50 @@ export const ContactsPage = () => {
                       {contact.owner || 'Unassigned'}
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <button className="p-2 text-gray-300 hover:text-ninja-dark transition-colors">
-                        <MoreVertical size={18} />
-                      </button>
+                      <div className="relative">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setOpenActionId(openActionId === contact.id ? null : contact.id); }}
+                          className="p-2 text-gray-300 hover:text-ninja-dark transition-colors"
+                        >
+                          <MoreVertical size={18} />
+                        </button>
+                        {openActionId === contact.id && (
+                          <>
+                            <div className="fixed inset-0 z-10" onClick={() => setOpenActionId(null)} />
+                            <div className="absolute right-0 top-10 z-20 w-48 bg-white rounded-xl shadow-xl border border-gray-100 py-2 animate-in fade-in zoom-in-95 duration-150">
+                              <button
+                                onClick={() => { setOpenActionId(null); toast.success(`Viewing ${contact.name}`); }}
+                                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-ninja-dark transition-colors"
+                              >
+                                <Eye size={16} className="text-gray-400" />
+                                View Details
+                              </button>
+                              <button
+                                onClick={() => { setOpenActionId(null); toast.success(`Edit ${contact.name} — coming soon`); }}
+                                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-ninja-dark transition-colors"
+                              >
+                                <Edit2 size={16} className="text-gray-400" />
+                                Edit Contact
+                              </button>
+                              <button
+                                onClick={() => { setOpenActionId(null); toast.success(`Adding ${contact.name} to workflow — coming soon`); }}
+                                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-ninja-dark transition-colors"
+                              >
+                                <UserPlus size={16} className="text-gray-400" />
+                                Add to Campaign
+                              </button>
+                              <div className="border-t border-gray-100 my-1" />
+                              <button
+                                onClick={() => { setOpenActionId(null); setDeleteConfirmId(contact.id); }}
+                                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-red-500 hover:bg-red-50 transition-colors"
+                              >
+                                <Trash2 size={16} />
+                                Delete Contact
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -452,21 +500,45 @@ export const ContactsPage = () => {
                 }
 
                 const nameParts = nameInput.value.trim().split(' ');
-                await apiService.createContact({
+                const contactData = {
                   firstName: nameParts[0],
                   lastName: nameParts.slice(1).join(' ') || '',
                   email: emailInput.value,
                   phone: phoneInput?.value || '',
                   companyName: companyInput?.value || '',
                   tags: selectedTags.map(t => t.name)
-                });
+                };
+
+                let result;
+                try {
+                  result = await apiService.createContact(contactData);
+                } catch (createErr: any) {
+                  if (createErr?.providerError?.includes('duplicate') || createErr?.providerError?.includes('duplicated')) {
+                    result = await apiService.upsertContact(contactData);
+                  } else {
+                    throw createErr;
+                  }
+                }
+
+                // Add to UI instantly
+                const newContact = {
+                  id: result?.contact?.id || result?.id || `temp-${Date.now()}`,
+                  name: nameInput.value.trim(),
+                  email: emailInput.value,
+                  phone: phoneInput?.value || '',
+                  status: 'Lead' as const,
+                  tags: selectedTags.map(t => t.name),
+                  source: 'SMS' as const,
+                  date: new Date().toLocaleDateString(),
+                  avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(nameInput.value)}&background=random`
+                };
+                setContacts(prev => [newContact, ...prev]);
 
                 toast.success('Contact added successfully!');
                 setIsAddModalOpen(false);
                 setSelectedTags([]);
-                loadInitialData();
-              } catch (error) {
-                toast.error('Failed to create contact');
+              } catch (error: any) {
+                toast.error(error?.providerError || 'Failed to create contact');
                 console.error(error);
               }
             }} className="rounded-xl px-8">Add Client</Button>
@@ -507,6 +579,40 @@ export const ContactsPage = () => {
           <div className="flex items-center gap-3 justify-end mt-4 pt-4 border-t border-gray-100">
             <Button variant="secondary" onClick={() => setIsSaveSmartListModalOpen(false)} className="rounded-xl">Cancel</Button>
             <Button onClick={handleSaveSmartList} className="rounded-xl px-8">Save List</Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal isOpen={!!deleteConfirmId} onClose={() => setDeleteConfirmId(null)} title="Delete Contact">
+        <div className="flex flex-col gap-4">
+          <div className="p-4 bg-red-50 rounded-2xl border border-red-100">
+            <p className="text-sm font-bold text-red-600">Are you sure you want to delete this contact?</p>
+            <p className="text-xs text-red-400 font-medium mt-1">This action cannot be undone. The contact will be permanently removed from GoHighLevel.</p>
+          </div>
+          <div className="flex items-center gap-3 justify-end pt-2">
+            <Button variant="secondary" onClick={() => setDeleteConfirmId(null)} className="rounded-xl">Cancel</Button>
+            <Button
+              onClick={async () => {
+                if (!deleteConfirmId) return;
+                setIsDeleting(true);
+                try {
+                  await apiService.deleteContact(deleteConfirmId);
+                  setContacts(prev => prev.filter(c => c.id !== deleteConfirmId));
+                  toast.success('Contact deleted');
+                  setDeleteConfirmId(null);
+                } catch (error: any) {
+                  toast.error(error?.providerError || 'Failed to delete contact');
+                  console.error(error);
+                } finally {
+                  setIsDeleting(false);
+                }
+              }}
+              className="rounded-xl px-8 bg-red-500 hover:bg-red-600 border-red-500 text-white"
+              disabled={isDeleting}
+            >
+              {isDeleting ? 'Deleting...' : 'Delete'}
+            </Button>
           </div>
         </div>
       </Modal>

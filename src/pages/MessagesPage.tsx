@@ -40,6 +40,9 @@ export const MessagesPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
+  const [isNewChatOpen, setIsNewChatOpen] = useState(false);
+  const [allContacts, setAllContacts] = useState<any[]>([]);
+  const [contactSearch, setContactSearch] = useState('');
 
   useEffect(() => {
     loadConversations();
@@ -55,8 +58,12 @@ export const MessagesPage = () => {
     setIsLoading(true);
     setSyncError(null);
     try {
-      const data = await apiService.getConversations();
+      const [data, contactsData] = await Promise.all([
+        apiService.getConversations(),
+        apiService.getContacts()
+      ]);
       setConversations(data);
+      setAllContacts(contactsData || []);
       if (data.length > 0 && !activeId) setActiveId(data[0].id);
     } catch (error: any) {
       console.error('Error loading conversations:', error);
@@ -83,16 +90,36 @@ export const MessagesPage = () => {
 
   const handleSendMessage = async () => {
     if (!messageText.trim() || !activeId || !activeChat) return;
-    
+
     setIsSending(true);
     try {
-      await apiService.sendMessage(activeId, messageText, activeChat.contactId);
+      // Find the contact to check if they have phone or email
+      const contact = allContacts.find(c => c.id === activeChat.contactId);
+      const hasPhone = contact?.phone && contact.phone.length > 3;
+      const hasEmail = contact?.email && contact.email.includes('@');
+      const msgType = hasPhone ? 'SMS' : (hasEmail ? 'Email' : 'SMS');
+
+      await apiService.sendMessage(activeId, messageText, activeChat.contactId, msgType as 'SMS' | 'Email');
+
+      // Add message to UI instantly
+      const newMsg = {
+        id: `msg-${Date.now()}`,
+        senderId: 'me',
+        text: messageText,
+        isMe: true,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        date: new Date().toISOString()
+      };
+      setConversations(prev => prev.map(c =>
+        c.id === activeId ? { ...c, messages: [...c.messages, newMsg], lastMessage: messageText } : c
+      ));
+
       setMessageText('');
       toast.success('Message sent');
-      // Reload messages to show the new one
-      loadMessages(activeId);
-    } catch (error) {
-      toast.error('Failed to send message');
+    } catch (error: any) {
+      console.error('Send error:', error);
+      const detail = error?.providerError || 'Failed to send message. Contact may not have a phone number or email.';
+      toast.error(typeof detail === 'string' ? detail : 'Failed to send message');
     } finally {
       setIsSending(false);
     }
@@ -105,6 +132,42 @@ export const MessagesPage = () => {
   });
 
   const activeChat = conversations.find(c => c.id === activeId);
+
+  // Contacts that don't already have a conversation
+  const existingContactIds = new Set(conversations.map(c => c.contactId));
+  const filteredNewContacts = allContacts
+    .filter(c => !existingContactIds.has(c.id))
+    .filter(c => contactSearch
+      ? c.name.toLowerCase().includes(contactSearch.toLowerCase()) || c.email.toLowerCase().includes(contactSearch.toLowerCase())
+      : true
+    );
+
+  const handleStartChat = async (contact: any) => {
+    try {
+      // Create a new conversation in GHL
+      const result = await apiService.createConversation({ contactId: contact.id });
+      const newConv: Conversation = {
+        id: result?.conversation?.id || result?.id || `new-${Date.now()}`,
+        contactId: contact.id,
+        contactName: contact.name,
+        lastMessage: 'New conversation',
+        unreadCount: 0,
+        timestamp: new Date().toLocaleDateString(),
+        channel: 'SMS' as any,
+        status: 'online',
+        avatar: contact.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(contact.name)}&background=random`,
+        messages: []
+      };
+      setConversations(prev => [newConv, ...prev]);
+      setActiveId(newConv.id);
+      setIsNewChatOpen(false);
+      setContactSearch('');
+      toast.success(`Chat started with ${contact.name}`);
+    } catch (error: any) {
+      console.error('Error creating conversation:', error);
+      toast.error(error?.providerError || 'Failed to start conversation');
+    }
+  };
 
   if (isLoading) {
     return (
@@ -122,6 +185,13 @@ export const MessagesPage = () => {
           <h1 className="text-3xl font-black text-ninja-dark tracking-tighter">Messages</h1>
           <p className="text-gray-400 font-medium">Manage your conversations</p>
         </div>
+        <button
+          onClick={() => setIsNewChatOpen(true)}
+          className="flex items-center gap-2 px-5 py-2.5 bg-ninja-yellow text-ninja-dark font-bold text-sm rounded-xl shadow-lg shadow-ninja-yellow/20 hover:bg-ninja-yellow/90 transition-all"
+        >
+          <Plus size={18} />
+          New Chat
+        </button>
       </div>
 
       {/* Alert Case: Branded Setup Notice */}
@@ -406,6 +476,58 @@ export const MessagesPage = () => {
           ) : null}
         </Card>
       </div>
+
+      {/* New Chat Modal */}
+      {isNewChatOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => { setIsNewChatOpen(false); setContactSearch(''); }} />
+          <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl animate-in zoom-in-95 duration-200 overflow-hidden">
+            <div className="p-6 border-b border-gray-100">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-black text-ninja-dark">Start New Chat</h3>
+                <button onClick={() => { setIsNewChatOpen(false); setContactSearch(''); }} className="text-gray-400 hover:text-ninja-dark transition-colors">
+                  <ArrowLeft size={20} />
+                </button>
+              </div>
+              <div className="relative mt-4">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
+                <input
+                  type="text"
+                  placeholder="Search contacts..."
+                  value={contactSearch}
+                  onChange={(e) => setContactSearch(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:border-ninja-yellow focus:ring-2 focus:ring-ninja-yellow/10 outline-none text-sm font-medium"
+                  autoFocus
+                />
+              </div>
+            </div>
+            <div className="max-h-[400px] overflow-y-auto">
+              {filteredNewContacts.length === 0 ? (
+                <div className="p-8 text-center">
+                  <p className="text-gray-400 font-medium text-sm">
+                    {allContacts.length === 0 ? 'No contacts found. Add contacts first.' : 'All contacts already have conversations.'}
+                  </p>
+                </div>
+              ) : (
+                filteredNewContacts.map((contact: any) => (
+                  <div
+                    key={contact.id}
+                    onClick={() => handleStartChat(contact)}
+                    className="flex items-center gap-3 px-6 py-4 hover:bg-ninja-yellow/5 cursor-pointer transition-colors border-b border-gray-50 group"
+                  >
+                    <Avatar name={contact.name} />
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-bold text-ninja-dark text-sm group-hover:text-ninja-yellow transition-colors">{contact.name}</h4>
+                      <p className="text-xs text-gray-400 truncate">{contact.email || contact.phone || 'No contact info'}</p>
+                    </div>
+                    <MessageCircle size={16} className="text-gray-300 group-hover:text-ninja-yellow transition-colors" />
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
