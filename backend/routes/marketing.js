@@ -9,8 +9,8 @@ const { GHL_API_BASE, getHeaders, locationId } = require('./_helpers');
 router.get('/campaigns', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/campaigns/`, {
-      headers: getHeaders(),
-      params: { locationId: locationId(), ...req.query }
+      headers: getHeaders(req),
+      params: { locationId: locationId(req), ...req.query }
     });
     res.json(response.data);
   } catch (error) {
@@ -22,7 +22,7 @@ router.get('/campaigns', async (req, res) => {
 router.get('/campaigns/:id', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/campaigns/${req.params.id}`, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -36,8 +36,8 @@ router.get('/campaigns/:id', async (req, res) => {
 router.get('/workflows', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/workflows/`, {
-      headers: getHeaders(),
-      params: { locationId: locationId(), ...req.query }
+      headers: getHeaders(req),
+      params: { locationId: locationId(req), ...req.query }
     });
     res.json(response.data);
   } catch (error) {
@@ -49,7 +49,7 @@ router.get('/workflows', async (req, res) => {
 router.get('/workflows/:id', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/workflows/${req.params.id}`, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -63,8 +63,8 @@ router.get('/workflows/:id', async (req, res) => {
 router.get('/forms', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/forms/`, {
-      headers: getHeaders(),
-      params: { locationId: locationId(), ...req.query }
+      headers: getHeaders(req),
+      params: { locationId: locationId(req), ...req.query }
     });
     res.json(response.data);
   } catch (error) {
@@ -76,8 +76,8 @@ router.get('/forms', async (req, res) => {
 router.get('/forms/:id/submissions', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/forms/submissions`, {
-      headers: getHeaders(),
-      params: { locationId: locationId(), formId: req.params.id, ...req.query }
+      headers: getHeaders(req),
+      params: { locationId: locationId(req), formId: req.params.id, ...req.query }
     });
     res.json(response.data);
   } catch (error) {
@@ -89,7 +89,7 @@ router.get('/forms/:id/submissions', async (req, res) => {
 router.post('/forms/upload-custom-files', async (req, res) => {
   try {
     const response = await axios.post(`${GHL_API_BASE}/forms/upload-custom-files`, req.body, {
-      headers: { ...getHeaders(), 'Content-Type': req.headers['content-type'] || 'application/json' }
+      headers: { ...getHeaders(req), 'Content-Type': req.headers['content-type'] || 'application/json' }
     });
     res.json(response.data);
   } catch (error) {
@@ -103,8 +103,8 @@ router.post('/forms/upload-custom-files', async (req, res) => {
 router.get('/surveys', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/surveys/`, {
-      headers: getHeaders(),
-      params: { locationId: locationId(), ...req.query }
+      headers: getHeaders(req),
+      params: { locationId: locationId(req), ...req.query }
     });
     res.json(response.data);
   } catch (error) {
@@ -116,8 +116,8 @@ router.get('/surveys', async (req, res) => {
 router.get('/surveys/:id/submissions', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/surveys/submissions`, {
-      headers: getHeaders(),
-      params: { locationId: locationId(), surveyId: req.params.id, ...req.query }
+      headers: getHeaders(req),
+      params: { locationId: locationId(req), surveyId: req.params.id, ...req.query }
     });
     res.json(response.data);
   } catch (error) {

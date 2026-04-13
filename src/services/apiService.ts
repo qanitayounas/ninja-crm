@@ -3,11 +3,29 @@ import type { Pipeline } from '../data/pipelineData';
 
 const API_BASE_URL = 'http://localhost:5000/api';
 
+// Get stored JWT token
+function getAuthToken(): string | null {
+  return localStorage.getItem('ninja_crm_token') || sessionStorage.getItem('ninja_crm_token');
+}
+
+// Build auth headers
+function authHeaders(): Record<string, string> {
+  const token = getAuthToken();
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  return headers;
+}
+
 // Generic fetch helpers
 async function get<T = any>(path: string, params?: Record<string, string>): Promise<T> {
   const url = new URL(`${API_BASE_URL}${path}`);
   if (params) Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
-  const res = await fetch(url.toString());
+  const res = await fetch(url.toString(), { headers: authHeaders() });
+  if (res.status === 401) {
+    apiService.logout();
+    window.location.href = '/login';
+    throw { status: 401, message: 'Session expired' };
+  }
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw { status: res.status, message: `GET ${path} failed`, providerError: err.details?.message || err.error };
@@ -18,9 +36,14 @@ async function get<T = any>(path: string, params?: Record<string, string>): Prom
 async function post<T = any>(path: string, body?: any): Promise<T> {
   const res = await fetch(`${API_BASE_URL}${path}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: authHeaders(),
     body: body ? JSON.stringify(body) : undefined
   });
+  if (res.status === 401) {
+    apiService.logout();
+    window.location.href = '/login';
+    throw { status: 401, message: 'Session expired' };
+  }
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw { status: res.status, message: `POST ${path} failed`, providerError: err.details?.message || err.error };
@@ -31,9 +54,14 @@ async function post<T = any>(path: string, body?: any): Promise<T> {
 async function put<T = any>(path: string, body?: any): Promise<T> {
   const res = await fetch(`${API_BASE_URL}${path}`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    headers: authHeaders(),
     body: body ? JSON.stringify(body) : undefined
   });
+  if (res.status === 401) {
+    apiService.logout();
+    window.location.href = '/login';
+    throw { status: 401, message: 'Session expired' };
+  }
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw { status: res.status, message: `PUT ${path} failed`, providerError: err.details?.message || err.error };
@@ -42,7 +70,12 @@ async function put<T = any>(path: string, body?: any): Promise<T> {
 }
 
 async function del<T = any>(path: string): Promise<T> {
-  const res = await fetch(`${API_BASE_URL}${path}`, { method: 'DELETE' });
+  const res = await fetch(`${API_BASE_URL}${path}`, { method: 'DELETE', headers: authHeaders() });
+  if (res.status === 401) {
+    apiService.logout();
+    window.location.href = '/login';
+    throw { status: 401, message: 'Session expired' };
+  }
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw { status: res.status, message: `DELETE ${path} failed`, providerError: err.details?.message || err.error };
@@ -56,6 +89,41 @@ class ApiService {
   // Authentication & Session (local)
   // ========================
 
+  // Get GHL OAuth authorization URL
+  async getOAuthUrl(locationId: string): Promise<string> {
+    const res = await fetch(`${API_BASE_URL}/auth/ghl/authorize?locationId=${encodeURIComponent(locationId)}`);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    return data.authUrl;
+  }
+
+  // Try to reconnect with existing account (no OAuth needed)
+  async reconnect(identifier: string): Promise<{ token: string; name: string } | null> {
+    // Check if it's an email or locationId
+    const isEmail = identifier.includes('@');
+    const body = isEmail ? { email: identifier } : { locationId: identifier };
+
+    const res = await fetch(`${API_BASE_URL}/auth/reconnect`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (data.error === 'not_found') return null;
+    if (data.token) return data;
+    return null;
+  }
+
+  // Handle OAuth callback - store JWT token from backend
+  handleOAuthCallback(token: string, name: string, remember: boolean = true): void {
+    const storage = remember ? localStorage : sessionStorage;
+    storage.setItem('ninja_crm_token', token);
+    storage.setItem('ninja_crm_user', JSON.stringify({ name, role: 'admin' }));
+    storage.setItem('ninja_crm_session_active', 'true');
+    localStorage.setItem('ninja_crm_remember_me', remember.toString());
+  }
+
+  // Legacy email/password login (kept for backwards compatibility)
   async login(email: string, password: string, remember: boolean = false): Promise<any> {
     if (email === 'qanitayounas973@gmail.com' && password === 'Qanita@123') {
       const userData = { email, name: 'Qanita Younas', role: 'admin' };
@@ -69,9 +137,11 @@ class ApiService {
   }
 
   logout() {
+    localStorage.removeItem('ninja_crm_token');
     localStorage.removeItem('ninja_crm_user');
     localStorage.removeItem('ninja_crm_session_active');
     localStorage.removeItem('ninja_crm_remember_me');
+    sessionStorage.removeItem('ninja_crm_token');
     sessionStorage.removeItem('ninja_crm_user');
     sessionStorage.removeItem('ninja_crm_session_active');
   }
@@ -79,6 +149,11 @@ class ApiService {
   isAuthenticated(): boolean {
     return localStorage.getItem('ninja_crm_session_active') === 'true' ||
            sessionStorage.getItem('ninja_crm_session_active') === 'true';
+  }
+
+  // Get current session info from backend
+  async getSessionInfo(): Promise<any> {
+    return get('/auth/me');
   }
 
   // ========================

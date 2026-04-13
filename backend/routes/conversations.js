@@ -7,8 +7,8 @@ const { GHL_API_BASE, getHeaders, locationId } = require('./_helpers');
 router.get('/', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/conversations/search`, {
-      headers: getHeaders(),
-      params: { locationId: locationId(), ...req.query }
+      headers: getHeaders(req),
+      params: { locationId: locationId(req), ...req.query }
     });
     res.json(response.data);
   } catch (error) {
@@ -20,7 +20,7 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/conversations/${req.params.id}`, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -33,8 +33,8 @@ router.post('/', async (req, res) => {
   try {
     const response = await axios.post(`${GHL_API_BASE}/conversations/`, {
       ...req.body,
-      locationId: locationId()
-    }, { headers: getHeaders() });
+      locationId: locationId(req)
+    }, { headers: getHeaders(req) });
     res.status(201).json(response.data);
   } catch (error) {
     res.status(error.response?.status || 500).json({ error: 'Failed to create conversation', details: error.response?.data });
@@ -45,7 +45,7 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const response = await axios.put(`${GHL_API_BASE}/conversations/${req.params.id}`, req.body, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -57,7 +57,7 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const response = await axios.delete(`${GHL_API_BASE}/conversations/${req.params.id}`, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -69,7 +69,7 @@ router.delete('/:id', async (req, res) => {
 router.get('/:id/messages', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/conversations/${req.params.id}/messages`, {
-      headers: getHeaders(),
+      headers: getHeaders(req),
       params: req.query
     });
     res.json(response.data);
@@ -81,9 +81,9 @@ router.get('/:id/messages', async (req, res) => {
 // Send message
 router.post('/messages', async (req, res) => {
   try {
-    const payload = { ...req.body, locationId: locationId() };
+    const payload = { ...req.body, locationId: locationId(req) };
     const response = await axios.post(`${GHL_API_BASE}/conversations/messages`, payload, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -95,7 +95,7 @@ router.post('/messages', async (req, res) => {
 router.get('/messages/:messageId', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/conversations/messages/${req.params.messageId}`, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -107,7 +107,7 @@ router.get('/messages/:messageId', async (req, res) => {
 router.delete('/messages/:messageId/schedule', async (req, res) => {
   try {
     const response = await axios.delete(`${GHL_API_BASE}/conversations/messages/${req.params.messageId}/schedule`, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -119,7 +119,7 @@ router.delete('/messages/:messageId/schedule', async (req, res) => {
 router.post('/messages/upload', async (req, res) => {
   try {
     const response = await axios.post(`${GHL_API_BASE}/conversations/messages/upload`, req.body, {
-      headers: { ...getHeaders(), 'Content-Type': req.headers['content-type'] }
+      headers: { ...getHeaders(req), 'Content-Type': req.headers['content-type'] }
     });
     res.json(response.data);
   } catch (error) {
@@ -131,7 +131,7 @@ router.post('/messages/upload', async (req, res) => {
 router.put('/messages/:messageId/status', async (req, res) => {
   try {
     const response = await axios.put(`${GHL_API_BASE}/conversations/messages/${req.params.messageId}/status`, req.body, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {

@@ -9,8 +9,8 @@ const { GHL_API_BASE, getHeaders, locationId } = require('./_helpers');
 router.get('/', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/blogs/`, {
-      headers: getHeaders(),
-      params: { locationId: locationId(), ...req.query }
+      headers: getHeaders(req),
+      params: { locationId: locationId(req), ...req.query }
     });
     res.json(response.data);
   } catch (error) {
@@ -24,8 +24,8 @@ router.get('/', async (req, res) => {
 router.get('/:blogId/posts', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/blogs/${req.params.blogId}/posts`, {
-      headers: getHeaders(),
-      params: { locationId: locationId(), ...req.query }
+      headers: getHeaders(req),
+      params: { locationId: locationId(req), ...req.query }
     });
     res.json(response.data);
   } catch (error) {
@@ -37,7 +37,7 @@ router.get('/:blogId/posts', async (req, res) => {
 router.get('/:blogId/posts/:postId', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/blogs/${req.params.blogId}/posts/${req.params.postId}`, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -50,8 +50,8 @@ router.post('/:blogId/posts', async (req, res) => {
   try {
     const response = await axios.post(`${GHL_API_BASE}/blogs/${req.params.blogId}/posts`, {
       ...req.body,
-      locationId: locationId()
-    }, { headers: getHeaders() });
+      locationId: locationId(req)
+    }, { headers: getHeaders(req) });
     res.status(201).json(response.data);
   } catch (error) {
     res.status(error.response?.status || 500).json({ error: 'Failed to create post', details: error.response?.data });
@@ -62,7 +62,7 @@ router.post('/:blogId/posts', async (req, res) => {
 router.put('/:blogId/posts/:postId', async (req, res) => {
   try {
     const response = await axios.put(`${GHL_API_BASE}/blogs/${req.params.blogId}/posts/${req.params.postId}`, req.body, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -74,7 +74,7 @@ router.put('/:blogId/posts/:postId', async (req, res) => {
 router.delete('/:blogId/posts/:postId', async (req, res) => {
   try {
     const response = await axios.delete(`${GHL_API_BASE}/blogs/${req.params.blogId}/posts/${req.params.postId}`, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -88,8 +88,8 @@ router.delete('/:blogId/posts/:postId', async (req, res) => {
 router.get('/:blogId/categories', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/blogs/categories`, {
-      headers: getHeaders(),
-      params: { locationId: locationId(), limit: 50, offset: 0, ...req.query }
+      headers: getHeaders(req),
+      params: { locationId: locationId(req), limit: 50, offset: 0, ...req.query }
     });
     res.json(response.data);
   } catch (error) {
@@ -103,8 +103,8 @@ router.get('/:blogId/categories', async (req, res) => {
 router.get('/:blogId/authors', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/blogs/authors`, {
-      headers: getHeaders(),
-      params: { locationId: locationId(), limit: 50, offset: 0, ...req.query }
+      headers: getHeaders(req),
+      params: { locationId: locationId(req), limit: 50, offset: 0, ...req.query }
     });
     res.json(response.data);
   } catch (error) {
@@ -118,8 +118,8 @@ router.get('/:blogId/authors', async (req, res) => {
 router.get('/:blogId/check-slug', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/blogs/${req.params.blogId}/check-slug`, {
-      headers: getHeaders(),
-      params: { locationId: locationId(), ...req.query }
+      headers: getHeaders(req),
+      params: { locationId: locationId(req), ...req.query }
     });
     res.json(response.data);
   } catch (error) {

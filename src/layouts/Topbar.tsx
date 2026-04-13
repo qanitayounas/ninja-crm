@@ -9,7 +9,16 @@ interface TopbarProps {
   onMenuClick?: () => void;
 }
 
+const getUserInfo = () => {
+  try {
+    const stored = localStorage.getItem('ninja_crm_user') || sessionStorage.getItem('ninja_crm_user');
+    if (stored) return JSON.parse(stored);
+  } catch {}
+  return { name: 'Admin Ninja', role: 'Super Admin' };
+};
+
 export const Topbar = ({ title, subtitle, actionText, onAction, onMenuClick }: TopbarProps) => {
+  const userInfo = getUserInfo();
   return (
     <header className="flex items-center justify-between h-20 pt-4 px-4 md:px-8 bg-transparent shrink-0">
       <div className="flex items-center gap-4">
@@ -55,10 +64,10 @@ export const Topbar = ({ title, subtitle, actionText, onAction, onMenuClick }: T
 
         <div className="flex items-center gap-3 ml-2">
           <div className="hidden sm:block text-right">
-            <p className="text-sm font-black text-ninja-dark leading-tight">Admin Ninja</p>
-            <p className="text-[11px] text-gray-400 font-bold leading-tight">Super Admin</p>
+            <p className="text-sm font-black text-ninja-dark leading-tight">{userInfo.name || 'User'}</p>
+            <p className="text-[11px] text-gray-400 font-bold leading-tight">{userInfo.role || 'Connected'}</p>
           </div>
-          <Avatar name="Admin Ninja" size="md" className="cursor-pointer hover:scale-105 transition-all rounded-full" />
+          <Avatar name={userInfo.name || 'User'} size="md" className="cursor-pointer hover:scale-105 transition-all rounded-full" />
         </div>
       </div>
     </header>

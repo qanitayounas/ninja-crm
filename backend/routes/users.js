@@ -4,7 +4,7 @@ const { proxyGet, proxyGetById, proxyPost, proxyPut, proxyDelete, locationId } =
 
 // List users
 router.get('/', proxyGet('/users/', (req) => ({
-  locationId: locationId(),
+  locationId: locationId(req),
   ...req.query
 })));
 
@@ -14,7 +14,7 @@ router.get('/:id', proxyGetById((p) => `/users/${p.id}`));
 // Create user
 router.post('/', proxyPost('/users/', (req) => ({
   ...req.body,
-  locationId: locationId()
+  locationId: locationId(req)
 })));
 
 // Update user

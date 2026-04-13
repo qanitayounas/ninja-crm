@@ -9,8 +9,8 @@ const { GHL_API_BASE, getHeaders, locationId } = require('./_helpers');
 router.get('/', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/emails/builder`, {
-      headers: getHeaders(),
-      params: { locationId: locationId(), limit: 20, offset: 0, ...req.query }
+      headers: getHeaders(req),
+      params: { locationId: locationId(req), limit: 20, offset: 0, ...req.query }
     });
     res.json(response.data);
   } catch (error) {
@@ -22,7 +22,7 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/emails/builder/${req.params.id}`, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -35,8 +35,8 @@ router.post('/', async (req, res) => {
   try {
     const response = await axios.post(`${GHL_API_BASE}/emails/builder`, {
       ...req.body,
-      locationId: locationId()
-    }, { headers: getHeaders() });
+      locationId: locationId(req)
+    }, { headers: getHeaders(req) });
     res.status(201).json(response.data);
   } catch (error) {
     res.status(error.response?.status || 500).json({ error: 'Failed to create email', details: error.response?.data });
@@ -47,7 +47,7 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const response = await axios.put(`${GHL_API_BASE}/emails/builder/${req.params.id}`, req.body, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -59,7 +59,7 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const response = await axios.delete(`${GHL_API_BASE}/emails/builder/${req.params.id}`, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -73,8 +73,8 @@ router.delete('/:id', async (req, res) => {
 router.get('/schedule', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/emails/schedule`, {
-      headers: getHeaders(),
-      params: { locationId: locationId(), ...req.query }
+      headers: getHeaders(req),
+      params: { locationId: locationId(req), ...req.query }
     });
     res.json(response.data);
   } catch (error) {
@@ -87,8 +87,8 @@ router.post('/schedule', async (req, res) => {
   try {
     const response = await axios.post(`${GHL_API_BASE}/emails/schedule`, {
       ...req.body,
-      locationId: locationId()
-    }, { headers: getHeaders() });
+      locationId: locationId(req)
+    }, { headers: getHeaders(req) });
     res.status(201).json(response.data);
   } catch (error) {
     res.status(error.response?.status || 500).json({ error: 'Failed to create schedule', details: error.response?.data });
@@ -99,7 +99,7 @@ router.post('/schedule', async (req, res) => {
 router.put('/schedule/:scheduleId', async (req, res) => {
   try {
     const response = await axios.put(`${GHL_API_BASE}/emails/schedule/${req.params.scheduleId}`, req.body, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -111,7 +111,7 @@ router.put('/schedule/:scheduleId', async (req, res) => {
 router.delete('/schedule/:scheduleId', async (req, res) => {
   try {
     const response = await axios.delete(`${GHL_API_BASE}/emails/schedule/${req.params.scheduleId}`, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {

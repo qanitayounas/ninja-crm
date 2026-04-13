@@ -9,8 +9,8 @@ const { GHL_API_BASE, getHeaders, locationId } = require('./_helpers');
 router.get('/', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/calendars/`, {
-      headers: getHeaders(),
-      params: { locationId: locationId() }
+      headers: getHeaders(req),
+      params: { locationId: locationId(req) }
     });
     res.json(response.data);
   } catch (error) {
@@ -22,7 +22,7 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/calendars/${req.params.id}`, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -35,8 +35,8 @@ router.post('/', async (req, res) => {
   try {
     const response = await axios.post(`${GHL_API_BASE}/calendars/`, {
       ...req.body,
-      locationId: locationId()
-    }, { headers: getHeaders() });
+      locationId: locationId(req)
+    }, { headers: getHeaders(req) });
     res.status(201).json(response.data);
   } catch (error) {
     res.status(error.response?.status || 500).json({ error: 'Failed to create calendar', details: error.response?.data });
@@ -47,7 +47,7 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const response = await axios.put(`${GHL_API_BASE}/calendars/${req.params.id}`, req.body, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -59,7 +59,7 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const response = await axios.delete(`${GHL_API_BASE}/calendars/${req.params.id}`, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -71,7 +71,7 @@ router.delete('/:id', async (req, res) => {
 router.get('/:id/free-slots', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/calendars/${req.params.id}/free-slots`, {
-      headers: getHeaders(),
+      headers: getHeaders(req),
       params: req.query
     });
     res.json(response.data);
@@ -88,8 +88,8 @@ router.get('/events', async (req, res) => {
     // If no specific filter provided, first get all calendars then fetch events for each
     if (!req.query.calendarId && !req.query.userId && !req.query.groupId) {
       const calRes = await axios.get(`${GHL_API_BASE}/calendars/`, {
-        headers: getHeaders(),
-        params: { locationId: locationId() }
+        headers: getHeaders(req),
+        params: { locationId: locationId(req) }
       });
       const calendars = calRes.data.calendars || [];
       if (calendars.length === 0) return res.json({ events: [] });
@@ -101,8 +101,8 @@ router.get('/events', async (req, res) => {
       for (const cal of calendars) {
         try {
           const evRes = await axios.get(`${GHL_API_BASE}/calendars/events`, {
-            headers: getHeaders(),
-            params: { locationId: locationId(), calendarId: cal.id, startTime, endTime }
+            headers: getHeaders(req),
+            params: { locationId: locationId(req), calendarId: cal.id, startTime, endTime }
           });
           allEvents.push(...(evRes.data.events || []));
         } catch (e) { /* skip failed calendar */ }
@@ -111,9 +111,9 @@ router.get('/events', async (req, res) => {
     }
 
     const response = await axios.get(`${GHL_API_BASE}/calendars/events`, {
-      headers: getHeaders(),
+      headers: getHeaders(req),
       params: {
-        locationId: locationId(),
+        locationId: locationId(req),
         startTime: req.query.startTime || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
         endTime: req.query.endTime || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
         ...req.query
@@ -129,7 +129,7 @@ router.get('/events', async (req, res) => {
 router.get('/events/:eventId', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/calendars/events/appointments/${req.params.eventId}`, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -142,19 +142,19 @@ router.post('/events', async (req, res) => {
   try {
     const payload = {
       ...req.body,
-      locationId: req.body.locationId || locationId()
+      locationId: req.body.locationId || locationId(req)
     };
     // calendarId is required
     if (!payload.calendarId) {
       const calRes = await axios.get(`${GHL_API_BASE}/calendars/`, {
-        headers: getHeaders(),
-        params: { locationId: locationId() }
+        headers: getHeaders(req),
+        params: { locationId: locationId(req) }
       });
       const cals = calRes.data.calendars || [];
       if (cals.length > 0) payload.calendarId = cals[0].id;
     }
     const response = await axios.post(`${GHL_API_BASE}/calendars/events/appointments`, payload, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.status(201).json(response.data);
   } catch (error) {
@@ -166,7 +166,7 @@ router.post('/events', async (req, res) => {
 router.put('/events/:eventId', async (req, res) => {
   try {
     const response = await axios.put(`${GHL_API_BASE}/calendars/events/appointments/${req.params.eventId}`, req.body, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -178,7 +178,7 @@ router.put('/events/:eventId', async (req, res) => {
 router.delete('/events/:eventId', async (req, res) => {
   try {
     const response = await axios.delete(`${GHL_API_BASE}/calendars/events/appointments/${req.params.eventId}`, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -192,8 +192,8 @@ router.delete('/events/:eventId', async (req, res) => {
 router.get('/groups', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/calendars/groups`, {
-      headers: getHeaders(),
-      params: { locationId: locationId() }
+      headers: getHeaders(req),
+      params: { locationId: locationId(req) }
     });
     res.json(response.data);
   } catch (error) {
@@ -206,8 +206,8 @@ router.post('/groups', async (req, res) => {
   try {
     const response = await axios.post(`${GHL_API_BASE}/calendars/groups`, {
       ...req.body,
-      locationId: locationId()
-    }, { headers: getHeaders() });
+      locationId: locationId(req)
+    }, { headers: getHeaders(req) });
     res.status(201).json(response.data);
   } catch (error) {
     res.status(error.response?.status || 500).json({ error: 'Failed to create group', details: error.response?.data });
@@ -218,7 +218,7 @@ router.post('/groups', async (req, res) => {
 router.put('/groups/:groupId', async (req, res) => {
   try {
     const response = await axios.put(`${GHL_API_BASE}/calendars/groups/${req.params.groupId}`, req.body, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -230,7 +230,7 @@ router.put('/groups/:groupId', async (req, res) => {
 router.delete('/groups/:groupId', async (req, res) => {
   try {
     const response = await axios.delete(`${GHL_API_BASE}/calendars/groups/${req.params.groupId}`, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -244,8 +244,8 @@ router.delete('/groups/:groupId', async (req, res) => {
 router.get('/resources', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/calendars/resources`, {
-      headers: getHeaders(),
-      params: { locationId: locationId() }
+      headers: getHeaders(req),
+      params: { locationId: locationId(req) }
     });
     res.json(response.data);
   } catch (error) {
@@ -257,7 +257,7 @@ router.get('/resources', async (req, res) => {
 router.get('/resources/:resourceId', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/calendars/resources/${req.params.resourceId}`, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -270,8 +270,8 @@ router.post('/resources', async (req, res) => {
   try {
     const response = await axios.post(`${GHL_API_BASE}/calendars/resources`, {
       ...req.body,
-      locationId: locationId()
-    }, { headers: getHeaders() });
+      locationId: locationId(req)
+    }, { headers: getHeaders(req) });
     res.status(201).json(response.data);
   } catch (error) {
     res.status(error.response?.status || 500).json({ error: 'Failed to create resource', details: error.response?.data });
@@ -282,7 +282,7 @@ router.post('/resources', async (req, res) => {
 router.put('/resources/:resourceId', async (req, res) => {
   try {
     const response = await axios.put(`${GHL_API_BASE}/calendars/resources/${req.params.resourceId}`, req.body, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -294,7 +294,7 @@ router.put('/resources/:resourceId', async (req, res) => {
 router.delete('/resources/:resourceId', async (req, res) => {
   try {
     const response = await axios.delete(`${GHL_API_BASE}/calendars/resources/${req.params.resourceId}`, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {

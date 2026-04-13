@@ -9,8 +9,8 @@ const { GHL_API_BASE, getHeaders, locationId } = require('./_helpers');
 router.get('/', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/documents-contracts/`, {
-      headers: getHeaders(),
-      params: { locationId: locationId(), ...req.query }
+      headers: getHeaders(req),
+      params: { locationId: locationId(req), ...req.query }
     });
     res.json(response.data);
   } catch (error) {
@@ -22,7 +22,7 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/documents-contracts/${req.params.id}`, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -35,8 +35,8 @@ router.post('/:id/send', async (req, res) => {
   try {
     const response = await axios.post(`${GHL_API_BASE}/documents-contracts/${req.params.id}/send`, {
       ...req.body,
-      locationId: locationId()
-    }, { headers: getHeaders() });
+      locationId: locationId(req)
+    }, { headers: getHeaders(req) });
     res.json(response.data);
   } catch (error) {
     res.status(error.response?.status || 500).json({ error: 'Failed to send document', details: error.response?.data });
@@ -49,8 +49,8 @@ router.post('/:id/send', async (req, res) => {
 router.get('/templates', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/documents-contracts/templates`, {
-      headers: getHeaders(),
-      params: { locationId: locationId(), ...req.query }
+      headers: getHeaders(req),
+      params: { locationId: locationId(req), ...req.query }
     });
     res.json(response.data);
   } catch (error) {
@@ -62,7 +62,7 @@ router.get('/templates', async (req, res) => {
 router.get('/templates/:templateId', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/documents-contracts/templates/${req.params.templateId}`, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -75,8 +75,8 @@ router.post('/templates/:templateId/send', async (req, res) => {
   try {
     const response = await axios.post(`${GHL_API_BASE}/documents-contracts/templates/${req.params.templateId}/send`, {
       ...req.body,
-      locationId: locationId()
-    }, { headers: getHeaders() });
+      locationId: locationId(req)
+    }, { headers: getHeaders(req) });
     res.json(response.data);
   } catch (error) {
     res.status(error.response?.status || 500).json({ error: 'Failed to send template', details: error.response?.data });

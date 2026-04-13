@@ -9,8 +9,8 @@ const { GHL_API_BASE, getHeaders, locationId } = require('./_helpers');
 router.get('/collections', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/products/collections`, {
-      headers: getHeaders(),
-      params: { locationId: locationId(), altId: locationId(), altType: 'location', ...req.query }
+      headers: getHeaders(req),
+      params: { locationId: locationId(req), altId: locationId(req), altType: 'location', ...req.query }
     });
     res.json(response.data);
   } catch (error) {
@@ -22,7 +22,7 @@ router.get('/collections', async (req, res) => {
 router.get('/collections/:collectionId', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/products/collections/${req.params.collectionId}`, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -35,8 +35,8 @@ router.post('/collections', async (req, res) => {
   try {
     const response = await axios.post(`${GHL_API_BASE}/products/collections`, {
       ...req.body,
-      locationId: locationId()
-    }, { headers: getHeaders() });
+      locationId: locationId(req)
+    }, { headers: getHeaders(req) });
     res.status(201).json(response.data);
   } catch (error) {
     res.status(error.response?.status || 500).json({ error: 'Failed to create collection', details: error.response?.data });
@@ -47,7 +47,7 @@ router.post('/collections', async (req, res) => {
 router.put('/collections/:collectionId', async (req, res) => {
   try {
     const response = await axios.put(`${GHL_API_BASE}/products/collections/${req.params.collectionId}`, req.body, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -59,7 +59,7 @@ router.put('/collections/:collectionId', async (req, res) => {
 router.delete('/collections/:collectionId', async (req, res) => {
   try {
     const response = await axios.delete(`${GHL_API_BASE}/products/collections/${req.params.collectionId}`, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -73,8 +73,8 @@ router.delete('/collections/:collectionId', async (req, res) => {
 router.get('/', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/products/`, {
-      headers: getHeaders(),
-      params: { locationId: locationId(), ...req.query }
+      headers: getHeaders(req),
+      params: { locationId: locationId(req), ...req.query }
     });
     res.json(response.data);
   } catch (error) {
@@ -86,7 +86,7 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/products/${req.params.id}`, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -99,8 +99,8 @@ router.post('/', async (req, res) => {
   try {
     const response = await axios.post(`${GHL_API_BASE}/products/`, {
       ...req.body,
-      locationId: locationId()
-    }, { headers: getHeaders() });
+      locationId: locationId(req)
+    }, { headers: getHeaders(req) });
     res.status(201).json(response.data);
   } catch (error) {
     res.status(error.response?.status || 500).json({ error: 'Failed to create product', details: error.response?.data });
@@ -111,7 +111,7 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const response = await axios.put(`${GHL_API_BASE}/products/${req.params.id}`, req.body, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -123,7 +123,7 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const response = await axios.delete(`${GHL_API_BASE}/products/${req.params.id}`, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -137,8 +137,8 @@ router.delete('/:id', async (req, res) => {
 router.get('/:id/prices', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/products/${req.params.id}/prices`, {
-      headers: getHeaders(),
-      params: { locationId: locationId(), ...req.query }
+      headers: getHeaders(req),
+      params: { locationId: locationId(req), ...req.query }
     });
     res.json(response.data);
   } catch (error) {
@@ -150,7 +150,7 @@ router.get('/:id/prices', async (req, res) => {
 router.get('/:id/prices/:priceId', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/products/${req.params.id}/prices/${req.params.priceId}`, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -163,8 +163,8 @@ router.post('/:id/prices', async (req, res) => {
   try {
     const response = await axios.post(`${GHL_API_BASE}/products/${req.params.id}/prices`, {
       ...req.body,
-      locationId: locationId()
-    }, { headers: getHeaders() });
+      locationId: locationId(req)
+    }, { headers: getHeaders(req) });
     res.status(201).json(response.data);
   } catch (error) {
     res.status(error.response?.status || 500).json({ error: 'Failed to create price', details: error.response?.data });
@@ -175,7 +175,7 @@ router.post('/:id/prices', async (req, res) => {
 router.put('/:id/prices/:priceId', async (req, res) => {
   try {
     const response = await axios.put(`${GHL_API_BASE}/products/${req.params.id}/prices/${req.params.priceId}`, req.body, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -187,7 +187,7 @@ router.put('/:id/prices/:priceId', async (req, res) => {
 router.delete('/:id/prices/:priceId', async (req, res) => {
   try {
     const response = await axios.delete(`${GHL_API_BASE}/products/${req.params.id}/prices/${req.params.priceId}`, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {

@@ -9,8 +9,8 @@ const { GHL_API_BASE, getHeaders, locationId } = require('./_helpers');
 router.get('/', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/funnels/funnel/list`, {
-      headers: getHeaders(),
-      params: { locationId: locationId(), ...req.query }
+      headers: getHeaders(req),
+      params: { locationId: locationId(req), ...req.query }
     });
     res.json(response.data);
   } catch (error) {
@@ -22,7 +22,7 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/funnels/funnel/${req.params.id}`, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -36,8 +36,8 @@ router.get('/:id', async (req, res) => {
 router.get('/:id/pages', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/funnels/page`, {
-      headers: getHeaders(),
-      params: { locationId: locationId(), funnelId: req.params.id, ...req.query }
+      headers: getHeaders(req),
+      params: { locationId: locationId(req), funnelId: req.params.id, ...req.query }
     });
     res.json(response.data);
   } catch (error) {
@@ -49,8 +49,8 @@ router.get('/:id/pages', async (req, res) => {
 router.get('/:id/page-count', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/funnels/page/count`, {
-      headers: getHeaders(),
-      params: { locationId: locationId(), funnelId: req.params.id }
+      headers: getHeaders(req),
+      params: { locationId: locationId(req), funnelId: req.params.id }
     });
     res.json(response.data);
   } catch (error) {
@@ -64,8 +64,8 @@ router.get('/:id/page-count', async (req, res) => {
 router.get('/redirects', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/funnels/lookup/redirect/list`, {
-      headers: getHeaders(),
-      params: { locationId: locationId(), ...req.query }
+      headers: getHeaders(req),
+      params: { locationId: locationId(req), ...req.query }
     });
     res.json(response.data);
   } catch (error) {
@@ -78,8 +78,8 @@ router.post('/redirects', async (req, res) => {
   try {
     const response = await axios.post(`${GHL_API_BASE}/funnels/lookup/redirect`, {
       ...req.body,
-      locationId: locationId()
-    }, { headers: getHeaders() });
+      locationId: locationId(req)
+    }, { headers: getHeaders(req) });
     res.status(201).json(response.data);
   } catch (error) {
     res.status(error.response?.status || 500).json({ error: 'Failed to create redirect', details: error.response?.data });
@@ -90,7 +90,7 @@ router.post('/redirects', async (req, res) => {
 router.put('/redirects/:redirectId', async (req, res) => {
   try {
     const response = await axios.put(`${GHL_API_BASE}/funnels/lookup/redirect/${req.params.redirectId}`, req.body, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -102,7 +102,7 @@ router.put('/redirects/:redirectId', async (req, res) => {
 router.delete('/redirects/:redirectId', async (req, res) => {
   try {
     const response = await axios.delete(`${GHL_API_BASE}/funnels/lookup/redirect/${req.params.redirectId}`, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {

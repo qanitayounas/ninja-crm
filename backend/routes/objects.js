@@ -9,8 +9,8 @@ const { GHL_API_BASE, getHeaders, locationId } = require('./_helpers');
 router.get('/schemas', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/objects/`, {
-      headers: getHeaders(),
-      params: { locationId: locationId() }
+      headers: getHeaders(req),
+      params: { locationId: locationId(req) }
     });
     res.json(response.data);
   } catch (error) {
@@ -22,7 +22,7 @@ router.get('/schemas', async (req, res) => {
 router.get('/schemas/:schemaId', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/objects/${req.params.schemaId}`, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -35,8 +35,8 @@ router.post('/schemas', async (req, res) => {
   try {
     const response = await axios.post(`${GHL_API_BASE}/objects/`, {
       ...req.body,
-      locationId: locationId()
-    }, { headers: getHeaders() });
+      locationId: locationId(req)
+    }, { headers: getHeaders(req) });
     res.status(201).json(response.data);
   } catch (error) {
     res.status(error.response?.status || 500).json({ error: 'Failed to create schema', details: error.response?.data });
@@ -47,7 +47,7 @@ router.post('/schemas', async (req, res) => {
 router.put('/schemas/:schemaId', async (req, res) => {
   try {
     const response = await axios.put(`${GHL_API_BASE}/objects/${req.params.schemaId}`, req.body, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -59,7 +59,7 @@ router.put('/schemas/:schemaId', async (req, res) => {
 router.delete('/schemas/:schemaId', async (req, res) => {
   try {
     const response = await axios.delete(`${GHL_API_BASE}/objects/${req.params.schemaId}`, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -73,8 +73,8 @@ router.delete('/schemas/:schemaId', async (req, res) => {
 router.get('/schemas/:schemaId/records', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/objects/${req.params.schemaId}/records`, {
-      headers: getHeaders(),
-      params: { locationId: locationId(), ...req.query }
+      headers: getHeaders(req),
+      params: { locationId: locationId(req), ...req.query }
     });
     res.json(response.data);
   } catch (error) {
@@ -86,7 +86,7 @@ router.get('/schemas/:schemaId/records', async (req, res) => {
 router.get('/schemas/:schemaId/records/:recordId', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/objects/${req.params.schemaId}/records/${req.params.recordId}`, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -99,8 +99,8 @@ router.post('/schemas/:schemaId/records', async (req, res) => {
   try {
     const response = await axios.post(`${GHL_API_BASE}/objects/${req.params.schemaId}/records`, {
       ...req.body,
-      locationId: locationId()
-    }, { headers: getHeaders() });
+      locationId: locationId(req)
+    }, { headers: getHeaders(req) });
     res.status(201).json(response.data);
   } catch (error) {
     res.status(error.response?.status || 500).json({ error: 'Failed to create record', details: error.response?.data });
@@ -111,7 +111,7 @@ router.post('/schemas/:schemaId/records', async (req, res) => {
 router.put('/schemas/:schemaId/records/:recordId', async (req, res) => {
   try {
     const response = await axios.put(`${GHL_API_BASE}/objects/${req.params.schemaId}/records/${req.params.recordId}`, req.body, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -123,7 +123,7 @@ router.put('/schemas/:schemaId/records/:recordId', async (req, res) => {
 router.delete('/schemas/:schemaId/records/:recordId', async (req, res) => {
   try {
     const response = await axios.delete(`${GHL_API_BASE}/objects/${req.params.schemaId}/records/${req.params.recordId}`, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -137,8 +137,8 @@ router.delete('/schemas/:schemaId/records/:recordId', async (req, res) => {
 router.get('/associations', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/associations/`, {
-      headers: getHeaders(),
-      params: { locationId: locationId(), ...req.query }
+      headers: getHeaders(req),
+      params: { locationId: locationId(req), ...req.query }
     });
     res.json(response.data);
   } catch (error) {
@@ -150,7 +150,7 @@ router.get('/associations', async (req, res) => {
 router.get('/associations/:id', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/associations/${req.params.id}`, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -163,8 +163,8 @@ router.post('/associations', async (req, res) => {
   try {
     const response = await axios.post(`${GHL_API_BASE}/associations/`, {
       ...req.body,
-      locationId: locationId()
-    }, { headers: getHeaders() });
+      locationId: locationId(req)
+    }, { headers: getHeaders(req) });
     res.status(201).json(response.data);
   } catch (error) {
     res.status(error.response?.status || 500).json({ error: 'Failed to create association', details: error.response?.data });
@@ -175,7 +175,7 @@ router.post('/associations', async (req, res) => {
 router.put('/associations/:id', async (req, res) => {
   try {
     const response = await axios.put(`${GHL_API_BASE}/associations/${req.params.id}`, req.body, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -187,7 +187,7 @@ router.put('/associations/:id', async (req, res) => {
 router.delete('/associations/:id', async (req, res) => {
   try {
     const response = await axios.delete(`${GHL_API_BASE}/associations/${req.params.id}`, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -201,7 +201,7 @@ router.delete('/associations/:id', async (req, res) => {
 router.get('/associations/:id/relations', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/associations/${req.params.id}/relations`, {
-      headers: getHeaders(),
+      headers: getHeaders(req),
       params: req.query
     });
     res.json(response.data);
@@ -214,7 +214,7 @@ router.get('/associations/:id/relations', async (req, res) => {
 router.post('/associations/:id/relations', async (req, res) => {
   try {
     const response = await axios.post(`${GHL_API_BASE}/associations/${req.params.id}/relations`, req.body, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.status(201).json(response.data);
   } catch (error) {
@@ -226,7 +226,7 @@ router.post('/associations/:id/relations', async (req, res) => {
 router.delete('/associations/:id/relations/:relationId', async (req, res) => {
   try {
     const response = await axios.delete(`${GHL_API_BASE}/associations/${req.params.id}/relations/${req.params.relationId}`, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {

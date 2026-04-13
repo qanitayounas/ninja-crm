@@ -62,8 +62,9 @@ import { MarketingHubPage } from "./pages/MarketingHubPage";
 import { SchoolProPage } from "./pages/SchoolProPage";
 import { SchoolProOverview } from "./pages/schoolpro/SchoolProOverview";
 import { TasksPage } from "./pages/TasksPage";
-import { 
-  SchoolProCourses, 
+import { AuthCallbackPage } from "./pages/AuthCallbackPage";
+import {
+  SchoolProCourses,
   SchoolProCommunities, 
   SchoolProCertificates, 
   SchoolProStudentPortal, 
@@ -93,6 +94,7 @@ function App() {
         <Routes>
           {/* Public/Standalone Routes */}
           <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
+          <Route path="/auth/callback" element={<AuthCallbackPage />} />
           <Route path="/signup" element={<PublicRoute><SignupPage /></PublicRoute>} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/pricing" element={<PricingPage />} />

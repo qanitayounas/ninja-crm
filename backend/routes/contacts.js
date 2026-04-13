@@ -4,13 +4,13 @@ const { proxyGet, proxyGetById, proxyPost, proxyPut, proxyDelete, locationId } =
 
 // List contacts
 router.get('/', proxyGet('/contacts/', (req) => ({
-  locationId: locationId(),
+  locationId: locationId(req),
   ...req.query
 })));
 
 // Search contacts
 router.get('/search', proxyGet('/contacts/search', (req) => ({
-  locationId: locationId(),
+  locationId: locationId(req),
   ...req.query
 })));
 
@@ -20,7 +20,7 @@ router.get('/:id', proxyGetById((p) => `/contacts/${p.id}`));
 // Create contact
 router.post('/', proxyPost('/contacts/', (req) => ({
   ...req.body,
-  locationId: locationId()
+  locationId: locationId(req)
 })));
 
 // Update contact
@@ -32,7 +32,7 @@ router.delete('/:id', proxyDelete((p) => `/contacts/${p.id}`));
 // Upsert contact
 router.post('/upsert', proxyPost('/contacts/upsert', (req) => ({
   ...req.body,
-  locationId: locationId()
+  locationId: locationId(req)
 })));
 
 // --- Contact Tags ---
@@ -46,7 +46,7 @@ router.post('/:id/tags', async (req, res) => {
     const response = await axios.post(
       `${GHL_API_BASE}/contacts/${req.params.id}/tags`,
       req.body,
-      { headers: getHeaders() }
+      { headers: getHeaders(req) }
     );
     res.json(response.data);
   } catch (error) {
@@ -59,7 +59,7 @@ router.delete('/:id/tags', async (req, res) => {
   try {
     const response = await axios.delete(
       `${GHL_API_BASE}/contacts/${req.params.id}/tags`,
-      { headers: getHeaders(), data: req.body }
+      { headers: getHeaders(req), data: req.body }
     );
     res.json(response.data);
   } catch (error) {
@@ -73,8 +73,8 @@ router.post('/:id/notes', async (req, res) => {
   try {
     const response = await axios.post(
       `${GHL_API_BASE}/contacts/${req.params.id}/notes`,
-      { ...req.body, locationId: locationId() },
-      { headers: getHeaders() }
+      { ...req.body, locationId: locationId(req) },
+      { headers: getHeaders(req) }
     );
     res.status(201).json(response.data);
   } catch (error) {
@@ -90,8 +90,8 @@ router.post('/:id/tasks', async (req, res) => {
   try {
     const response = await axios.post(
       `${GHL_API_BASE}/contacts/${req.params.id}/tasks`,
-      { ...req.body, locationId: locationId() },
-      { headers: getHeaders() }
+      { ...req.body, locationId: locationId(req) },
+      { headers: getHeaders(req) }
     );
     res.status(201).json(response.data);
   } catch (error) {
@@ -110,7 +110,7 @@ router.post('/:id/campaigns/add', async (req, res) => {
     const response = await axios.post(
       `${GHL_API_BASE}/contacts/${req.params.id}/campaigns/add`,
       req.body,
-      { headers: getHeaders() }
+      { headers: getHeaders(req) }
     );
     res.json(response.data);
   } catch (error) {
@@ -123,7 +123,7 @@ router.post('/:id/campaigns/remove', async (req, res) => {
     const response = await axios.post(
       `${GHL_API_BASE}/contacts/${req.params.id}/campaigns/remove`,
       req.body,
-      { headers: getHeaders() }
+      { headers: getHeaders(req) }
     );
     res.json(response.data);
   } catch (error) {
@@ -137,7 +137,7 @@ router.post('/:id/workflow/:workflowId', async (req, res) => {
     const response = await axios.post(
       `${GHL_API_BASE}/contacts/${req.params.id}/workflow/${req.params.workflowId}`,
       { eventStartTime: req.body.eventStartTime },
-      { headers: getHeaders() }
+      { headers: getHeaders(req) }
     );
     res.json(response.data);
   } catch (error) {

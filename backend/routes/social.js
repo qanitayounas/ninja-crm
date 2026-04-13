@@ -9,8 +9,8 @@ const { GHL_API_BASE, getHeaders, locationId } = require('./_helpers');
 router.get('/posts', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/social-media-posting/posts`, {
-      headers: getHeaders(),
-      params: { locationId: locationId(), ...req.query }
+      headers: getHeaders(req),
+      params: { locationId: locationId(req), ...req.query }
     });
     res.json(response.data);
   } catch (error) {
@@ -22,7 +22,7 @@ router.get('/posts', async (req, res) => {
 router.get('/posts/:id', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/social-media-posting/posts/${req.params.id}`, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -35,8 +35,8 @@ router.post('/posts', async (req, res) => {
   try {
     const response = await axios.post(`${GHL_API_BASE}/social-media-posting/posts`, {
       ...req.body,
-      locationId: locationId()
-    }, { headers: getHeaders() });
+      locationId: locationId(req)
+    }, { headers: getHeaders(req) });
     res.status(201).json(response.data);
   } catch (error) {
     res.status(error.response?.status || 500).json({ error: 'Failed to create post', details: error.response?.data });
@@ -47,7 +47,7 @@ router.post('/posts', async (req, res) => {
 router.put('/posts/:id', async (req, res) => {
   try {
     const response = await axios.put(`${GHL_API_BASE}/social-media-posting/posts/${req.params.id}`, req.body, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -59,7 +59,7 @@ router.put('/posts/:id', async (req, res) => {
 router.delete('/posts/:id', async (req, res) => {
   try {
     const response = await axios.delete(`${GHL_API_BASE}/social-media-posting/posts/${req.params.id}`, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -73,8 +73,8 @@ router.delete('/posts/:id', async (req, res) => {
 router.get('/accounts', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/social-media-posting/accounts`, {
-      headers: getHeaders(),
-      params: { locationId: locationId() }
+      headers: getHeaders(req),
+      params: { locationId: locationId(req) }
     });
     res.json(response.data);
   } catch (error) {
@@ -86,7 +86,7 @@ router.get('/accounts', async (req, res) => {
 router.get('/accounts/:id', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/social-media-posting/accounts/${req.params.id}`, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -98,7 +98,7 @@ router.get('/accounts/:id', async (req, res) => {
 router.delete('/accounts/:id', async (req, res) => {
   try {
     const response = await axios.delete(`${GHL_API_BASE}/social-media-posting/accounts/${req.params.id}`, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -112,8 +112,8 @@ router.delete('/accounts/:id', async (req, res) => {
 router.get('/tags', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/social-media-posting/tags`, {
-      headers: getHeaders(),
-      params: { locationId: locationId() }
+      headers: getHeaders(req),
+      params: { locationId: locationId(req) }
     });
     res.json(response.data);
   } catch (error) {
@@ -125,7 +125,7 @@ router.get('/tags', async (req, res) => {
 router.get('/tags/:id', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/social-media-posting/tags/${req.params.id}`, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -140,8 +140,8 @@ router.post('/categories', async (req, res) => {
   try {
     const response = await axios.post(`${GHL_API_BASE}/social-media-posting/categories`, {
       ...req.body,
-      locationId: locationId()
-    }, { headers: getHeaders() });
+      locationId: locationId(req)
+    }, { headers: getHeaders(req) });
     res.status(201).json(response.data);
   } catch (error) {
     res.status(error.response?.status || 500).json({ error: 'Failed to create category', details: error.response?.data });
@@ -154,8 +154,8 @@ router.post('/categories', async (req, res) => {
 router.get('/stats', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/social-media-posting/stats`, {
-      headers: getHeaders(),
-      params: { locationId: locationId(), ...req.query }
+      headers: getHeaders(req),
+      params: { locationId: locationId(req), ...req.query }
     });
     res.json(response.data);
   } catch (error) {
@@ -169,8 +169,8 @@ router.get('/stats', async (req, res) => {
 router.get('/csv/export', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/social-media-posting/csv`, {
-      headers: getHeaders(),
-      params: { locationId: locationId(), ...req.query }
+      headers: getHeaders(req),
+      params: { locationId: locationId(req), ...req.query }
     });
     res.json(response.data);
   } catch (error) {
@@ -183,8 +183,8 @@ router.post('/csv/import', async (req, res) => {
   try {
     const response = await axios.post(`${GHL_API_BASE}/social-media-posting/csv`, {
       ...req.body,
-      locationId: locationId()
-    }, { headers: getHeaders() });
+      locationId: locationId(req)
+    }, { headers: getHeaders(req) });
     res.json(response.data);
   } catch (error) {
     res.status(error.response?.status || 500).json({ error: 'Failed to import CSV', details: error.response?.data });

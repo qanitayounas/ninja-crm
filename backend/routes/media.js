@@ -15,8 +15,8 @@ router.get('/', async (req, res) => {
     const results = await Promise.allSettled(
       types.map(type =>
         axios.get(`${GHL_API_BASE}/medias/files`, {
-          headers: getHeaders(),
-          params: { locationId: locationId(), type, sortBy: 'createdAt', sortOrder: 'desc', ...req.query }
+          headers: getHeaders(req),
+          params: { locationId: locationId(req), type, sortBy: 'createdAt', sortOrder: 'desc', ...req.query }
         })
       )
     );
@@ -59,9 +59,9 @@ router.post('/upload', upload.single('file'), async (req, res) => {
       form,
       {
         headers: {
-          ...getHeaders(),
+          ...getHeaders(req),
           ...form.getHeaders(),
-          'locationid': locationId()
+          'locationid': locationId(req)
         },
         maxContentLength: 25 * 1024 * 1024,
         maxBodyLength: 25 * 1024 * 1024
@@ -78,7 +78,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/medias/${req.params.id}`, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -90,8 +90,8 @@ router.get('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const response = await axios.delete(`${GHL_API_BASE}/medias/${req.params.id}`, {
-      headers: getHeaders(),
-      params: { altId: locationId(), altType: 'location' }
+      headers: getHeaders(req),
+      params: { altId: locationId(req), altType: 'location' }
     });
     res.json(response.data);
   } catch (error) {

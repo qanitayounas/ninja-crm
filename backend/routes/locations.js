@@ -8,8 +8,8 @@ const { GHL_API_BASE, getHeaders, locationId } = require('./_helpers');
 // Get current location
 router.get('/', async (req, res) => {
   try {
-    const response = await axios.get(`${GHL_API_BASE}/locations/${locationId()}`, {
-      headers: getHeaders()
+    const response = await axios.get(`${GHL_API_BASE}/locations/${locationId(req)}`, {
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -20,8 +20,8 @@ router.get('/', async (req, res) => {
 // Update location
 router.put('/', async (req, res) => {
   try {
-    const response = await axios.put(`${GHL_API_BASE}/locations/${locationId()}`, req.body, {
-      headers: getHeaders()
+    const response = await axios.put(`${GHL_API_BASE}/locations/${locationId(req)}`, req.body, {
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -34,8 +34,8 @@ router.put('/', async (req, res) => {
 // List custom fields
 router.get('/custom-fields', async (req, res) => {
   try {
-    const response = await axios.get(`${GHL_API_BASE}/locations/${locationId()}/customFields`, {
-      headers: getHeaders(),
+    const response = await axios.get(`${GHL_API_BASE}/locations/${locationId(req)}/customFields`, {
+      headers: getHeaders(req),
       params: req.query
     });
     res.json(response.data);
@@ -47,8 +47,8 @@ router.get('/custom-fields', async (req, res) => {
 // Get single custom field
 router.get('/custom-fields/:id', async (req, res) => {
   try {
-    const response = await axios.get(`${GHL_API_BASE}/locations/${locationId()}/customFields/${req.params.id}`, {
-      headers: getHeaders()
+    const response = await axios.get(`${GHL_API_BASE}/locations/${locationId(req)}/customFields/${req.params.id}`, {
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -59,8 +59,8 @@ router.get('/custom-fields/:id', async (req, res) => {
 // Create custom field
 router.post('/custom-fields', async (req, res) => {
   try {
-    const response = await axios.post(`${GHL_API_BASE}/locations/${locationId()}/customFields`, req.body, {
-      headers: getHeaders()
+    const response = await axios.post(`${GHL_API_BASE}/locations/${locationId(req)}/customFields`, req.body, {
+      headers: getHeaders(req)
     });
     res.status(201).json(response.data);
   } catch (error) {
@@ -71,8 +71,8 @@ router.post('/custom-fields', async (req, res) => {
 // Update custom field
 router.put('/custom-fields/:id', async (req, res) => {
   try {
-    const response = await axios.put(`${GHL_API_BASE}/locations/${locationId()}/customFields/${req.params.id}`, req.body, {
-      headers: getHeaders()
+    const response = await axios.put(`${GHL_API_BASE}/locations/${locationId(req)}/customFields/${req.params.id}`, req.body, {
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -83,8 +83,8 @@ router.put('/custom-fields/:id', async (req, res) => {
 // Delete custom field
 router.delete('/custom-fields/:id', async (req, res) => {
   try {
-    const response = await axios.delete(`${GHL_API_BASE}/locations/${locationId()}/customFields/${req.params.id}`, {
-      headers: getHeaders()
+    const response = await axios.delete(`${GHL_API_BASE}/locations/${locationId(req)}/customFields/${req.params.id}`, {
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -97,8 +97,8 @@ router.delete('/custom-fields/:id', async (req, res) => {
 // List custom values
 router.get('/custom-values', async (req, res) => {
   try {
-    const response = await axios.get(`${GHL_API_BASE}/locations/${locationId()}/customValues`, {
-      headers: getHeaders()
+    const response = await axios.get(`${GHL_API_BASE}/locations/${locationId(req)}/customValues`, {
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -109,8 +109,8 @@ router.get('/custom-values', async (req, res) => {
 // Create custom value
 router.post('/custom-values', async (req, res) => {
   try {
-    const response = await axios.post(`${GHL_API_BASE}/locations/${locationId()}/customValues`, req.body, {
-      headers: getHeaders()
+    const response = await axios.post(`${GHL_API_BASE}/locations/${locationId(req)}/customValues`, req.body, {
+      headers: getHeaders(req)
     });
     res.status(201).json(response.data);
   } catch (error) {
@@ -121,8 +121,8 @@ router.post('/custom-values', async (req, res) => {
 // Update custom value
 router.put('/custom-values/:id', async (req, res) => {
   try {
-    const response = await axios.put(`${GHL_API_BASE}/locations/${locationId()}/customValues/${req.params.id}`, req.body, {
-      headers: getHeaders()
+    const response = await axios.put(`${GHL_API_BASE}/locations/${locationId(req)}/customValues/${req.params.id}`, req.body, {
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -133,8 +133,8 @@ router.put('/custom-values/:id', async (req, res) => {
 // Delete custom value
 router.delete('/custom-values/:id', async (req, res) => {
   try {
-    const response = await axios.delete(`${GHL_API_BASE}/locations/${locationId()}/customValues/${req.params.id}`, {
-      headers: getHeaders()
+    const response = await axios.delete(`${GHL_API_BASE}/locations/${locationId(req)}/customValues/${req.params.id}`, {
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -147,8 +147,8 @@ router.delete('/custom-values/:id', async (req, res) => {
 // List tags
 router.get('/tags', async (req, res) => {
   try {
-    const response = await axios.get(`${GHL_API_BASE}/locations/${locationId()}/tags`, {
-      headers: getHeaders(),
+    const response = await axios.get(`${GHL_API_BASE}/locations/${locationId(req)}/tags`, {
+      headers: getHeaders(req),
       params: req.query
     });
     res.json(response.data);
@@ -160,8 +160,8 @@ router.get('/tags', async (req, res) => {
 // Get single tag
 router.get('/tags/:id', async (req, res) => {
   try {
-    const response = await axios.get(`${GHL_API_BASE}/locations/${locationId()}/tags/${req.params.id}`, {
-      headers: getHeaders()
+    const response = await axios.get(`${GHL_API_BASE}/locations/${locationId(req)}/tags/${req.params.id}`, {
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -172,8 +172,8 @@ router.get('/tags/:id', async (req, res) => {
 // Create tag
 router.post('/tags', async (req, res) => {
   try {
-    const response = await axios.post(`${GHL_API_BASE}/locations/${locationId()}/tags`, req.body, {
-      headers: getHeaders()
+    const response = await axios.post(`${GHL_API_BASE}/locations/${locationId(req)}/tags`, req.body, {
+      headers: getHeaders(req)
     });
     res.status(201).json(response.data);
   } catch (error) {
@@ -184,8 +184,8 @@ router.post('/tags', async (req, res) => {
 // Update tag
 router.put('/tags/:id', async (req, res) => {
   try {
-    const response = await axios.put(`${GHL_API_BASE}/locations/${locationId()}/tags/${req.params.id}`, req.body, {
-      headers: getHeaders()
+    const response = await axios.put(`${GHL_API_BASE}/locations/${locationId(req)}/tags/${req.params.id}`, req.body, {
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -196,8 +196,8 @@ router.put('/tags/:id', async (req, res) => {
 // Delete tag
 router.delete('/tags/:id', async (req, res) => {
   try {
-    const response = await axios.delete(`${GHL_API_BASE}/locations/${locationId()}/tags/${req.params.id}`, {
-      headers: getHeaders()
+    const response = await axios.delete(`${GHL_API_BASE}/locations/${locationId(req)}/tags/${req.params.id}`, {
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -210,8 +210,8 @@ router.delete('/tags/:id', async (req, res) => {
 // List templates (email/SMS)
 router.get('/templates', async (req, res) => {
   try {
-    const response = await axios.get(`${GHL_API_BASE}/locations/${locationId()}/templates`, {
-      headers: getHeaders(),
+    const response = await axios.get(`${GHL_API_BASE}/locations/${locationId(req)}/templates`, {
+      headers: getHeaders(req),
       params: req.query
     });
     res.json(response.data);
@@ -225,8 +225,8 @@ router.get('/templates', async (req, res) => {
 // List location tasks
 router.get('/tasks', async (req, res) => {
   try {
-    const response = await axios.get(`${GHL_API_BASE}/locations/${locationId()}/tasks`, {
-      headers: getHeaders(),
+    const response = await axios.get(`${GHL_API_BASE}/locations/${locationId(req)}/tasks`, {
+      headers: getHeaders(req),
       params: req.query
     });
     res.json(response.data);

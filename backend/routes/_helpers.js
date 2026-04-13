@@ -2,19 +2,40 @@ const axios = require('axios');
 
 const GHL_API_BASE = 'https://services.leadconnectorhq.com';
 
-const getHeaders = () => ({
-  'Authorization': `Bearer ${process.env.GHL_API_KEY}`,
-  'Version': '2021-07-28'
-});
+// Returns headers using per-client OAuth token or API key
+const getHeaders = (req) => {
+  const client = req?.ghlClient;
+  let token;
 
-const locationId = () => process.env.GHL_LOCATION_ID;
+  if (client?.accessToken && client?.userType === 'Location') {
+    token = client.accessToken;
+    console.log('Using Location OAuth token for API call');
+  } else {
+    token = process.env.GHL_API_KEY;
+    console.log('Using API key for API call (userType:', client?.userType, ')');
+  }
+
+  return {
+    'Authorization': `Bearer ${token}`,
+    'Version': '2021-07-28'
+  };
+};
+
+// Returns locationId - for Location tokens use client's, otherwise use env
+const locationId = (req) => {
+  const client = req?.ghlClient;
+  if (client?.userType === 'Location' && client?.locationId) {
+    return client.locationId;
+  }
+  return process.env.GHL_LOCATION_ID;
+};
 
 // Generic proxy: GET list
 const proxyGet = (ghlPath, paramsFn) => async (req, res) => {
   try {
-    const params = paramsFn ? paramsFn(req) : { locationId: locationId() };
+    const params = paramsFn ? paramsFn(req) : { locationId: locationId(req) };
     const response = await axios.get(`${GHL_API_BASE}${ghlPath}`, {
-      headers: getHeaders(),
+      headers: getHeaders(req),
       params
     });
     res.json(response.data);
@@ -32,7 +53,7 @@ const proxyGetById = (ghlPathFn) => async (req, res) => {
   try {
     const path = ghlPathFn(req.params);
     const response = await axios.get(`${GHL_API_BASE}${path}`, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -47,9 +68,9 @@ const proxyGetById = (ghlPathFn) => async (req, res) => {
 // Generic proxy: POST create
 const proxyPost = (ghlPath, bodyFn) => async (req, res) => {
   try {
-    const payload = bodyFn ? bodyFn(req) : { ...req.body, locationId: locationId() };
+    const payload = bodyFn ? bodyFn(req) : { ...req.body, locationId: locationId(req) };
     const response = await axios.post(`${GHL_API_BASE}${ghlPath}`, payload, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.status(201).json(response.data);
   } catch (error) {
@@ -65,9 +86,9 @@ const proxyPost = (ghlPath, bodyFn) => async (req, res) => {
 const proxyPostDynamic = (ghlPathFn, bodyFn) => async (req, res) => {
   try {
     const path = ghlPathFn(req.params);
-    const payload = bodyFn ? bodyFn(req) : { ...req.body, locationId: locationId() };
+    const payload = bodyFn ? bodyFn(req) : { ...req.body, locationId: locationId(req) };
     const response = await axios.post(`${GHL_API_BASE}${path}`, payload, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.status(201).json(response.data);
   } catch (error) {
@@ -84,7 +105,7 @@ const proxyPut = (ghlPathFn) => async (req, res) => {
   try {
     const path = ghlPathFn(req.params);
     const response = await axios.put(`${GHL_API_BASE}${path}`, req.body, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {
@@ -101,7 +122,7 @@ const proxyDelete = (ghlPathFn) => async (req, res) => {
   try {
     const path = ghlPathFn(req.params);
     const response = await axios.delete(`${GHL_API_BASE}${path}`, {
-      headers: getHeaders()
+      headers: getHeaders(req)
     });
     res.json(response.data);
   } catch (error) {

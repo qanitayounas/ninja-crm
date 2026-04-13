@@ -13,7 +13,19 @@ app.use(cors());
 app.use(express.json());
 
 // ========================
-// Route Modules (GHL API Proxy)
+// Auth Routes (no middleware needed - public)
+// ========================
+const authRouter = require('./routes/auth');
+app.use('/api/auth', authRouter);
+
+// ========================
+// Client Auth Middleware (all /api/* routes below are protected)
+// ========================
+const clientAuth = require('./middleware/clientAuth');
+app.use('/api', clientAuth);
+
+// ========================
+// Route Modules (GHL API Proxy) - Protected by clientAuth
 // ========================
 
 const contactsRouter = require('./routes/contacts');
@@ -69,17 +81,30 @@ app.use('/api', miscRouter); // charges, recurring-tasks, links, saas, reviews m
 
 const axios = require('axios');
 const GHL_API_BASE = 'https://services.leadconnectorhq.com';
-const getHeaders = () => ({
-  'Authorization': `Bearer ${process.env.GHL_API_KEY}`,
-  'Version': '2021-07-28'
-});
+const getClientHeaders = (req) => {
+  const client = req.ghlClient;
+  const token = (client?.accessToken && client?.userType === 'Location')
+    ? client.accessToken
+    : process.env.GHL_API_KEY;
+  return {
+    'Authorization': `Bearer ${token}`,
+    'Version': '2021-07-28'
+  };
+};
+const getClientLocationId = (req) => {
+  const client = req.ghlClient;
+  if (client?.userType === 'Location' && client?.locationId) {
+    return client.locationId;
+  }
+  return process.env.GHL_LOCATION_ID;
+};
 
 // GET /api/pipelines -> redirect to opportunities router pattern
 app.get('/api/pipelines', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/opportunities/pipelines`, {
-      headers: getHeaders(),
-      params: { locationId: process.env.GHL_LOCATION_ID }
+      headers: getClientHeaders(req),
+      params: { locationId: getClientLocationId(req) }
     });
     res.json(response.data);
   } catch (error) {
@@ -92,8 +117,8 @@ app.get('/api/appointments', async (req, res) => {
   try {
     // First get all calendars to get a calendarId
     const calRes = await axios.get(`${GHL_API_BASE}/calendars/`, {
-      headers: getHeaders(),
-      params: { locationId: process.env.GHL_LOCATION_ID }
+      headers: getClientHeaders(req),
+      params: { locationId: getClientLocationId(req) }
     });
     const calendars = calRes.data.calendars || [];
     if (calendars.length === 0) return res.json({ events: [] });
@@ -105,8 +130,8 @@ app.get('/api/appointments', async (req, res) => {
     for (const cal of calendars) {
       try {
         const evRes = await axios.get(`${GHL_API_BASE}/calendars/events`, {
-          headers: getHeaders(),
-          params: { locationId: process.env.GHL_LOCATION_ID, calendarId: cal.id, startTime, endTime }
+          headers: getClientHeaders(req),
+          params: { locationId: getClientLocationId(req), calendarId: cal.id, startTime, endTime }
         });
         allEvents.push(...(evRes.data.events || []));
       } catch (e) { /* skip */ }
@@ -121,8 +146,8 @@ app.get('/api/appointments', async (req, res) => {
 app.get('/api/workflows', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/workflows/`, {
-      headers: getHeaders(),
-      params: { locationId: process.env.GHL_LOCATION_ID }
+      headers: getClientHeaders(req),
+      params: { locationId: getClientLocationId(req) }
     });
     res.json(response.data);
   } catch (error) {
@@ -134,8 +159,8 @@ app.get('/api/workflows', async (req, res) => {
 app.get('/api/sites/funnels', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/funnels/funnel/list`, {
-      headers: getHeaders(),
-      params: { locationId: process.env.GHL_LOCATION_ID }
+      headers: getClientHeaders(req),
+      params: { locationId: getClientLocationId(req) }
     });
     res.json(response.data);
   } catch (error) {
@@ -147,8 +172,8 @@ app.get('/api/sites/funnels', async (req, res) => {
 app.get('/api/sites/forms', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/forms/`, {
-      headers: getHeaders(),
-      params: { locationId: process.env.GHL_LOCATION_ID }
+      headers: getClientHeaders(req),
+      params: { locationId: getClientLocationId(req) }
     });
     res.json(response.data);
   } catch (error) {
@@ -160,8 +185,8 @@ app.get('/api/sites/forms', async (req, res) => {
 app.get('/api/sites/surveys', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/surveys/`, {
-      headers: getHeaders(),
-      params: { locationId: process.env.GHL_LOCATION_ID }
+      headers: getClientHeaders(req),
+      params: { locationId: getClientLocationId(req) }
     });
     res.json(response.data);
   } catch (error) {
@@ -173,8 +198,8 @@ app.get('/api/sites/surveys', async (req, res) => {
 app.get('/api/billing/transactions', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/payments/orders`, {
-      headers: getHeaders(),
-      params: { altId: process.env.GHL_LOCATION_ID, altType: 'location' }
+      headers: getClientHeaders(req),
+      params: { altId: getClientLocationId(req), altType: 'location' }
     });
     res.json(response.data);
   } catch (error) {
@@ -186,8 +211,8 @@ app.get('/api/billing/transactions', async (req, res) => {
 app.get('/api/school/courses', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/courses/`, {
-      headers: getHeaders(),
-      params: { locationId: process.env.GHL_LOCATION_ID }
+      headers: getClientHeaders(req),
+      params: { locationId: getClientLocationId(req) }
     });
     res.json(response.data);
   } catch (error) {
@@ -199,8 +224,8 @@ app.get('/api/school/courses', async (req, res) => {
 app.get('/api/marketing/campaigns', async (req, res) => {
   try {
     const response = await axios.get(`${GHL_API_BASE}/campaigns/`, {
-      headers: getHeaders(),
-      params: { locationId: process.env.GHL_LOCATION_ID }
+      headers: getClientHeaders(req),
+      params: { locationId: getClientLocationId(req) }
     });
     res.json(response.data);
   } catch (error) {
@@ -215,9 +240,9 @@ app.get('/api/marketing/campaigns', async (req, res) => {
 app.get('/api/dashboard', async (req, res) => {
   try {
     const [contacts, pipelines, opportunities] = await Promise.all([
-      axios.get(`${GHL_API_BASE}/contacts/`, { headers: getHeaders(), params: { locationId: process.env.GHL_LOCATION_ID, limit: 1 } }),
-      axios.get(`${GHL_API_BASE}/opportunities/pipelines`, { headers: getHeaders(), params: { locationId: process.env.GHL_LOCATION_ID } }),
-      axios.get(`${GHL_API_BASE}/opportunities/search`, { headers: getHeaders(), params: { location_id: process.env.GHL_LOCATION_ID, limit: 1 } })
+      axios.get(`${GHL_API_BASE}/contacts/`, { headers: getClientHeaders(req), params: { locationId: getClientLocationId(req), limit: 1 } }),
+      axios.get(`${GHL_API_BASE}/opportunities/pipelines`, { headers: getClientHeaders(req), params: { locationId: getClientLocationId(req) } }),
+      axios.get(`${GHL_API_BASE}/opportunities/search`, { headers: getClientHeaders(req), params: { location_id: getClientLocationId(req), limit: 1 } })
     ]);
 
     res.json({

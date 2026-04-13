@@ -61,8 +61,10 @@ export const MediaPage = () => {
                 formData.append('file', file);
                 formData.append('name', file.name);
 
+                const token = localStorage.getItem('ninja_crm_token') || sessionStorage.getItem('ninja_crm_token');
                 const res = await fetch('http://localhost:5000/api/media/upload', {
                     method: 'POST',
+                    headers: token ? { 'Authorization': `Bearer ${token}` } : {},
                     body: formData
                 });
 
